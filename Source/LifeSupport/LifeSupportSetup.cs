@@ -29,8 +29,8 @@ public class LifeSupportSetup : MonoBehaviour
 
     private LifeSupportConfig LoadLifeSupportConfig()
     {
-        var mapNode = GameDatabase.Instance.GetConfigNodes("LIFE_SUPPORT_SETTINGS").FirstOrDefault();
-        var settings = ResourceUtilities.LoadNodeProperties<LifeSupportConfig>(mapNode);
+        var lsNode = GameDatabase.Instance.GetConfigNodes("LIFE_SUPPORT_SETTINGS").FirstOrDefault();
+        var settings = ResourceUtilities.LoadNodeProperties<LifeSupportConfig>(lsNode);
         return settings;
     }
 }

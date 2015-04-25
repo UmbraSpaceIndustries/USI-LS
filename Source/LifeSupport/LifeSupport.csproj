@@ -14,10 +14,10 @@
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>pdbonly</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>none</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\..\..\KSP_DEV\GameData\UmbraSpaceIndustries\LifeSupport\</OutputPath>
+    <OutputPath>..\..\..\..\..\..\..\KSP_DEV\GameData\UmbraSpaceIndustries\LifeSupport\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -50,7 +50,6 @@
     <Compile Include="AddScenarioModules.cs" />
     <Compile Include="LifeSupportMonitor.cs" />
     <Compile Include="LifeSupportManager.cs" />
-    <Compile Include="LifeSupportResourceSetup.cs" />
     <Compile Include="LIfeSupportScenario.cs" />
     <Compile Include="LifeSupportPersistance.cs" />
     <Compile Include="LifeSupportSetup.cs" />
