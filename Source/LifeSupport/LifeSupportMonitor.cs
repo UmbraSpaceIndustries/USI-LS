@@ -153,12 +153,6 @@ namespace LifeSupport
                 GUILayout.Label(v.UpdateLabel, _labelStyle, GUILayout.Width(90));
                 GUILayout.Label(String.Format("<color=#{0}>{1}</color>", lblUpdate, updateString), _labelStyle, GUILayout.Width(160));
                 GUILayout.EndHorizontal();
-                //GUILayout.BeginHorizontal();
-                //GUILayout.Label("", _labelStyle, GUILayout.Width(20));
-                //GUILayout.Label("DEBUG:", _labelStyle, GUILayout.Width(80));
-                //GUILayout.Label(String.Format("lft:{0}", v.LastFeeding), _labelStyle, GUILayout.Width(160));
-                //GUILayout.Label(String.Format("st:{0}", v.SupplyTime), _labelStyle, GUILayout.Width(160));
-                //GUILayout.EndHorizontal();
             }
             GUILayout.EndVertical();
             GUILayout.EndScrollView();

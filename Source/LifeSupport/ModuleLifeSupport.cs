@@ -32,8 +32,8 @@ namespace LifeSupport
             var recipe = new ConversionRecipe();
             var numCrew = part.protoModuleCrew.Count();
             var ecAmount = 0.01f;
-            var supAmount = 0.00002f;
-            var scrapAmount = 0.00002f;
+            var supAmount = 0.00005f;
+            var scrapAmount = 0.00005f;
             recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = ecAmount * numCrew, ResourceName = "ElectricCharge", DumpExcess = true });
             recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = supAmount * numCrew, ResourceName = "Supplies", DumpExcess = true });
             recipe.Outputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = scrapAmount * numCrew, ResourceName = "Mulch", DumpExcess = true });
@@ -88,7 +88,7 @@ namespace LifeSupport
                 LifeSupportManager.Instance.TrackKerbal(k);
 
                 var supAmpunt = _resBroker.AmountAvailable(part, "Supplies", deltaTime, "ALL_VESSEL");
-                v.SuppliesLeft = supAmpunt/0.00002f/part.vessel.GetCrewCount();
+                v.SuppliesLeft = supAmpunt/0.00005f/part.vessel.GetCrewCount();
                 LifeSupportManager.Instance.TrackVessel(v);
             }
         }
@@ -129,7 +129,10 @@ namespace LifeSupport
                     return;
                 }
 
-                //Vacation time!
+                //Vacation time!  The lone exception are our badasses.
+                if (crew.isBadass)
+                    return;
+
                 if (crew.type != ProtoCrewMember.KerbalType.Tourist)
                 {
                     string msg = string.Format("{0} refuses to work.", crew.name);
