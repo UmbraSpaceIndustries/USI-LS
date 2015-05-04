@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
@@ -7,6 +8,8 @@ namespace LifeSupport
 {
     public class ModuleLifeSupport : BaseConverter
     {
+        private List<string> vetNames = new List<string>{"Bill Kerman","Bob Kerman","Jebediah Kerman","Valentina Kerman"};
+
         public override void OnStart(StartState state)
         {
             base.OnStart(state);
@@ -130,7 +133,7 @@ namespace LifeSupport
                 }
 
                 //Vacation time!  The lone exception are our badasses.
-                if (crew.isBadass)
+                if (crew.isBadass || vetNames.Contains(crew.name))
                     return;
 
                 if (crew.type != ProtoCrewMember.KerbalType.Tourist)

@@ -1,0 +1,7 @@
+USI Life Support - ChangeLog
+
+0.1.1 - 2015.05.04
+* Added a new 100-liter radial NOMS tank
+* Vets (Jeb/Val/Bill/Bob) should now be immune to supply deprivation
+* Rescue Kerbals should not die nearly as instantly...
+* Added a mini greenhouse 

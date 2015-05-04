@@ -68,6 +68,12 @@ namespace LifeSupport
                     //Lone exception is a landed EVA Kerbal on Kerbin.
                     if (v.situation == Vessel.Situations.LANDED && v.mainBody.bodyName == "Kerbin")
                         return;
+                    //Check their status.
+                    var k = LifeSupportManager.Instance.FetchKerbal(c);
+                    //Only if they are unsupplied
+                    if (k.LastMeal > Planetarium.GetUniversalTime() - LifeSupportSetup.Instance.LSConfig.SupplyTime)
+                        return;
+                    
                     string msg = string.Format("{0} has died of starvation", c.name);
                     LifeSupportManager.Instance.UntrackKerbal(c.name);
                     ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
