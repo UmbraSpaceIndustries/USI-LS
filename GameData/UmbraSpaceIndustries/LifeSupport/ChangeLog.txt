@@ -1,5 +1,23 @@
 USI Life Support - ChangeLog
 
+0.1.4 - 2015.07.01
+* Corrected collider and node issues with large greenhouse
+
+0.1.3 - 2015.06.26
+* You can now access the life support screen from the KSC, VAB, and Tracking Station
+* Life Support should no longer cause unanticipated part activations
+* Added 'Fertilizer' as a resource
+* Increased the cost of Mulch
+* Added token mulch storage to all inline tanks
+* Added a larger greenhouse that can also use fertilizer to extend supplies
+* Mini packs for mulch and fertilizer
+* Only crewed vehicles are showed in the life support summary window
+* Once supplis go in the red, replaced the negative time with 'crew lost'
+* Added parameter for the altitude at which kerbals are considered supplied on Kerbin
+* Added parameter to toggle the immunity of verterans (orange suits)
+
+
+
 0.1.1 - 2015.05.04
 * Added a new 100-liter radial NOMS tank
 * Vets (Jeb/Val/Bill/Bob) should now be immune to supply deprivation

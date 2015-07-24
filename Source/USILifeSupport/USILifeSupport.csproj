@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>LifeSupport</RootNamespace>
-    <AssemblyName>LifeSupport</AssemblyName>
+    <AssemblyName>USILifeSupport</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -48,14 +48,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AddScenarioModules.cs" />
-    <Compile Include="LifeSupportMonitor.cs" />
-    <Compile Include="LifeSupportManager.cs" />
-    <Compile Include="LIfeSupportScenario.cs" />
-    <Compile Include="LifeSupportPersistance.cs" />
-    <Compile Include="LifeSupportSetup.cs" />
-    <Compile Include="LifeSupportStatus.cs" />
     <Compile Include="ModuleLifeSupport.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="LifeSupportManager.cs" />
+    <Compile Include="LifeSupportMonitor.cs" />
+    <Compile Include="LifeSupportPersistance.cs" />
+    <Compile Include="LIfeSupportScenario.cs" />
+    <Compile Include="LifeSupportSetup.cs" />
+    <Compile Include="LifeSupportStatus.cs" />
     <Compile Include="VesselSupplyStatus.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
