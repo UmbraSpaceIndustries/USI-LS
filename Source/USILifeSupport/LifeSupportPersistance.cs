@@ -78,6 +78,7 @@ namespace LifeSupport
                 rNode.AddValue("KerbalName", r.KerbalName);
                 rNode.AddValue("LastMeal", r.LastMeal);
                 rNode.AddValue("IsGrouchy", r.IsGrouchy);
+                rNode.AddValue("OldTrait", r.OldTrait);
                 rNode.AddValue("LastUpdate", r.LastUpdate);
                 SettingsNode.AddNode(rNode);
             }
@@ -190,6 +191,7 @@ namespace LifeSupport
             }
             kerbInfo.LastMeal = status.LastMeal;
             kerbInfo.IsGrouchy = status.IsGrouchy;
+            kerbInfo.OldTrait = status.OldTrait;
             kerbInfo.LastUpdate = status.LastUpdate;
         }
 

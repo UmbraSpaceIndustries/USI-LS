@@ -19,13 +19,8 @@ namespace LifeSupport
                 v.VesselId = part.vessel.id.ToString();
                 LifeSupportManager.Instance.TrackVessel(v);
                 Fields["status"].guiActive = false;
+                IsActivated = true;
             }
-        }
-
-        protected override float GetHeatMultiplier(ConverterResults result, double deltaTime)
-        {
-            //No need for heat generation
-            return 0f;
         }
 
         protected override ConversionRecipe PrepareRecipe(double deltatime)
@@ -41,6 +36,11 @@ namespace LifeSupport
             recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = supAmount * numCrew, ResourceName = "Supplies", DumpExcess = true });
             recipe.Outputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = scrapAmount * numCrew, ResourceName = "Mulch", DumpExcess = true });
             return recipe;
+        }
+
+
+        protected override void PreProcessing()
+        {
         }
 
         public override bool IsSituationValid()
@@ -83,7 +83,7 @@ namespace LifeSupport
                         string msg = string.Format("{0} has returned to duty", c.name);
                         ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
                         c.type = ProtoCrewMember.KerbalType.Crew;
-                        KerbalRoster.SetExperienceTrait(c, "");
+                        KerbalRoster.SetExperienceTrait(c,k.OldTrait);
                         k.IsGrouchy = false;
                     }
                 }
@@ -141,8 +141,10 @@ namespace LifeSupport
                     string msg = string.Format("{0} refuses to work.", crew.name);
                     ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
                     crew.type = ProtoCrewMember.KerbalType.Tourist;
+                    kStat.OldTrait = crew.experienceTrait.Title;
                     KerbalRoster.SetExperienceTrait(crew, "Tourist");
                     kStat.IsGrouchy = true;
+
                     LifeSupportManager.Instance.TrackKerbal(kStat);
                 }
             }
