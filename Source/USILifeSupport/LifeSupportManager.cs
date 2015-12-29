@@ -153,6 +153,12 @@ namespace LifeSupport
         }
 
 
+        public static bool isVet(string kName)
+        {
+            var firstname = kName.Replace(" Kerman", "");
+            return (LifeSupportSetup.Instance.LSConfig.VetNames.Contains(firstname));
+        }
+
 
         internal void UpdateVesselStats()
         {

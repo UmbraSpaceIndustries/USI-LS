@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using Random = System.Random;
 
 namespace LifeSupport
 {
     public class ModuleLifeSupport : BaseConverter
     {
-        private List<string> vetNames = new List<string>{"Bill Kerman","Bob Kerman","Jebediah Kerman","Valentina Kerman"};
-
         public override void OnStart(StartState state)
         {
             base.OnStart(state);
@@ -29,9 +29,9 @@ namespace LifeSupport
             //keep our Kerbals cozy and warm.
             var recipe = new ConversionRecipe();
             var numCrew = part.protoModuleCrew.Count();
-            var ecAmount = 0.01f;
-            var supAmount = 0.00005f;
-            var scrapAmount = 0.00005f;
+            var ecAmount = LifeSupportSetup.Instance.LSConfig.ECAmount; 
+            var supAmount = LifeSupportSetup.Instance.LSConfig.SupplyAmount; 
+            var scrapAmount = LifeSupportSetup.Instance.LSConfig.WasteAmount; 
             recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = ecAmount * numCrew, ResourceName = "ElectricCharge", DumpExcess = true });
             recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = supAmount * numCrew, ResourceName = "Supplies", DumpExcess = true });
             recipe.Outputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = scrapAmount * numCrew, ResourceName = "Mulch", DumpExcess = true });
@@ -41,6 +41,18 @@ namespace LifeSupport
 
         protected override void PreProcessing()
         {
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                //Unlock the biscuit tins...
+                foreach (var p in vessel.parts)
+                {
+                    if (p.Resources.Contains("Supplies"))
+                    {
+                        var r = p.Resources["Supplies"];
+                        r.flowState = true;
+                    }
+                }
+            }
         }
 
         public override bool IsSituationValid()
@@ -66,12 +78,11 @@ namespace LifeSupport
                 //Fetch them from the queue
                 var k = LifeSupportManager.Instance.FetchKerbal(c);
                 //Update our stuff
-                var onKerbin = (part.vessel.mainBody.name == "Kerbin" && part.vessel.altitude < 50000);
+                var onKerbin = (part.vessel.mainBody.name == "Kerbin" && part.vessel.altitude < LifeSupportSetup.Instance.LSConfig.HomeWorldAltitude);
 
                 if (!onKerbin && (deltaTime - result.TimeFactor > tolerance))
                 {
-                    //Sadness
-                    CheckSideEffects(k, c);
+                    CheckSupplySideEffects(k, c);
                 }
                 else
                 {
@@ -96,7 +107,7 @@ namespace LifeSupport
             }
         }
 
-        private void CheckSideEffects(LifeSupportStatus kStat, ProtoCrewMember crew)
+        private void CheckSupplySideEffects(LifeSupportStatus kStat, ProtoCrewMember crew)
         {
             var curTime = Planetarium.GetUniversalTime();
             var SnackMax = LifeSupportSetup.Instance.LSConfig.SupplyTime;
@@ -105,49 +116,82 @@ namespace LifeSupport
 
             if (SnackTime > SnackMax)
             {
-                //If we are past the final threshold, we will start by trying to unlock any biscuit tins left on the ship.
-                
-                foreach (var rp in vessel.parts.Where(p => p.Resources.Contains("Supplies")))
-                {
-                    var resAmt = rp.Resources["Supplies"].amount;
-                    if (resAmt > 0)
-                    {
-                        rp.Resources["Supplies"].amount = 0;
-                        string msg = string.Format("{0} raids the ship for snacks...  some accidentally fell out of the airlock.", crew.name);
-                        kStat.LastMeal = lastUpdateTime;
-                        ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
-                        LifeSupportManager.Instance.TrackKerbal(kStat);
-                        //At this point, the Kerbal is saved!
-                        return;
-                    }
-                }
+                ApplyEffect(kStat, crew,
+                    LifeSupportManager.isVet(kStat.KerbalName)
+                        ? LifeSupportSetup.Instance.LSConfig.NoSupplyEffectVets
+                        : LifeSupportSetup.Instance.LSConfig.NoSupplyEffect);
+            }
+        }
 
-                if (LifeSupportSetup.Instance.LSConfig.CausesDeath)
-                {
-                    string msg = string.Format("{0} has died of starvation", crew.name);
+        private void ApplyEffect(LifeSupportStatus kStat, ProtoCrewMember crew, int effectId)
+        {
+            /*
+             *  SIDE EFFECTS:
+             * 
+             *  0 = No Effect (The feature is effectively turned off
+             *  1 = Grouchy (they become a Tourist until rescued)
+             *  2 = Mutinous (A tourist, but a random part of the ship is decoupled as they search for snacks
+             *  3 = Instantly 'wander' back to the KSC - don't ask us how!
+             *  4 = M.I.A. (will eventually respawn)
+             *  5 = K.I.A. 
+             * 
+             */
+
+            var msg = "";
+            switch (effectId)
+            {
+                case 1: //Grouchy
+                    if (crew.type != ProtoCrewMember.KerbalType.Tourist)
+                    {
+                        msg = string.Format("{0} refuses to work", crew.name);
+                        crew.type = ProtoCrewMember.KerbalType.Tourist;
+                        kStat.OldTrait = crew.experienceTrait.Title;
+                        KerbalRoster.SetExperienceTrait(crew, "Tourist");
+                        kStat.IsGrouchy = true;
+                        LifeSupportManager.Instance.TrackKerbal(kStat);
+                    }
+                    break;
+                case 2:  //Mutinous
+                    {
+                        msg = string.Format("{0} has become mutinous", crew.name);
+                        crew.type = ProtoCrewMember.KerbalType.Tourist;
+                        kStat.OldTrait = crew.experienceTrait.Title;
+                        KerbalRoster.SetExperienceTrait(crew, "Tourist");
+                        kStat.IsGrouchy = true;
+                        LifeSupportManager.Instance.TrackKerbal(kStat);
+                        ClipRandomPart();
+                    }                    
+                    break;
+                case 3: //Return to KSC
+                    msg = string.Format("{0} gets fed up and wanders back to the KSC", crew.name);
                     LifeSupportManager.Instance.UntrackKerbal(crew.name);
-                    ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
+                    part.RemoveCrewmember(crew);
+                    crew.rosterStatus = ProtoCrewMember.RosterStatus.Available;
+                    break;
+                case 4: //Despawn
+                    msg = string.Format("{0} has gone missing", crew.name);
+                    LifeSupportManager.Instance.UntrackKerbal(crew.name);
+                    part.RemoveCrewmember(crew);
+                    crew.rosterStatus = ProtoCrewMember.RosterStatus.Missing;
+                    break;
+                case 5: //Kill
+                    msg = string.Format("{0} has died", crew.name);
+                    LifeSupportManager.Instance.UntrackKerbal(crew.name);
                     part.RemoveCrewmember(crew);
                     crew.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
-                    return;
-                }
-
-                //Vacation time!  The lone exception are our badasses.
-                if (crew.isBadass || vetNames.Contains(crew.name))
-                    return;
-
-                if (crew.type != ProtoCrewMember.KerbalType.Tourist)
-                {
-                    string msg = string.Format("{0} refuses to work.", crew.name);
-                    ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
-                    crew.type = ProtoCrewMember.KerbalType.Tourist;
-                    kStat.OldTrait = crew.experienceTrait.Title;
-                    KerbalRoster.SetExperienceTrait(crew, "Tourist");
-                    kStat.IsGrouchy = true;
-
-                    LifeSupportManager.Instance.TrackKerbal(kStat);
-                }
+                    break;
             }
+
+            ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
+        }
+
+        private void ClipRandomPart()
+        {
+            Random r = new Random();
+            var idx = r.Next(1, vessel.parts.Count - 1);
+            var p = vessel.parts[idx];
+            if(p.parent != null)
+                p.decouple();
         }
     }
 }

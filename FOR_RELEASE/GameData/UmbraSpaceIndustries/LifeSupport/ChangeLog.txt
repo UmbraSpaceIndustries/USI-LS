@@ -1,3 +1,12 @@
+0.2.0 - 2015.12.29
+------------------
+24-hour clock support and cost fixes (thanks Kerbas-ad-astra!)
+Empty vessels are now properly cleaned up
+Command Chairs are now checked for life support
+Tin-raiding has been replaced by an auto-unlock feature
+A host of new config values are now included - update to taste.  
+
+
 0.1.7 - 2015.11.19
 ------------------
 Pushed version number up a bit due to some version number shenanigans
