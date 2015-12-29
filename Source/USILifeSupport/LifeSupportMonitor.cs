@@ -170,8 +170,8 @@ namespace LifeSupport
         {
             const double secsPerMinute = 60d;
             const double secsPerHour = secsPerMinute * 60d;
-            const double secsPerDay = secsPerHour * 6d;
-            const double secsPerYear = secsPerDay * 425d;
+			double secsPerDay = GameSettings.KERBIN_TIME ? secsPerHour * 6d : secsPerHour * 24d ;
+			double secsPerYear = GameSettings.KERBIN_TIME ? secsPerDay * 425d : secsPerDay * 365d ;
             double s = Math.Abs(tSnack);
             double y = Math.Floor(s/secsPerYear);
             s = s - (y * secsPerYear);
