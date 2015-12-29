@@ -41,13 +41,16 @@ namespace LifeSupport
 
         protected override void PreProcessing()
         {
-            //Unlock the biscuit tins...
-            foreach (var p in vessel.parts)
+            if (HighLogic.LoadedSceneIsFlight)
             {
-                if (p.Resources.Contains("Supplies"))
+                //Unlock the biscuit tins...
+                foreach (var p in vessel.parts)
                 {
-                    var r = p.Resources["Supplies"];
-                    r.flowState = true;
+                    if (p.Resources.Contains("Supplies"))
+                    {
+                        var r = p.Resources["Supplies"];
+                        r.flowState = true;
+                    }
                 }
             }
         }
@@ -75,7 +78,7 @@ namespace LifeSupport
                 //Fetch them from the queue
                 var k = LifeSupportManager.Instance.FetchKerbal(c);
                 //Update our stuff
-                var onKerbin = (part.vessel.mainBody.name == "Kerbin" && part.vessel.altitude < 50000);
+                var onKerbin = (part.vessel.mainBody.name == "Kerbin" && part.vessel.altitude < LifeSupportSetup.Instance.LSConfig.HomeWorldAltitude);
 
                 if (!onKerbin && (deltaTime - result.TimeFactor > tolerance))
                 {

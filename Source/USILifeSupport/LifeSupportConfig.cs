@@ -15,5 +15,6 @@
         public int NoHomeEffectVets { get; set; }
         public int HabMultiplier { get; set; }
         public string VetNames { get; set; }
+        public int HomeWorldAltitude { get; set; }
     }
 }
