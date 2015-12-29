@@ -1,36 +1,32 @@
 ﻿using System.Linq;
 using UnityEngine;
 
-public class LifeSupportSetup : MonoBehaviour
+namespace LifeSupport
 {
-    public class LifeSupportConfig
+    public class LifeSupportSetup : MonoBehaviour
     {
-        public float SupplyTime { get; set; }
-        public float ECAmount { get; set; }
-        public bool CausesDeath { get; set; }
-    }
+        // Static singleton instance
+        private static LifeSupportSetup instance;
 
-    // Static singleton instance
-    private static LifeSupportSetup instance;
+        // Static singleton property
+        public static LifeSupportSetup Instance
+        {
+            get { return instance ?? (instance = new GameObject("LifeSupportSetup").AddComponent<LifeSupportSetup>()); }
+        }
 
-    // Static singleton property
-    public static LifeSupportSetup Instance
-    {
-        get { return instance ?? (instance = new GameObject("LifeSupportSetup").AddComponent<LifeSupportSetup>()); }
-    }
+        //Static data holding variables
+        private static LifeSupportConfig _lsConfig;
 
-    //Static data holding variables
-    private static LifeSupportConfig _lsConfig;
+        public LifeSupportConfig LSConfig
+        {
+            get { return _lsConfig ?? (_lsConfig = LoadLifeSupportConfig()); }
+        }
 
-    public LifeSupportConfig LSConfig
-    {
-        get { return _lsConfig ?? (_lsConfig = LoadLifeSupportConfig()); }
-    }
-
-    private LifeSupportConfig LoadLifeSupportConfig()
-    {
-        var lsNode = GameDatabase.Instance.GetConfigNodes("LIFE_SUPPORT_SETTINGS").FirstOrDefault();
-        var settings = ResourceUtilities.LoadNodeProperties<LifeSupportConfig>(lsNode);
-        return settings;
+        private LifeSupportConfig LoadLifeSupportConfig()
+        {
+            var lsNode = GameDatabase.Instance.GetConfigNodes("LIFE_SUPPORT_SETTINGS").FirstOrDefault();
+            var settings = ResourceUtilities.LoadNodeProperties<LifeSupportConfig>(lsNode);
+            return settings;
+        }
     }
 }
