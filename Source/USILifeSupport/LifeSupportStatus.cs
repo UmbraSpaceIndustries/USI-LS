@@ -6,5 +6,7 @@ namespace LifeSupport
         public double LastMeal { get; set; }
         public double LastUpdate { get; set; }
         public bool IsGrouchy { get; set; }
+
+        public string OldTrait { get; set; }
     }
 }

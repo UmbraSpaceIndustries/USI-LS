@@ -1,7 +1,22 @@
-USI Life Support - ChangeLog
+0.2.0 - 2015.12.29
+------------------
+24-hour clock support and cost fixes (thanks Kerbas-ad-astra!)
+Empty vessels are now properly cleaned up
+Command Chairs are now checked for life support
+Tin-raiding has been replaced by an auto-unlock feature
+A host of new config values are now included - update to taste.  
 
-0.1.4 - 2015.07.01
-* Corrected collider and node issues with large greenhouse
+
+0.1.7 - 2015.11.19
+------------------
+Pushed version number up a bit due to some version number shenanigans
+Adjusted mass of Nom-O-Matic 5000 (thanks mhoram!)
+Corrected various part costs (thanks fat-lobyte!)
+Fixed an issue where returned Kerbals were remaining tourists
+
+0.1.4 - 2015.11.09
+------------------
+Update for KSP 1.0.5
 
 0.1.3 - 2015.06.26
 * You can now access the life support screen from the KSC, VAB, and Tracking Station

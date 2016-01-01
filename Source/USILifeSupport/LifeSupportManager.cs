@@ -82,6 +82,7 @@ namespace LifeSupport
                 k.LastMeal = Planetarium.GetUniversalTime();
                 k.LastUpdate = Planetarium.GetUniversalTime();
                 k.IsGrouchy = false;
+                k.OldTrait = crew.experienceTrait.Title;
                 TrackKerbal(k);
             }
 
@@ -102,6 +103,7 @@ namespace LifeSupport
             kerbInfo.LastMeal = status.LastMeal;
             kerbInfo.LastUpdate = status.LastUpdate;
             kerbInfo.IsGrouchy = status.IsGrouchy;
+            kerbInfo.OldTrait = status.OldTrait;
             LifeSupportScenario.Instance.settings.SaveStatusNode(status);
         }
 
@@ -150,6 +152,12 @@ namespace LifeSupport
             return vInfo;
         }
 
+
+        public static bool isVet(string kName)
+        {
+            var firstname = kName.Replace(" Kerman", "");
+            return (LifeSupportSetup.Instance.LSConfig.VetNames.Contains(firstname));
+        }
 
 
         internal void UpdateVesselStats()
