@@ -1,3 +1,8 @@
+0.2.1 - 2016.01.01
+------------------
+Fixed bug where crew were starving on Kerbin
+Fixed vessel display issues (hopefully) in flight
+
 0.2.0 - 2015.12.29
 ------------------
 24-hour clock support and cost fixes (thanks Kerbas-ad-astra!)
