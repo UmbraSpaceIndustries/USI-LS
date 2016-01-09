@@ -78,8 +78,7 @@ namespace LifeSupport
                 //Fetch them from the queue
                 var k = LifeSupportManager.Instance.FetchKerbal(c);
                 //Update our stuff
-                var onKerbin = (part.vessel.mainBody.name == "Kerbin" && part.vessel.altitude < LifeSupportSetup.Instance.LSConfig.HomeWorldAltitude);
-
+                var onKerbin = (part.vessel.mainBody == FlightGlobals.GetHomeBody() && part.vessel.altitude < LifeSupportSetup.Instance.LSConfig.HomeWorldAltitude);
                 if (!onKerbin && (deltaTime - result.TimeFactor > tolerance))
                 {
                     CheckSupplySideEffects(k, c);
@@ -100,7 +99,6 @@ namespace LifeSupport
                 }
                 k.LastUpdate = Planetarium.GetUniversalTime();
                 LifeSupportManager.Instance.TrackKerbal(k);
-
                 var supAmpunt = _resBroker.AmountAvailable(part, "Supplies", deltaTime, "ALL_VESSEL");
                 v.SuppliesLeft = supAmpunt/0.00005f/part.vessel.GetCrewCount();
                 LifeSupportManager.Instance.TrackVessel(v);

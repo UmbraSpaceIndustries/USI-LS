@@ -62,27 +62,18 @@ namespace LifeSupport
         private void FixedUpdate()
         {
             CheckEVAKerbals();
-            CleanupEmptyVessels();
+            LifeSupportManager.Instance.UpdateVesselStats();
         }
 
-        private void CleanupEmptyVessels()
-        {
-            foreach (var lsv in LifeSupportManager.Instance.VesselSupplyInfo)
-            {
-                var vsl = FlightGlobals.Vessels.FirstOrDefault(v => v.id.ToString() == lsv.VesselId);
-                if(vsl == null || vsl.GetCrewCount() == 0)
-                    LifeSupportManager.Instance.UntrackVessel(lsv.VesselId);
-            }    
-        }
-
+        
         private void CheckEVAKerbals()
         {
             foreach (var v in FlightGlobals.Vessels.Where(v => v.isEVA))
             {
-                var c = v.GetVesselCrew().First();
-                    //Lone exception is a landed EVA Kerbal on Kerbin.
-                    if (v.situation == Vessel.Situations.LANDED && v.mainBody.bodyName == "Kerbin")
-                        return;
+                if (v.mainBody != FlightGlobals.GetHomeBody())
+                {
+                    var c = v.GetVesselCrew().First();
+
                     //Check their status.
                     var k = LifeSupportManager.Instance.FetchKerbal(c);
                     //Only if they are unsupplied
@@ -91,7 +82,8 @@ namespace LifeSupport
                     ApplyEVAEffect(k, c, v,
                         LifeSupportManager.isVet(k.KerbalName)
                             ? LifeSupportSetup.Instance.LSConfig.EVAEffectVets
-                            : LifeSupportSetup.Instance.LSConfig.EVAEffect);                
+                            : LifeSupportSetup.Instance.LSConfig.EVAEffect);
+                }
             }
         }
 
