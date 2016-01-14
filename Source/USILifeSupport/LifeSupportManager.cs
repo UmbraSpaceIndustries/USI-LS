@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+
+
 namespace LifeSupport
 {
     public class LifeSupportManager : MonoBehaviour
@@ -80,6 +82,10 @@ namespace LifeSupport
                 var k = new LifeSupportStatus();
                 k.KerbalName = crew.name;
                 k.LastMeal = Planetarium.GetUniversalTime();
+                k.LastOnKerbin = Planetarium.GetUniversalTime();
+                k.MaxOffKerbinTime = Planetarium.GetUniversalTime() + 648000;
+                k.TimeInVessel = 0d;
+                k.LastVesselId = "??UNKNOWN??";
                 k.LastUpdate = Planetarium.GetUniversalTime();
                 k.IsGrouchy = false;
                 k.OldTrait = crew.experienceTrait.Title;
@@ -101,6 +107,10 @@ namespace LifeSupport
                 LifeSupportInfo.Add(kerbInfo);
             }
             kerbInfo.LastMeal = status.LastMeal;
+            kerbInfo.LastOnKerbin = status.LastOnKerbin;
+            kerbInfo.MaxOffKerbinTime = status.MaxOffKerbinTime;
+            kerbInfo.LastVesselId = status.LastVesselId;
+            kerbInfo.TimeInVessel = status.TimeInVessel;
             kerbInfo.LastUpdate = status.LastUpdate;
             kerbInfo.IsGrouchy = status.IsGrouchy;
             kerbInfo.OldTrait = status.OldTrait;
@@ -121,8 +131,11 @@ namespace LifeSupport
             vesselInfo.LastFeeding = status.LastFeeding;
             vesselInfo.LastUpdate = status.LastUpdate;
             vesselInfo.NumCrew = status.NumCrew;
+            vesselInfo.CrewCap = status.CrewCap;
+            vesselInfo.HabSpace = status.HabSpace;
+            vesselInfo.HabMultiplier = status.HabMultiplier;
             vesselInfo.SuppliesLeft = status.SuppliesLeft;
-            LifeSupportScenario.Instance.settings.SaveVesselNode(status);
+            LifeSupportScenario.Instance.settings.SaveVesselNode(vesselInfo);
         }
 
         public void UntrackVessel(string vesselId)
@@ -142,6 +155,9 @@ namespace LifeSupport
                 v.LastFeeding = Planetarium.GetUniversalTime();
                 v.LastUpdate = Planetarium.GetUniversalTime();
                 v.NumCrew = 0;
+                v.CrewCap = 0;
+                v.HabMultiplier = 0;
+                v.HabSpace = 0;
                 v.SuppliesLeft = 0f;
                 v.VesselId = vesselId;
                 v.VesselName = "??loading??";
@@ -166,7 +182,8 @@ namespace LifeSupport
             var badIDs = new List<string>();
             foreach (var vInfo in LifeSupportManager.Instance.VesselSupplyInfo)
             {
-                if(FlightGlobals.Vessels.All(v => v.id.ToString() != vInfo.VesselId))
+                var vsl = FlightGlobals.Vessels.FirstOrDefault(v => v.id.ToString() == vInfo.VesselId);
+                if(vsl == null || vInfo.NumCrew == 0)
                 {
                     badIDs.Add(vInfo.VesselId);
                 }
@@ -176,6 +193,25 @@ namespace LifeSupport
             {
                 LifeSupportManager.Instance.UntrackVessel(id);
             }
+        }
+
+        internal static double GetRecyclerMultiplier(Vessel vessel)
+        {
+            //TODO
+            return 1d;
+        }
+
+        internal static double GetHabtime(VesselSupplyStatus thisVessel)
+        {
+            //Crew ratio is important - all of a vessel's hab capabilities are increased if a full crew is not present.
+            var crewRatio = thisVessel.CrewCap / Math.Max(1,thisVessel.NumCrew);  //This will be 1 or greater
+            //Hab time is a combination of four things
+            //First - crew capacity. 
+            var habTime = LifeSupportSetup.Instance.LSConfig.BaseHabTime + thisVessel.HabSpace; 
+            //Now we can do our calculation. 
+            var habTotal = habTime * thisVessel.HabMultiplier * crewRatio * LifeSupportSetup.Instance.LSConfig.HabMultiplier;
+            //A Kerbal month is 30 six-hour Kerbin days.
+            return habTotal*(60d*60d*6d*30d);
         }
     }
 }

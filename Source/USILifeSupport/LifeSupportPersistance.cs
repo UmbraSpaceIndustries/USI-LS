@@ -77,6 +77,10 @@ namespace LifeSupport
                 var rNode = new ConfigNode("STATUS_DATA");
                 rNode.AddValue("KerbalName", r.KerbalName);
                 rNode.AddValue("LastMeal", r.LastMeal);
+                rNode.AddValue("LastOnKerbin", r.LastOnKerbin);
+                rNode.AddValue("MaxOffKerbinTime", r.MaxOffKerbinTime);
+                rNode.AddValue("LastVesselId", r.LastVesselId);
+                rNode.AddValue("TimeInVessel", r.TimeInVessel);
                 rNode.AddValue("IsGrouchy", r.IsGrouchy);
                 rNode.AddValue("OldTrait", r.OldTrait);
                 rNode.AddValue("LastUpdate", r.LastUpdate);
@@ -90,8 +94,10 @@ namespace LifeSupport
                 rNode.AddValue("VesselName", r.VesselName);
                 rNode.AddValue("SuppliesLeft", r.SuppliesLeft);
                 rNode.AddValue("NumCrew", r.NumCrew);
+                rNode.AddValue("CrewCap", r.CrewCap);
+                rNode.AddValue("HabSpace", r.HabSpace);
+                rNode.AddValue("HabMultiplier", r.HabMultiplier);
                 rNode.AddValue("LastFeeding", r.LastFeeding);
-                rNode.AddValue("LastUpdate", r.LastUpdate);
                 SettingsNode.AddNode(rNode);
             }
 
@@ -190,6 +196,10 @@ namespace LifeSupport
                 _StatusInfo.Add(kerbInfo);
             }
             kerbInfo.LastMeal = status.LastMeal;
+            kerbInfo.LastOnKerbin = status.LastOnKerbin;
+            kerbInfo.MaxOffKerbinTime = status.MaxOffKerbinTime;
+            kerbInfo.TimeInVessel = status.TimeInVessel;
+            kerbInfo.LastVesselId = status.LastVesselId;
             kerbInfo.IsGrouchy = status.IsGrouchy;
             kerbInfo.OldTrait = status.OldTrait;
             kerbInfo.LastUpdate = status.LastUpdate;
@@ -209,6 +219,9 @@ namespace LifeSupport
             vesselInfo.LastFeeding = status.LastFeeding;
             vesselInfo.LastUpdate = status.LastUpdate;
             vesselInfo.NumCrew = status.NumCrew;
+            vesselInfo.CrewCap = status.CrewCap;
+            vesselInfo.HabSpace = status.HabSpace;
+            vesselInfo.HabMultiplier = status.HabMultiplier;
             vesselInfo.SuppliesLeft = status.SuppliesLeft;
         }
     
