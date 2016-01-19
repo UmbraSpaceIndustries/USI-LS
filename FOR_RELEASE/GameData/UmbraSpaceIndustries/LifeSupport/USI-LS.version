@@ -1,6 +1,6 @@
 {
      "NAME":"USI-LS",
-     "URL":"https://raw.githubusercontent.com/BobPalmer/USI-LS/master/GameData/UmbraSpaceIndustries/LifeSupport/USI-LS.version",
+     "URL":"https://raw.githubusercontent.com/BobPalmer/USI-LS/master/FOR_RELEASE/GameData/UmbraSpaceIndustries/LifeSupport/USI-LS.version",
      "DOWNLOAD":"https://github.com/BobPalmer/USI-LS/releases",
      "GITHUB":{
          "USERNAME":"BobPalmer",
@@ -9,8 +9,8 @@
      },
      "VERSION":{
          "MAJOR":0,
-         "MINOR":2,
-         "PATCH":1,
+         "MINOR":3,
+         "PATCH":0,
          "BUILD":0
      },
      "KSP_VERSION":{

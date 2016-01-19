@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using KolonyTools;
 using UnityEngine;
+
+
 
 namespace LifeSupport
 {
@@ -80,6 +83,10 @@ namespace LifeSupport
                 var k = new LifeSupportStatus();
                 k.KerbalName = crew.name;
                 k.LastMeal = Planetarium.GetUniversalTime();
+                k.LastOnKerbin = Planetarium.GetUniversalTime();
+                k.MaxOffKerbinTime = Planetarium.GetUniversalTime() + 972000000;
+                k.TimeInVessel = 0d;
+                k.LastVesselId = "??UNKNOWN??";
                 k.LastUpdate = Planetarium.GetUniversalTime();
                 k.IsGrouchy = false;
                 k.OldTrait = crew.experienceTrait.Title;
@@ -101,6 +108,10 @@ namespace LifeSupport
                 LifeSupportInfo.Add(kerbInfo);
             }
             kerbInfo.LastMeal = status.LastMeal;
+            kerbInfo.LastOnKerbin = status.LastOnKerbin;
+            kerbInfo.MaxOffKerbinTime = status.MaxOffKerbinTime;
+            kerbInfo.LastVesselId = status.LastVesselId;
+            kerbInfo.TimeInVessel = status.TimeInVessel;
             kerbInfo.LastUpdate = status.LastUpdate;
             kerbInfo.IsGrouchy = status.IsGrouchy;
             kerbInfo.OldTrait = status.OldTrait;
@@ -121,8 +132,12 @@ namespace LifeSupport
             vesselInfo.LastFeeding = status.LastFeeding;
             vesselInfo.LastUpdate = status.LastUpdate;
             vesselInfo.NumCrew = status.NumCrew;
+            vesselInfo.RecyclerMultiplier = status.RecyclerMultiplier;
+            vesselInfo.CrewCap = status.CrewCap;
+            vesselInfo.HabSpace = status.HabSpace;
+            vesselInfo.HabMultiplier = status.HabMultiplier;
             vesselInfo.SuppliesLeft = status.SuppliesLeft;
-            LifeSupportScenario.Instance.settings.SaveVesselNode(status);
+            LifeSupportScenario.Instance.settings.SaveVesselNode(vesselInfo);
         }
 
         public void UntrackVessel(string vesselId)
@@ -142,6 +157,11 @@ namespace LifeSupport
                 v.LastFeeding = Planetarium.GetUniversalTime();
                 v.LastUpdate = Planetarium.GetUniversalTime();
                 v.NumCrew = 0;
+                v.RecyclerMultiplier = 1;
+                v.CrewCap = 0;
+                v.HabMultiplier = 0;
+                v.HabSpace = 0;
+                v.HabSpace = 0;
                 v.SuppliesLeft = 0f;
                 v.VesselId = vesselId;
                 v.VesselName = "??loading??";
@@ -166,7 +186,8 @@ namespace LifeSupport
             var badIDs = new List<string>();
             foreach (var vInfo in LifeSupportManager.Instance.VesselSupplyInfo)
             {
-                if(FlightGlobals.Vessels.All(v => v.id.ToString() != vInfo.VesselId))
+                var vsl = FlightGlobals.Vessels.FirstOrDefault(v => v.id.ToString() == vInfo.VesselId);
+                if(vsl == null || vInfo.NumCrew == 0)
                 {
                     badIDs.Add(vInfo.VesselId);
                 }
@@ -176,6 +197,118 @@ namespace LifeSupport
             {
                 LifeSupportManager.Instance.UntrackVessel(id);
             }
+        }
+
+        internal static double GetRecyclerMultiplier(Vessel vessel)
+        {
+            if (!LifeSupportSetup.Instance.LSConfig.EnableRecyclers)
+                return 1d;
+
+            var recyclerCap = 0f;
+            var recyclerVal = 1f;
+            var crewCount = vessel.GetCrewCount();
+            foreach (var r in vessel.FindPartModulesImplementing<ModuleLifeSupportRecycler>())
+            {
+                if (r.IsActivated)
+                {
+                    if (r.RecyclePercent > recyclerCap)
+                        recyclerCap = r.RecyclePercent;
+                    var recPercent = r.RecyclePercent;
+                    if (r.CrewCapacity < crewCount)
+                        recPercent *= r.CrewCapacity/(float) crewCount;
+
+                    recyclerVal *= (1f - recPercent);
+                }
+            }
+
+            var vList = LogisticsTools.GetNearbyVessels((float)LifeSupportSetup.Instance.LSConfig.HabRange, false, vessel, true);
+            foreach (var v in vList)
+            {
+                foreach (var r in v.FindPartModulesImplementing<ModuleLifeSupportRecycler>())
+                {
+                    if (r.IsActivated)
+                    {
+                        if (r.RecyclePercent > recyclerCap)
+                            recyclerCap = r.RecyclePercent;
+                        var recPercent = r.RecyclePercent;
+                        if (r.CrewCapacity < crewCount)
+                            recPercent *= r.CrewCapacity / (float)crewCount;
+
+                        recyclerVal *= (1f - recPercent);
+                    }
+                }
+            } 
+            return Math.Max(recyclerVal, (1f - recyclerCap));
+        }
+
+
+        internal static double GetLocalHabTime(VesselSupplyStatus thisVessel)
+        {
+            //Crew ratio is important - all of a vessel's hab capabilities are increased if a full crew is not present.
+            var crewRatio = thisVessel.CrewCap / Math.Max(1, thisVessel.NumCrew);  //This will be 1 or greater
+            //Hab time is a combination of four things
+            //First - crew capacity. 
+            var habTime = LifeSupportSetup.Instance.LSConfig.BaseHabTime + thisVessel.HabSpace;
+            //Now we can do our calculation. 
+            var habTotal = habTime * thisVessel.HabMultiplier * crewRatio * LifeSupportSetup.Instance.LSConfig.HabMultiplier;
+            //A Kerbal month is 30 six-hour Kerbin days.
+            return habTotal * (60d * 60d * 6d * 30d);
+        }
+
+
+        internal static double GetNearbyHabTime(VesselSupplyStatus thisVessel)
+        {
+            //Hab time is not only about the current vessel but also nearby landed ones.
+            var vsl = FlightGlobals.Vessels.FirstOrDefault(v => v.id.ToString() == thisVessel.VesselId);
+            double crewRatio, habTime;
+            var habTotal = 0d;
+
+            var vList = LogisticsTools.GetNearbyVessels((float)LifeSupportSetup.Instance.LSConfig.HabRange, false, vsl, true);
+            foreach (var v in vList)
+            {
+                var curVsl = LifeSupportManager.Instance.FetchVessel(v.id.ToString());
+                crewRatio = curVsl.CrewCap / Math.Max(1, thisVessel.NumCrew);  //This will be 1 or greater
+                //Hab time is a combination of four things
+                //First - crew capacity. 
+                habTime = LifeSupportSetup.Instance.LSConfig.BaseHabTime + curVsl.HabSpace;
+                //Now we can do our calculation. 
+                habTotal = habTime * curVsl.HabMultiplier * crewRatio * LifeSupportSetup.Instance.LSConfig.HabMultiplier;
+            }
+            return habTotal * (60d * 60d * 6d * 30d);
+        }
+
+        internal static double GetTotalHabTime(VesselSupplyStatus vsl)
+        {
+            var totHabTime = 0d;
+            totHabTime += GetLocalHabTime(vsl);
+            totHabTime += GetNearbyHabTime(vsl);
+            return totHabTime;
+        }
+
+        internal static double GetRecyclerMultiplierForParts(List<Part> pList, int crewCount)
+        {
+            if (!LifeSupportSetup.Instance.LSConfig.EnableRecyclers)
+                return 1d;
+
+            var recyclerCap = 0f;
+            var recyclerVal = 1f;
+
+            foreach (var p in pList)
+            {
+                var mod = p.FindModuleImplementing<ModuleLifeSupportRecycler>();
+                if (mod == null) 
+                    continue;
+                
+                if (mod.RecyclePercent > recyclerCap)
+                    recyclerCap = mod.RecyclePercent;
+                var recPercent = mod.RecyclePercent;
+                if (mod.CrewCapacity < crewCount)
+                    recPercent *= mod.CrewCapacity / (float)crewCount;
+
+                recyclerVal *= (1f - recPercent);
+            }
+            
+            return Math.Max(recyclerVal, (1f - recyclerCap));
         }
     }
 }
