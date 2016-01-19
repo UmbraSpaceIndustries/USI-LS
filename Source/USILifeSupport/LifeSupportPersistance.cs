@@ -94,6 +94,7 @@ namespace LifeSupport
                 rNode.AddValue("VesselName", r.VesselName);
                 rNode.AddValue("SuppliesLeft", r.SuppliesLeft);
                 rNode.AddValue("NumCrew", r.NumCrew);
+                rNode.AddValue("RecyclerMultiplier", r.RecyclerMultiplier);
                 rNode.AddValue("CrewCap", r.CrewCap);
                 rNode.AddValue("HabSpace", r.HabSpace);
                 rNode.AddValue("HabMultiplier", r.HabMultiplier);
@@ -219,7 +220,9 @@ namespace LifeSupport
             vesselInfo.LastFeeding = status.LastFeeding;
             vesselInfo.LastUpdate = status.LastUpdate;
             vesselInfo.NumCrew = status.NumCrew;
+            vesselInfo.RecyclerMultiplier = status.RecyclerMultiplier;
             vesselInfo.CrewCap = status.CrewCap;
+            vesselInfo.HabSpace = status.HabSpace;
             vesselInfo.HabSpace = status.HabSpace;
             vesselInfo.HabMultiplier = status.HabMultiplier;
             vesselInfo.SuppliesLeft = status.SuppliesLeft;

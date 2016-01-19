@@ -1,3 +1,17 @@
+0.3.0 - 2016.01.18
+------------------
+EVA timer is now based on how long the kerbal has been EVA.
+Habitation space is now a thing - see the forum for details.  
+The in-flight view has had a visual refresh to reflect the new data.
+Multiple LS configs are now supported, with a delta inclusive of the most pessimistic changes being used.
+Added displays to the tracking station, space center, and VAB/SPH
+SPH display includes build aid information for the current vessel
+Reduced mass of Nom-O-Matic 5000
+Kerbals no longer raid the supply tins - but they will unlock all of them.
+Corrected stack nodes for nom tanks
+Kerbals in command seats should properly consume supplies
+Recyclers and Habitation calculations, if enabled, can extend to nearby landed vessels to better facilitate disconnected bases.
+
 0.2.1 - 2016.01.01
 ------------------
 Fixed bug where crew were starving on Kerbin

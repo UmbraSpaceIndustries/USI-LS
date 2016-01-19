@@ -42,7 +42,9 @@ namespace LifeSupport
                 SupplyTime=324000,
                 SupplyAmount = 0.00005f,
                 WasteAmount = 0.00005f,
-                ReplacementPartAmount = 0.00001f
+                ReplacementPartAmount = 0.00001f,
+                EnableRecyclers = false,
+                HabRange = 2000
             };
             foreach (var lsNode in lsNodes)
             {
@@ -63,6 +65,9 @@ namespace LifeSupport
                 finalSettings.EVAEffect = Math.Max(settings.EVAEffect, finalSettings.EVAEffect);
                 finalSettings.EVAEffectVets = Math.Max(settings.EVAEffectVets, finalSettings.EVAEffectVets);
                 finalSettings.VetNames += settings.VetNames + ",";
+                finalSettings.HabRange = Math.Min(settings.HabRange, finalSettings.HabRange);
+                if (settings.EnableRecyclers)
+                    finalSettings.EnableRecyclers = true;
             }
             return finalSettings;
         }

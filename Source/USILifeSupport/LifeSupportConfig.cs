@@ -18,5 +18,7 @@
         public string VetNames { get; set; }
         public int HomeWorldAltitude { get; set; }
         public double BaseHabTime { get; set; }
+        public bool EnableRecyclers { get; set; }
+        public double HabRange { get; set; }
     }
 }

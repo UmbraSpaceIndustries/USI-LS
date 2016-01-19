@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Random = System.Random;
 
 namespace LifeSupport
@@ -26,6 +27,7 @@ namespace LifeSupport
             //keep our Kerbals cozy and warm.
             var recipe = new ConversionRecipe();
             var numCrew = part.protoModuleCrew.Count;
+            var recPercent = LifeSupportManager.GetRecyclerMultiplier(part.vessel);
             var ecAmount = LifeSupportSetup.Instance.LSConfig.ECAmount; 
             var supAmount = LifeSupportSetup.Instance.LSConfig.SupplyAmount; 
             var scrapAmount = LifeSupportSetup.Instance.LSConfig.WasteAmount;
@@ -37,8 +39,8 @@ namespace LifeSupport
             }
 
             recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = ecAmount * numCrew, ResourceName = "ElectricCharge", DumpExcess = true });
-            recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = supAmount * numCrew, ResourceName = "Supplies", DumpExcess = true });
-            recipe.Outputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = scrapAmount * numCrew, ResourceName = "Mulch", DumpExcess = true });
+            recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = supAmount * numCrew * recPercent, ResourceName = "Supplies", DumpExcess = true });
+            recipe.Outputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = scrapAmount * numCrew * recPercent, ResourceName = "Mulch", DumpExcess = true });
             return recipe;
         }
 
@@ -66,13 +68,28 @@ namespace LifeSupport
             return true;
         }
 
+        private void CheckForDeadKerbals()
+        {
+            var thisCrew = LifeSupportManager.Instance.LifeSupportInfo.Where(k => k.LastVesselId == vessel.id.ToString());
+            foreach (var k in thisCrew)
+            {
+                if (vessel.GetVesselCrew().All(c => c.name != k.KerbalName))
+                {
+                    LifeSupportManager.Instance.UntrackKerbal(k.KerbalName);
+                }
+            }
+        }
+
         protected override void PostProcess(ConverterResults result, double deltaTime)
         {
             var v = LifeSupportManager.Instance.FetchVessel(part.vessel.id.ToString());
             v.LastUpdate = Planetarium.GetUniversalTime();
             v.VesselName = part.vessel.vesselName;
             v.NumCrew = part.vessel.GetCrewCount();
+            v.RecyclerMultiplier = (float)LifeSupportManager.GetRecyclerMultiplier(part.vessel);
             v.CrewCap = part.vessel.GetCrewCapacity();
+
+            CheckForDeadKerbals();
 
             //Update Hab info
             var habMulti = 1d;
@@ -129,7 +146,7 @@ namespace LifeSupport
                 if (onKerbin)
                 {
                     k.LastOnKerbin = Planetarium.GetUniversalTime();
-                    k.MaxOffKerbinTime = Planetarium.GetUniversalTime() + 648000;
+                    k.MaxOffKerbinTime = Planetarium.GetUniversalTime() + 972000000;
                     k.TimeInVessel = 0d;
                 }
                 else
@@ -184,7 +201,7 @@ namespace LifeSupport
 
         private bool CheckHabSideEffects(LifeSupportStatus kStat, ProtoCrewMember crew, VesselSupplyStatus vsl)
         {
-            var habTime = LifeSupportManager.GetHabtime(vsl);
+            var habTime = LifeSupportManager.GetTotalHabTime(vsl);
             if (kStat.LastOnKerbin < 1)
                 kStat.LastOnKerbin = Planetarium.GetUniversalTime();
             if (habTime + kStat.LastOnKerbin > kStat.MaxOffKerbinTime)
