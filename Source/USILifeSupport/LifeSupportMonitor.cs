@@ -500,9 +500,11 @@ namespace LifeSupport
                     var cls = LifeSupportManager.Instance.FetchKerbal(c);
                     cStat.CrewName = String.Format("<color=#FFFFFF>{0}</color>", c.name);
 
-                    //var foodEaten = Planetarium.GetUniversalTime() - cls.LastMeal;
-                    //var snacksLeft = vsl.SuppliesLeft - foodEaten;
-                    var snacksLeft = supAmount/vsl.NumCrew/supPerDay*60*60*6;
+                    var snacksLeft = supAmount / supPerDay * 60 * 60 * 6;
+                    if (supAmount <= ResourceUtilities.FLOAT_TOLERANCE && !LifeSupportManager.IsOnKerbin(thisVessel))
+                    {
+                        snacksLeft = cls.LastMeal - Planetarium.GetUniversalTime();
+                    }
 
                     var lblSup = "6FFF00";
                     if (snacksLeft < 60 * 60 * 6 * 15) //15 days

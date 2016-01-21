@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Resources;
 using Random = System.Random;
 
 namespace LifeSupport
@@ -18,6 +19,10 @@ namespace LifeSupport
                 LifeSupportManager.Instance.TrackVessel(v);
                 Fields["status"].guiActive = false;
                 IsActivated = true;
+                if (LifeSupportSetup.Instance.LSConfig.ReplacementPartAmount < ResourceUtilities.FLOAT_TOLERANCE)
+                {
+                    Fields["wearPercent"].guiActive = false;
+                }
             }
         }
 
@@ -80,6 +85,8 @@ namespace LifeSupport
             }
         }
 
+
+
         protected override void PostProcess(ConverterResults result, double deltaTime)
         {
             var v = LifeSupportManager.Instance.FetchVessel(part.vessel.id.ToString());
@@ -140,10 +147,9 @@ namespace LifeSupport
                 //Fetch them from the queue
                 var k = LifeSupportManager.Instance.FetchKerbal(c);
                 //Update our stuff
-                var onKerbin = (part.vessel.mainBody == FlightGlobals.GetHomeBody() && part.vessel.altitude < LifeSupportSetup.Instance.LSConfig.HomeWorldAltitude);
 
                 //First - Hab effects.
-                if (onKerbin)
+                if (LifeSupportManager.IsOnKerbin(part.vessel))
                 {
                     k.LastOnKerbin = Planetarium.GetUniversalTime();
                     k.MaxOffKerbinTime = Planetarium.GetUniversalTime() + 972000000;
@@ -160,7 +166,7 @@ namespace LifeSupport
                 isGrouchyHab = CheckHabSideEffects(k, c, v);
 
                 //Second - Supply
-                if (!onKerbin && (deltaTime - result.TimeFactor > tolerance))
+                if (!LifeSupportManager.IsOnKerbin(part.vessel) && (deltaTime - result.TimeFactor > tolerance))
                 {
                     isGrouchySupplies = CheckSupplySideEffects(k, c);
                 }

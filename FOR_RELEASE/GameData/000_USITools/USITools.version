@@ -1,16 +1,16 @@
 {
-     "NAME":"USI-LS",
-     "URL":"https://raw.githubusercontent.com/BobPalmer/USI-LS/master/FOR_RELEASE/GameData/UmbraSpaceIndustries/LifeSupport/USI-LS.version",
-     "DOWNLOAD":"https://github.com/BobPalmer/USI-LS/releases",
+     "NAME":"USI Tools",
+	 "URL":"https://raw.githubusercontent.com/BobPalmer/UmbraSpaceIndustries/master/FOR_RELEASE/GameData/UmbraSpaceIndustries/USICore.version",
+	 "DOWNLOAD":"https://github.com/BobPalmer/UmbraSpaceIndustries/releases",
      "GITHUB":{
          "USERNAME":"BobPalmer",
-         "REPOSITORY":"USI-LS",
+         "REPOSITORY":"UmbraSpaceIndustries",
          "ALLOW_PRE_RELEASE":false
      },
      "VERSION":{
          "MAJOR":0,
-         "MINOR":3,
-         "PATCH":2,
+         "MINOR":5,
+         "PATCH":5,
          "BUILD":0
      },
      "KSP_VERSION":{
