@@ -42,7 +42,7 @@ namespace LifeSupport
                 SupplyTime=324000,
                 SupplyAmount = 0.00005f,
                 WasteAmount = 0.00005f,
-                ReplacementPartAmount = 0.00001f,
+                ReplacementPartAmount = 0f,
                 EnableRecyclers = false,
                 HabRange = 2000
             };

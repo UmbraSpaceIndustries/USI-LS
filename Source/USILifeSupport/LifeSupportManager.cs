@@ -199,6 +199,17 @@ namespace LifeSupport
             }
         }
 
+        private static int GetColonyCrewCount(Vessel vsl)
+        {
+            var crewCount = vsl.GetCrewCount();
+            var vList = LogisticsTools.GetNearbyVessels((float)LifeSupportSetup.Instance.LSConfig.HabRange, false, vsl, true);
+            foreach (var v in vList)
+            {
+                crewCount += v.GetCrewCount();
+            }
+            return crewCount;
+        }
+
         internal static double GetRecyclerMultiplier(Vessel vessel)
         {
             if (!LifeSupportSetup.Instance.LSConfig.EnableRecyclers)
@@ -206,7 +217,8 @@ namespace LifeSupport
 
             var recyclerCap = 0f;
             var recyclerVal = 1f;
-            var crewCount = vessel.GetCrewCount();
+            var crewCount = GetColonyCrewCount(vessel);
+
             foreach (var r in vessel.FindPartModulesImplementing<ModuleLifeSupportRecycler>())
             {
                 if (r.IsActivated)
@@ -309,6 +321,10 @@ namespace LifeSupport
             }
             
             return Math.Max(recyclerVal, (1f - recyclerCap));
+        }
+        public static bool IsOnKerbin(Vessel v)
+        {
+            return (v.mainBody == FlightGlobals.GetHomeBody() && v.altitude < LifeSupportSetup.Instance.LSConfig.HomeWorldAltitude);
         }
     }
 }
