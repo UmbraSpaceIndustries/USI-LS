@@ -97,27 +97,6 @@ namespace LifeSupport
                     maxCrew += part.CrewCapacity;
                 }
 
-                foreach (var part in EditorLogic.fetch.ship.parts)
-                {
-                    var hab = part.Modules.GetModules<ModuleHabitation>().FirstOrDefault();
-                    if(hab != null)
-                    {
-                        //Certain modules, in addition to crew capacity, have living space.
-                        extraHabTime += hab.KerbalMonths;
-                        //Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
-                        habMult += (hab.HabMultiplier * (hab.CrewCapacity / maxCrew));
-                    }
-
-                    if (part.Resources.Contains("Supplies"))
-                    {
-                        supplies += part.Resources["Supplies"].amount;
-                    }
-                    if (part.Resources.Contains("ElectricCharge"))
-                    {
-                        batteryAmount += part.Resources["ElectricCharge"].maxAmount;
-                    }
-                }
-
                 CMAssignmentDialog dialog = CMAssignmentDialog.Instance;
                 if (dialog != null)
                 {
@@ -134,6 +113,29 @@ namespace LifeSupport
                         }
                     }
                 }
+
+                foreach (var part in EditorLogic.fetch.ship.parts)
+                {
+                    var hab = part.Modules.GetModules<ModuleHabitation>().FirstOrDefault();
+                    if(hab != null)
+                    {
+                        //Certain modules, in addition to crew capacity, have living space.
+                        extraHabTime += hab.KerbalMonths;
+                        //Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
+                        habMult += (hab.HabMultiplier*(hab.CrewCapacity/curCrew));
+                    }
+
+                    if (part.Resources.Contains("Supplies"))
+                    {
+                        supplies += part.Resources["Supplies"].amount;
+                    }
+                    if (part.Resources.Contains("ElectricCharge"))
+                    {
+                        batteryAmount += part.Resources["ElectricCharge"].maxAmount;
+                    }
+                }
+
+
                 var totalHabSpace = (LifeSupportSetup.Instance.LSConfig.BaseHabTime * maxCrew) + extraHabTime;
                 //A Kerbal month is 30 six-hour Kerbin days.
                 var totalHabMult = habMult * LifeSupportSetup.Instance.LSConfig.HabMultiplier * 60d * 60d * 6d * 30d;

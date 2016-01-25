@@ -1,3 +1,8 @@
+0.3.4 - 2016.01.25
+------------------
+Fixed a typo in the hab multiplier foruma that used crew capacity not current crew
+The cupola now acts as a hab multiplier
+
 0.3.3 - 2016.01.24
 ------------------
 Fixed a few formula bugs, and added a crew capacity cap for hab multipliers
