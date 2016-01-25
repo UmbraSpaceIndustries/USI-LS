@@ -134,8 +134,8 @@ namespace LifeSupport
             vesselInfo.NumCrew = status.NumCrew;
             vesselInfo.RecyclerMultiplier = status.RecyclerMultiplier;
             vesselInfo.CrewCap = status.CrewCap;
-            vesselInfo.HabSpace = status.HabSpace;
-            vesselInfo.HabMultiplier = status.HabMultiplier;
+            vesselInfo.ExtraHabSpace = status.ExtraHabSpace;
+            vesselInfo.VesselHabMultiplier = status.VesselHabMultiplier;
             vesselInfo.SuppliesLeft = status.SuppliesLeft;
             LifeSupportScenario.Instance.settings.SaveVesselNode(vesselInfo);
         }
@@ -159,9 +159,8 @@ namespace LifeSupport
                 v.NumCrew = 0;
                 v.RecyclerMultiplier = 1;
                 v.CrewCap = 0;
-                v.HabMultiplier = 0;
-                v.HabSpace = 0;
-                v.HabSpace = 0;
+                v.VesselHabMultiplier = 0;
+                v.ExtraHabSpace = 0;
                 v.SuppliesLeft = 0f;
                 v.VesselId = vesselId;
                 v.VesselName = "??loading??";
@@ -254,47 +253,30 @@ namespace LifeSupport
         }
 
 
-        internal static double GetLocalHabTime(VesselSupplyStatus thisVessel)
+        internal static double GetTotalHabTime(VesselSupplyStatus sourceVessel)
         {
-            //Crew ratio is important - all of a vessel's hab capabilities are increased if a full crew is not present.
-            var crewRatio = thisVessel.CrewCap / Math.Max(1, thisVessel.NumCrew);  //This will be 1 or greater
-            //Hab time is a combination of four things
-            //First - crew capacity. 
-            var habTime = LifeSupportSetup.Instance.LSConfig.BaseHabTime + thisVessel.HabSpace;
-            //Now we can do our calculation. 
-            var habTotal = habTime * thisVessel.HabMultiplier * crewRatio * LifeSupportSetup.Instance.LSConfig.HabMultiplier;
-            //A Kerbal month is 30 six-hour Kerbin days.
-            return habTotal * (60d * 60d * 6d * 30d);
-        }
-
-
-        internal static double GetNearbyHabTime(VesselSupplyStatus thisVessel)
-        {
-            //Hab time is not only about the current vessel but also nearby landed ones.
-            var vsl = FlightGlobals.Vessels.FirstOrDefault(v => v.id.ToString() == thisVessel.VesselId);
-            double crewRatio, habTime;
-            var habTotal = 0d;
+            var vsl = FlightGlobals.Vessels.FirstOrDefault(v => v.id.ToString() == sourceVessel.VesselId);
+            double totHabSpace = (LifeSupportSetup.Instance.LSConfig.BaseHabTime * sourceVessel.CrewCap) + sourceVessel.ExtraHabSpace;
+            double totHabMult = sourceVessel.VesselHabMultiplier;
+            double totCurCrew = sourceVessel.NumCrew;
+            double totMaxCrew = sourceVessel.CrewCap;
 
             var vList = LogisticsTools.GetNearbyVessels((float)LifeSupportSetup.Instance.LSConfig.HabRange, false, vsl, true);
             foreach (var v in vList)
             {
                 var curVsl = LifeSupportManager.Instance.FetchVessel(v.id.ToString());
-                crewRatio = curVsl.CrewCap / Math.Max(1, thisVessel.NumCrew);  //This will be 1 or greater
-                //Hab time is a combination of four things
+                //Hab time starts with our baseline of the crew hab plus extra hab.
+                //We then multiply it out based on the crew ratio, our global multiplier, and the vessel's multipler.
                 //First - crew capacity. 
-                habTime = LifeSupportSetup.Instance.LSConfig.BaseHabTime + curVsl.HabSpace;
-                //Now we can do our calculation. 
-                habTotal = habTime * curVsl.HabMultiplier * crewRatio * LifeSupportSetup.Instance.LSConfig.HabMultiplier;
+                totHabSpace += (LifeSupportSetup.Instance.LSConfig.BaseHabTime * curVsl.CrewCap) + curVsl.ExtraHabSpace;
+                totCurCrew += curVsl.NumCrew;
+                totMaxCrew += curVsl.CrewCap;
+                totHabMult += curVsl.VesselHabMultiplier;
             }
-            return habTotal * (60d * 60d * 6d * 30d);
-        }
+            double habTotal = totHabSpace / totCurCrew * (totHabMult + 1) * LifeSupportSetup.Instance.LSConfig.HabMultiplier;
+            //print(String.Format("THS: {0} TC:{1} THM: {2} HM: {3}", totHabSpace, totCurCrew, totHabMult, LifeSupportSetup.Instance.LSConfig.HabMultiplier));
 
-        internal static double GetTotalHabTime(VesselSupplyStatus vsl)
-        {
-            var totHabTime = 0d;
-            totHabTime += GetLocalHabTime(vsl);
-            totHabTime += GetNearbyHabTime(vsl);
-            return totHabTime;
+            return habTotal * (60d * 60d * 6d * 30d);
         }
 
         internal static double GetRecyclerMultiplierForParts(List<Part> pList, int crewCount)
