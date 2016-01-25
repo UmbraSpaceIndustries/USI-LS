@@ -10,8 +10,8 @@ namespace LifeSupport
         public int NumCrew { get; set; }
         public float RecyclerMultiplier { get; set; }
         public int CrewCap { get; set; }
-        public double HabSpace { get; set; }
-        public double HabMultiplier { get; set; }
+        public double ExtraHabSpace { get; set; }
+        public double VesselHabMultiplier { get; set; }
         public double SuppliesLeft { get; set; }
         public double LastFeeding { get; set; }
     }

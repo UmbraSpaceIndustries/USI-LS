@@ -88,7 +88,6 @@ namespace LifeSupport
                 var curCrew = 0;
                 var maxCrew = 0;
                 var supplies = 0d;
-                var totalHabTime = 0d;
                 var extraHabTime = 0d;
                 var habMult = 1d;
                 var batteryAmount = 0d;
@@ -96,13 +95,17 @@ namespace LifeSupport
                 foreach (var part in EditorLogic.fetch.ship.parts)
                 {
                     maxCrew += part.CrewCapacity;
+                }
+
+                foreach (var part in EditorLogic.fetch.ship.parts)
+                {
                     var hab = part.Modules.GetModules<ModuleHabitation>().FirstOrDefault();
                     if(hab != null)
                     {
                         //Certain modules, in addition to crew capacity, have living space.
                         extraHabTime += hab.KerbalMonths;
                         //Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
-                        habMult += hab.HabMultiplier;
+                        habMult += (hab.HabMultiplier * (hab.CrewCapacity / maxCrew));
                     }
 
                     if (part.Resources.Contains("Supplies"))
@@ -131,13 +134,10 @@ namespace LifeSupport
                         }
                     }
                 }
-                //Hab time is a combination of four things
-                //First - crew capacity. 
-                var habTime = LifeSupportSetup.Instance.LSConfig.BaseHabTime + extraHabTime;
-                //Now we can do our calculation. 
-                var habTotal = habTime * habMult * LifeSupportSetup.Instance.LSConfig.HabMultiplier * maxCrew;
+                var totalHabSpace = (LifeSupportSetup.Instance.LSConfig.BaseHabTime * maxCrew) + extraHabTime;
                 //A Kerbal month is 30 six-hour Kerbin days.
-                totalHabTime = habTotal * (60d * 60d * 6d * 30d);
+                var totalHabMult = habMult * LifeSupportSetup.Instance.LSConfig.HabMultiplier * 60d * 60d * 6d * 30d;
+
                 var totalBatteryTime = batteryAmount / LifeSupportSetup.Instance.LSConfig.ECAmount;
                 var totalSupplyTime = supplies / LifeSupportSetup.Instance.LSConfig.SupplyAmount;
 
@@ -157,7 +157,7 @@ namespace LifeSupport
                     GUILayout.Label(LifeSupportUtilities.SecondsToKerbinTime(totalBatteryTime / Math.Max(1, curCrew)), _labelStyle,
                         GUILayout.Width(160));
                     if (useHabPenalties)
-                        GUILayout.Label(LifeSupportUtilities.SecondsToKerbinTime(totalHabTime / Math.Max(1, curCrew)), _labelStyle,
+                        GUILayout.Label(LifeSupportUtilities.SecondsToKerbinTime(totalHabSpace / Math.Max(1, curCrew) * totalHabMult), _labelStyle,
                             GUILayout.Width(160));
                     else
                         GUILayout.Label("indefinite", _labelStyle, GUILayout.Width(160));
@@ -170,7 +170,7 @@ namespace LifeSupport
                     GUILayout.Label(LifeSupportUtilities.SecondsToKerbinTime(totalBatteryTime / Math.Max(1, maxCrew)), _labelStyle,
                         GUILayout.Width(160));
                     if (useHabPenalties)
-                        GUILayout.Label(LifeSupportUtilities.SecondsToKerbinTime(totalHabTime / Math.Max(1, maxCrew)), _labelStyle,
+                        GUILayout.Label(LifeSupportUtilities.SecondsToKerbinTime(totalHabSpace / Math.Max(1, maxCrew) * totalHabMult), _labelStyle,
                             GUILayout.Width(160));
                     else
                         GUILayout.Label("indefinite", _labelStyle, GUILayout.Width(160));

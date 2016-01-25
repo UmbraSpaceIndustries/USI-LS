@@ -1,3 +1,7 @@
+0.3.3 - 2016.01.24
+------------------
+Fixed a few formula bugs, and added a crew capacity cap for hab multipliers
+
 0.3.2 - 2016.01.20 
 ------------------
 Fixed an issue where crew were being doubled when showing the supplies left in the UI

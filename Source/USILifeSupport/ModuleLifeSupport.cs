@@ -99,7 +99,7 @@ namespace LifeSupport
             CheckForDeadKerbals();
 
             //Update Hab info
-            var habMulti = 1d;
+            var habMulti = 0d;
             var habTime = 0d;
             var totParts = 0d;
             var maxParts = 0d;
@@ -109,11 +109,11 @@ namespace LifeSupport
                 //Next.  Certain modules, in addition to crew capacity, have living space.
                 habTime += hab.KerbalMonths;
                 //Lastly.  Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
-                habMulti += hab.HabMultiplier;
+                habMulti += (hab.HabMultiplier * (hab.CrewCapacity / v.CrewCap));
             }
 
-            v.HabSpace = habTime;
-            v.HabMultiplier = habMulti;
+            v.ExtraHabSpace = habTime;
+            v.VesselHabMultiplier = habMulti;
             //We also have to temper this with whether or not these parts are worn out.
             if (part.Resources.Contains("ReplacementParts"))
             {
@@ -124,7 +124,8 @@ namespace LifeSupport
             //Worn out parts have a corresponding negative effect.
             if (maxParts > 0)
             {
-                v.HabMultiplier *= (totParts/maxParts);
+                v.VesselHabMultiplier *= (totParts/maxParts);
+                v.ExtraHabSpace *= (totParts / maxParts);
                 if (totParts < 1)
                     wearPercent = "Broken!";
                 else
