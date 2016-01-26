@@ -109,7 +109,7 @@ namespace LifeSupport
                 //Next.  Certain modules, in addition to crew capacity, have living space.
                 habTime += hab.KerbalMonths;
                 //Lastly.  Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
-                habMulti += (hab.HabMultiplier * (hab.CrewCapacity / v.NumCrew));
+                habMulti += (hab.HabMultiplier * Math.Min(1,hab.CrewCapacity / v.NumCrew));
             }
 
             v.ExtraHabSpace = habTime;

@@ -1,3 +1,12 @@
+0.3.5 - 2016.01.25
+------------------
+Fixed an issue with the cupola config
+The Science Lab is now a 70% recycler
+Kerbals now consume (by default) 16.5kg of supplies per day
+Nom O Matics have been tweaked to be converters based on the new scale
+Habitation is now on by default (since there are sufficient stock parts to cover the mechanic)
+See LSModule.cfg for suggested settings for modders making USI-LS compatible parts
+
 0.3.4 - 2016.01.25
 ------------------
 Fixed a typo in the hab multiplier foruma that used crew capacity not current crew
