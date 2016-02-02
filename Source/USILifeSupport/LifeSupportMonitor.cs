@@ -253,8 +253,19 @@ namespace LifeSupport
             GenerateWindow();
         }
 
+        private double LastUpdate;
+        private double checkTime = 1d;
+
         private void FixedUpdate()
         {
+            //if (LastUpdate < ResourceUtilities.FLOAT_TOLERANCE)
+            //    LastUpdate = Planetarium.GetUniversalTime();
+
+            //if (Planetarium.GetUniversalTime() < checkTime + LastUpdate)
+            //    return;
+
+            //LastUpdate = Planetarium.GetUniversalTime();
+            //_guiStats = UpdateGUIStats();
             CheckEVAKerbals();
             LifeSupportManager.Instance.UpdateVesselStats();
         }
@@ -405,15 +416,8 @@ namespace LifeSupport
             }
         }
 
-        private void GenerateWindow()
+        private List<LifeSupportVesselDisplayStat> UpdateGUIStats()
         {
-            GUILayout.BeginVertical();
-            scrollPos = GUILayout.BeginScrollView(scrollPos, _scrollStyle, GUILayout.Width(600), GUILayout.Height(350));
-            GUILayout.BeginVertical();
-
-
-            try
-            {
             var useHabPenalties = (LifeSupportSetup.Instance.LSConfig.NoHomeEffectVets +
                                    LifeSupportSetup.Instance.LSConfig.NoHomeEffect > 0);
             LifeSupportManager.Instance.UpdateVesselStats();
@@ -476,15 +480,16 @@ namespace LifeSupport
                     supAmount = Math.Max(0, (vsl.SuppliesLeft * supmult) - estFood);
 
                 var lblColor = "ACFF40";
-                if (Planetarium.GetUniversalTime() - vsl.LastUpdate > 1)
+                if (Planetarium.GetUniversalTime() - vsl.LastUpdate > 2)
                     lblColor = "C4C4C4";
                 vstat.VesselName = String.Format("<color=#{0}>{1}</color>", lblColor, vsl.VesselName);
                 vstat.LastUpdate = vsl.LastUpdate;
                 var sitString = "Orbiting";
-                if (thisVessel.Landed)
+                if (thisVessel.Splashed || thisVessel.heightFromTerrain < 1000)
+                    sitString = "Splashed"; 
+                if (thisVessel.Landed || thisVessel.heightFromTerrain < 1000)
                     sitString = "Landed";
-                if (thisVessel.Splashed)
-                    sitString = "Splashed";
+
                 var habString = "indefinite";
                 if (useHabPenalties)
                     habString = LifeSupportUtilities.SecondsToKerbinTime(habTime,true);
@@ -522,8 +527,7 @@ namespace LifeSupport
                         lblSup = "FF5E5E";
                     }
                     cStat.SupplyLabel = String.Format("<color=#{0}>{1}</color>",lblSup,LifeSupportUtilities.SecondsToKerbinTime(snacksLeft));
-                    var timeDelta = Planetarium.GetUniversalTime() - cls.LastUpdate;
-                    var timeLeft = Math.Min(cls.MaxOffKerbinTime - Planetarium.GetUniversalTime(), habTime - (cls.TimeInVessel + timeDelta));
+                    var timeLeft = Math.Min(cls.MaxOffKerbinTime - Planetarium.GetUniversalTime(), habTime - (Planetarium.GetUniversalTime() - cls.TimeEnteredVessel));
 
                     var lblHab = "6FFF00";
                     if (timeLeft < 60 * 60 * 6 * 15) //15 days
@@ -547,26 +551,40 @@ namespace LifeSupport
                 statList.Add(vstat);
             }
 
+            return statList;
+        }
 
-            foreach (var v in statList.OrderByDescending(s => s.LastUpdate))
+        private List<LifeSupportVesselDisplayStat> _guiStats; 
+
+        private void GenerateWindow()
+        {
+            _guiStats = UpdateGUIStats();
+            GUILayout.BeginVertical();
+            scrollPos = GUILayout.BeginScrollView(scrollPos, _scrollStyle, GUILayout.Width(600), GUILayout.Height(350));
+            GUILayout.BeginVertical();
+
+
+            try
             {
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("", _labelStyle, GUILayout.Width(10));
-                GUILayout.Label(v.VesselName, _labelStyle, GUILayout.Width(155));
-                GUILayout.Label(v.SummaryLabel, _labelStyle, GUILayout.Width(370));
-                GUILayout.EndHorizontal();
-                foreach (var c in v.crew)
+                foreach (var v in _guiStats.OrderByDescending(s => s.LastUpdate))
                 {
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label("", _labelStyle, GUILayout.Width(30));
-                    GUILayout.Label(c.CrewName, _labelStyle, GUILayout.Width(135));
-                    GUILayout.Label("<color=#EDEDED>sup:</color>", _labelStyle, GUILayout.Width(32));
-                    GUILayout.Label(c.SupplyLabel, _labelStyle, GUILayout.Width(155));
-                    GUILayout.Label("<color=#EDEDED>hab:</color>", _labelStyle, GUILayout.Width(32));
-                    GUILayout.Label(c.HabLabel, _labelStyle, GUILayout.Width(155));
+                    GUILayout.Label("", _labelStyle, GUILayout.Width(10));
+                    GUILayout.Label(v.VesselName, _labelStyle, GUILayout.Width(155));
+                    GUILayout.Label(v.SummaryLabel, _labelStyle, GUILayout.Width(370));
                     GUILayout.EndHorizontal();
+                    foreach (var c in v.crew)
+                    {
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Label("", _labelStyle, GUILayout.Width(30));
+                        GUILayout.Label(c.CrewName, _labelStyle, GUILayout.Width(135));
+                        GUILayout.Label("<color=#EDEDED>sup:</color>", _labelStyle, GUILayout.Width(32));
+                        GUILayout.Label(c.SupplyLabel, _labelStyle, GUILayout.Width(155));
+                        GUILayout.Label("<color=#EDEDED>hab:</color>", _labelStyle, GUILayout.Width(32));
+                        GUILayout.Label(c.HabLabel, _labelStyle, GUILayout.Width(155));
+                        GUILayout.EndHorizontal();
+                    }
                 }
-            }
 
             }
             catch (Exception ex)
