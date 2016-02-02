@@ -80,7 +80,7 @@ namespace LifeSupport
                 rNode.AddValue("LastOnKerbin", r.LastOnKerbin);
                 rNode.AddValue("MaxOffKerbinTime", r.MaxOffKerbinTime);
                 rNode.AddValue("LastVesselId", r.LastVesselId);
-                rNode.AddValue("TimeInVessel", r.TimeInVessel);
+                rNode.AddValue("TimeEnteredVessel", r.TimeEnteredVessel);
                 rNode.AddValue("IsGrouchy", r.IsGrouchy);
                 rNode.AddValue("OldTrait", r.OldTrait);
                 rNode.AddValue("LastUpdate", r.LastUpdate);
@@ -199,7 +199,7 @@ namespace LifeSupport
             kerbInfo.LastMeal = status.LastMeal;
             kerbInfo.LastOnKerbin = status.LastOnKerbin;
             kerbInfo.MaxOffKerbinTime = status.MaxOffKerbinTime;
-            kerbInfo.TimeInVessel = status.TimeInVessel;
+            kerbInfo.TimeEnteredVessel = status.TimeEnteredVessel;
             kerbInfo.LastVesselId = status.LastVesselId;
             kerbInfo.IsGrouchy = status.IsGrouchy;
             kerbInfo.OldTrait = status.OldTrait;

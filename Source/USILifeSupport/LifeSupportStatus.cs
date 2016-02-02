@@ -9,7 +9,7 @@ namespace LifeSupport
         public string OldTrait { get; set; }
         public double LastOnKerbin { get; set; }
         public double MaxOffKerbinTime { get; set; }
-        public double TimeInVessel { get; set; }
+        public double TimeEnteredVessel { get; set; }
         public string LastVesselId { get; set; }
     }
 }

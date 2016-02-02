@@ -18,6 +18,7 @@ namespace LifeSupport
                 v.VesselId = part.vessel.id.ToString();
                 LifeSupportManager.Instance.TrackVessel(v);
                 Fields["status"].guiActive = false;
+                AlwaysActive = true;
                 IsActivated = true;
                 if (LifeSupportSetup.Instance.LSConfig.ReplacementPartAmount < ResourceUtilities.FLOAT_TOLERANCE)
                 {
@@ -26,15 +27,28 @@ namespace LifeSupport
             }
         }
 
+        private ConversionRecipe _lsRecipe;
+        private int _lastCrewCount;
+
         protected override ConversionRecipe PrepareRecipe(double deltatime)
+        {
+            if (_lsRecipe == null || _lastCrewCount != part.protoModuleCrew.Count)
+            {
+                _lsRecipe = GenerateLSRecipe();
+                _lastCrewCount = part.protoModuleCrew.Count;
+            }
+            return _lsRecipe;
+        }
+
+        private ConversionRecipe GenerateLSRecipe()
         {
             //This is where the rubber hits the road.  Let us see if we can
             //keep our Kerbals cozy and warm.
             var recipe = new ConversionRecipe();
             var numCrew = part.protoModuleCrew.Count;
             var recPercent = LifeSupportManager.GetRecyclerMultiplier(part.vessel);
-            var ecAmount = LifeSupportSetup.Instance.LSConfig.ECAmount; 
-            var supAmount = LifeSupportSetup.Instance.LSConfig.SupplyAmount; 
+            var ecAmount = LifeSupportSetup.Instance.LSConfig.ECAmount;
+            var supAmount = LifeSupportSetup.Instance.LSConfig.SupplyAmount;
             var scrapAmount = LifeSupportSetup.Instance.LSConfig.WasteAmount;
             var repAmount = LifeSupportSetup.Instance.LSConfig.ReplacementPartAmount;
 
@@ -49,7 +63,6 @@ namespace LifeSupport
             return recipe;
         }
 
-
         protected override void PreProcessing()
         {
             if (HighLogic.LoadedSceneIsFlight)
@@ -62,6 +75,19 @@ namespace LifeSupport
                         var r = p.Resources["Supplies"];
                         r.flowState = true;
                     }
+                }
+
+                if (part.protoModuleCrew.Count == 0 && IsActivated)
+                {
+                    print("Turning life support off...");
+                    AlwaysActive = false;
+                    IsActivated = false;
+                }
+                if (part.protoModuleCrew.Count != 0 && !IsActivated)
+                {
+                    print("Turning life support on...");
+                    AlwaysActive = true;
+                    IsActivated = true;
                 }
             }
         }
@@ -85,10 +111,17 @@ namespace LifeSupport
             }
         }
 
-
+        private double LastUpdate;
+        private double checkTime = 1d;
 
         protected override void PostProcess(ConverterResults result, double deltaTime)
         {
+            if (LastUpdate < ResourceUtilities.FLOAT_TOLERANCE)
+                LastUpdate = Planetarium.GetUniversalTime();
+
+            if (Planetarium.GetUniversalTime() < checkTime + LastUpdate)
+                return;
+
             var v = LifeSupportManager.Instance.FetchVessel(part.vessel.id.ToString());
             v.LastUpdate = Planetarium.GetUniversalTime();
             v.VesselName = part.vessel.vesselName;
@@ -154,14 +187,14 @@ namespace LifeSupport
                 {
                     k.LastOnKerbin = Planetarium.GetUniversalTime();
                     k.MaxOffKerbinTime = Planetarium.GetUniversalTime() + 972000000;
-                    k.TimeInVessel = 0d;
+                    k.TimeEnteredVessel = Planetarium.GetUniversalTime();
                 }
                 else
                 {
                     if (part.vessel.id.ToString() != k.LastVesselId)
                     {
                         k.LastVesselId = part.vessel.id.ToString();
-                        k.TimeInVessel = 0d;
+                        k.TimeEnteredVessel = Planetarium.GetUniversalTime();
                     }
                 }
                 isGrouchyHab = CheckHabSideEffects(k, c, v);
@@ -214,7 +247,9 @@ namespace LifeSupport
             if (habTime + kStat.LastOnKerbin > kStat.MaxOffKerbinTime)
                 kStat.MaxOffKerbinTime = habTime + kStat.LastOnKerbin;
 
-            if (Planetarium.GetUniversalTime() > kStat.MaxOffKerbinTime || kStat.TimeInVessel > habTime)
+            LifeSupportManager.Instance.TrackKerbal(kStat);
+
+            if (Planetarium.GetUniversalTime() > kStat.MaxOffKerbinTime || (Planetarium.GetUniversalTime() - kStat.TimeEnteredVessel) > habTime)
             {
                 ApplyEffect(kStat, crew,
                     LifeSupportManager.isVet(kStat.KerbalName)
