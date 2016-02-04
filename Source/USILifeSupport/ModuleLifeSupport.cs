@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Linq;
-using System.Resources;
+using UnityEngine;
 using Random = System.Random;
 
 namespace LifeSupport
 {
-    public class ModuleLifeSupport : BaseConverter
+    public class ModuleLifeSupport : PartModule
     {
-        [KSPField(guiActive = true, guiName = "Wear")] 
-        public string wearPercent;
+        [KSPField(guiActive = true, guiName = "Wear")] public string wearPercent;
+
         public override void OnStart(StartState state)
         {
             base.OnStart(state);
@@ -17,116 +17,105 @@ namespace LifeSupport
                 var v = new VesselSupplyStatus();
                 v.VesselId = part.vessel.id.ToString();
                 LifeSupportManager.Instance.TrackVessel(v);
-                Fields["status"].guiActive = false;
-                AlwaysActive = true;
-                IsActivated = true;
                 if (LifeSupportSetup.Instance.LSConfig.ReplacementPartAmount < ResourceUtilities.FLOAT_TOLERANCE)
                 {
                     Fields["wearPercent"].guiActive = false;
                 }
+                _lastCrewCount = part.protoModuleCrew.Count;
             }
         }
 
         private ConversionRecipe _lsRecipe;
         private int _lastCrewCount;
 
-        protected override ConversionRecipe PrepareRecipe(double deltatime)
+        private ConversionRecipe LifeSupportRecipe
         {
-            if (_lsRecipe == null || _lastCrewCount != part.protoModuleCrew.Count)
+            get
             {
+                if (_lsRecipe != null && _lastCrewCount == part.protoModuleCrew.Count)
+                    return _lsRecipe;
+
                 _lsRecipe = GenerateLSRecipe();
                 _lastCrewCount = part.protoModuleCrew.Count;
+                return _lsRecipe;
             }
-            return _lsRecipe;
         }
 
-        private ConversionRecipe GenerateLSRecipe()
-        {
-            //This is where the rubber hits the road.  Let us see if we can
-            //keep our Kerbals cozy and warm.
-            var recipe = new ConversionRecipe();
-            var numCrew = part.protoModuleCrew.Count;
-            var recPercent = LifeSupportManager.GetRecyclerMultiplier(part.vessel);
-            var ecAmount = LifeSupportSetup.Instance.LSConfig.ECAmount;
-            var supAmount = LifeSupportSetup.Instance.LSConfig.SupplyAmount;
-            var scrapAmount = LifeSupportSetup.Instance.LSConfig.WasteAmount;
-            var repAmount = LifeSupportSetup.Instance.LSConfig.ReplacementPartAmount;
+        protected IResourceBroker _resBroker;
+        protected ResourceConverter _resConverter;
+        protected double lastUpdateTime;
 
-            if (part.Resources.Contains("ReplacementParts"))
+        public ResourceConverter ResConverter
+        {
+            get { return _resConverter ?? (_resConverter = new ResourceConverter(ResBroker)); }
+        }
+
+        public IResourceBroker ResBroker
+        {
+            get { return _resBroker ?? (_resBroker = new ResourceBroker()); }
+        }
+
+        protected double GetDeltaTime()
+        {
+            if (Time.timeSinceLevelLoad < 1.0f || !FlightGlobals.ready)
             {
-                recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = repAmount * numCrew, ResourceName = "ReplacementParts", DumpExcess = false });
+                return -1;
             }
 
-            recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = ecAmount * numCrew, ResourceName = "ElectricCharge", DumpExcess = true });
-            recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = supAmount * numCrew * recPercent, ResourceName = "Supplies", DumpExcess = true });
-            recipe.Outputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = scrapAmount * numCrew * recPercent, ResourceName = "Mulch", DumpExcess = true });
-            return recipe;
-        }
-
-        protected override void PreProcessing()
-        {
-            if (HighLogic.LoadedSceneIsFlight)
+            if (Math.Abs(lastUpdateTime) < ResourceUtilities.FLOAT_TOLERANCE)
             {
-                //Unlock the biscuit tins...
-                foreach (var p in vessel.parts)
-                {
-                    if (p.Resources.Contains("Supplies"))
-                    {
-                        var r = p.Resources["Supplies"];
-                        r.flowState = true;
-                    }
-                }
-
-                if (part.protoModuleCrew.Count == 0 && IsActivated)
-                {
-                    print("Turning life support off...");
-                    AlwaysActive = false;
-                    IsActivated = false;
-                }
-                if (part.protoModuleCrew.Count != 0 && !IsActivated)
-                {
-                    print("Turning life support on...");
-                    AlwaysActive = true;
-                    IsActivated = true;
-                }
+                // Just started running
+                lastUpdateTime = Planetarium.GetUniversalTime();
+                return -1;
             }
+
+            double deltaTime = Math.Min(Planetarium.GetUniversalTime() - lastUpdateTime,
+                ResourceUtilities.GetMaxDeltaTime());
+            lastUpdateTime += deltaTime;
+            return deltaTime;
         }
 
-        public override bool IsSituationValid()
+
+        public override void OnLoad(ConfigNode node)
         {
-            //Disable life support if we are in a pre-launch state.
-            //return (part.vessel.situation != Vessel.Situations.PRELAUNCH);
-            return true;
-        }
-
-        private void CheckForDeadKerbals()
-        {
-            var thisCrew = LifeSupportManager.Instance.LifeSupportInfo.Where(k => k.LastVesselId == vessel.id.ToString());
-            foreach (var k in thisCrew)
-            {
-                if (vessel.GetVesselCrew().All(c => c.name != k.KerbalName))
-                {
-                    LifeSupportManager.Instance.UntrackKerbal(k.KerbalName);
-                }
-            }
-        }
-
-        private double LastUpdate;
-        private double checkTime = 1d;
-
-        protected override void PostProcess(ConverterResults result, double deltaTime)
-        {
-            if (LastUpdate < ResourceUtilities.FLOAT_TOLERANCE)
-                LastUpdate = Planetarium.GetUniversalTime();
-
-            if (Planetarium.GetUniversalTime() < checkTime + LastUpdate)
+            base.OnLoad(node);
+            if (!HighLogic.LoadedSceneIsFlight)
                 return;
+            lastUpdateTime = ResourceUtilities.GetValue(node, "lastUpdateTime", lastUpdateTime);
+        }
+
+        public override void OnSave(ConfigNode node)
+        {
+            base.OnSave(node);
+            if (!HighLogic.LoadedSceneIsFlight)
+                return;
+            node.AddValue("lastUpdateTime", lastUpdateTime);
+        }
+
+        public void FixedUpdate()
+        {
+            if (_lastCrewCount == 0)
+                return;
+
+            if (Planetarium.GetUniversalTime() < _lastProcessingTime + _checkInterval)
+                return;
+
+            _lastProcessingTime = Planetarium.GetUniversalTime();
+
+            UnlockTins();
+            //Check our time
+            double deltaTime = GetDeltaTime();
+
+            if (deltaTime < ResourceUtilities.FLOAT_TOLERANCE)
+                return;
+
+            ConverterResults result = ResConverter.ProcessRecipe(deltaTime, LifeSupportRecipe, part, this, 1f);
 
             var v = LifeSupportManager.Instance.FetchVessel(part.vessel.id.ToString());
             v.LastUpdate = Planetarium.GetUniversalTime();
             v.VesselName = part.vessel.vesselName;
             v.NumCrew = part.vessel.GetCrewCount();
-            v.RecyclerMultiplier = (float)LifeSupportManager.GetRecyclerMultiplier(part.vessel);
+            v.RecyclerMultiplier = (float) LifeSupportManager.GetRecyclerMultiplier(part.vessel);
             v.CrewCap = part.vessel.GetCrewCapacity();
 
             CheckForDeadKerbals();
@@ -142,7 +131,7 @@ namespace LifeSupport
                 //Next.  Certain modules, in addition to crew capacity, have living space.
                 habTime += hab.KerbalMonths;
                 //Lastly.  Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
-                habMulti += (hab.HabMultiplier * Math.Min(1,hab.CrewCapacity / v.NumCrew));
+                habMulti += (hab.HabMultiplier*Math.Min(1, hab.CrewCapacity/v.NumCrew));
             }
 
             v.ExtraHabSpace = habTime;
@@ -158,7 +147,7 @@ namespace LifeSupport
             if (maxParts > 0)
             {
                 v.VesselHabMultiplier *= (totParts/maxParts);
-                v.ExtraHabSpace *= (totParts / maxParts);
+                v.ExtraHabSpace *= (totParts/maxParts);
                 if (totParts < 1)
                     wearPercent = "Broken!";
                 else
@@ -212,14 +201,69 @@ namespace LifeSupport
                 }
 
                 k.LastUpdate = Planetarium.GetUniversalTime();
-                if(!isGrouchyHab && !isGrouchySupplies)
-                    RemoveGrouchiness(c,k);
+                if (!isGrouchyHab && !isGrouchySupplies)
+                    RemoveGrouchiness(c, k);
                 LifeSupportManager.Instance.TrackKerbal(k);
                 var supAmpunt = _resBroker.AmountAvailable(part, "Supplies", deltaTime, "ALL_VESSEL");
-                v.SuppliesLeft = supAmpunt/LifeSupportSetup.Instance.LSConfig.SupplyAmount/part.vessel.GetCrewCount()/LifeSupportManager.GetRecyclerMultiplier(vessel);
+                v.SuppliesLeft = supAmpunt/LifeSupportSetup.Instance.LSConfig.SupplyAmount/part.vessel.GetCrewCount()/
+                                 LifeSupportManager.GetRecyclerMultiplier(vessel);
             }
             LifeSupportManager.Instance.TrackVessel(v);
         }
+
+        private ConversionRecipe GenerateLSRecipe()
+            {
+                //This is where the rubber hits the road.  Let us see if we can
+                //keep our Kerbals cozy and warm.
+                var recipe = new ConversionRecipe();
+                var numCrew = part.protoModuleCrew.Count;
+                var recPercent = LifeSupportManager.GetRecyclerMultiplier(part.vessel);
+                var ecAmount = LifeSupportSetup.Instance.LSConfig.ECAmount;
+                var supAmount = LifeSupportSetup.Instance.LSConfig.SupplyAmount;
+                var scrapAmount = LifeSupportSetup.Instance.LSConfig.WasteAmount;
+                var repAmount = LifeSupportSetup.Instance.LSConfig.ReplacementPartAmount;
+
+                if (part.Resources.Contains("ReplacementParts"))
+                {
+                    recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = repAmount * numCrew, ResourceName = "ReplacementParts", DumpExcess = false });
+                }
+
+                recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = ecAmount * numCrew, ResourceName = "ElectricCharge", DumpExcess = true });
+                recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = supAmount * numCrew * recPercent, ResourceName = "Supplies", DumpExcess = true });
+                recipe.Outputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = scrapAmount * numCrew * recPercent, ResourceName = "Mulch", DumpExcess = true });
+                return recipe;
+            }
+
+        private void UnlockTins()
+        {
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                //Unlock the biscuit tins...
+                foreach (var p in vessel.parts)
+                {
+                    if (p.Resources.Contains("Supplies"))
+                    {
+                        var r = p.Resources["Supplies"];
+                        r.flowState = true;
+                    }
+                }
+            }
+        }
+
+        private void CheckForDeadKerbals()
+        {
+            var thisCrew = LifeSupportManager.Instance.LifeSupportInfo.Where(k => k.LastVesselId == vessel.id.ToString());
+            foreach (var k in thisCrew)
+            {
+                if (vessel.GetVesselCrew().All(c => c.name != k.KerbalName))
+                {
+                    LifeSupportManager.Instance.UntrackKerbal(k.KerbalName);
+                }
+            }
+        }
+
+        private double _checkInterval = 1d;
+        private double _lastProcessingTime;
 
         private bool CheckSupplySideEffects(LifeSupportStatus kStat, ProtoCrewMember crew)
         {

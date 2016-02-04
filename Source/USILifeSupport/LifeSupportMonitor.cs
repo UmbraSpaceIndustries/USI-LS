@@ -253,25 +253,9 @@ namespace LifeSupport
             GenerateWindow();
         }
 
-        private double LastUpdate;
-        private double checkTime = 1d;
+        private double _lastGUIUpdate;
+        private double _guiCheckInterval = 1d;
 
-        private void FixedUpdate()
-        {
-            //if (LastUpdate < ResourceUtilities.FLOAT_TOLERANCE)
-            //    LastUpdate = Planetarium.GetUniversalTime();
-
-            //if (Planetarium.GetUniversalTime() < checkTime + LastUpdate)
-            //    return;
-
-            //LastUpdate = Planetarium.GetUniversalTime();
-            //_guiStats = UpdateGUIStats();
-            CheckEVAKerbals();
-            LifeSupportManager.Instance.UpdateVesselStats();
-        }
-
-
-        
         private void CheckEVAKerbals()
         {
             if (!HighLogic.LoadedSceneIsFlight)
@@ -505,7 +489,7 @@ namespace LifeSupport
                 {
                     var cStat = new LifeSupportCrewDisplayStat();
                     var cls = LifeSupportManager.Instance.FetchKerbal(c);
-                    cStat.CrewName = String.Format("<color=#FFFFFF>{0}</color>", c.name);
+                    cStat.CrewName = String.Format("<color=#FFFFFF>{0} ({1})</color>", c.name,c.experienceTrait.Title.Substring(0,1));
 
                     var snacksLeft = supAmount / supPerDay * 60 * 60 * 6;
                     if (supAmount <= ResourceUtilities.FLOAT_TOLERANCE && !LifeSupportManager.IsOnKerbin(thisVessel))
@@ -558,7 +542,14 @@ namespace LifeSupport
 
         private void GenerateWindow()
         {
-            _guiStats = UpdateGUIStats();
+            if (Planetarium.GetUniversalTime() > _lastGUIUpdate + _guiCheckInterval)
+            {
+                _lastGUIUpdate = Planetarium.GetUniversalTime();
+                _guiStats = UpdateGUIStats();
+                CheckEVAKerbals();
+                LifeSupportManager.Instance.UpdateVesselStats();
+            }
+
             GUILayout.BeginVertical();
             scrollPos = GUILayout.BeginScrollView(scrollPos, _scrollStyle, GUILayout.Width(600), GUILayout.Height(350));
             GUILayout.BeginVertical();
@@ -566,7 +557,7 @@ namespace LifeSupport
 
             try
             {
-                foreach (var v in _guiStats.OrderByDescending(s => s.LastUpdate))
+                foreach (var v in _guiStats.OrderByDescending(s => (int)s.LastUpdate + " " + s.VesselName))
                 {
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("", _labelStyle, GUILayout.Width(10));
