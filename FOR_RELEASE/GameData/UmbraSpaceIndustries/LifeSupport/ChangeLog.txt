@@ -1,7 +1,16 @@
+0.3.8 - 2016.02.03
+------------------
+Performance update, general bug fixing
+
+0.3.7 - 2016.02.02
+------------------
+Fixed a gui glich showing an unused menu option
+Added kerbal experience trait (P/E/S) to LS GUI
+Removed habitation by default as it was causing some confusion.  Recyclers remain on by default.
+
 0.3.6 - 2016.02.01
 ------------------
 Lots of optimizations and small bug fixes
-
 
 0.3.5 - 2016.01.25
 ------------------
