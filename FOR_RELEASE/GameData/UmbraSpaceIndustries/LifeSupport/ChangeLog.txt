@@ -1,3 +1,59 @@
+0.3.8 - 2016.02.03
+------------------
+Performance update, general bug fixing
+
+0.3.7 - 2016.02.02
+------------------
+Fixed a gui glich showing an unused menu option
+Added kerbal experience trait (P/E/S) to LS GUI
+Removed habitation by default as it was causing some confusion.  Recyclers remain on by default.
+
+0.3.6 - 2016.02.01
+------------------
+Lots of optimizations and small bug fixes
+
+0.3.5 - 2016.01.25
+------------------
+Fixed an issue with the cupola config
+The Science Lab is now a 70% recycler
+Kerbals now consume (by default) 16.5kg of supplies per day
+Nom O Matics have been tweaked to be converters based on the new scale
+Habitation is now on by default (since there are sufficient stock parts to cover the mechanic)
+See LSModule.cfg for suggested settings for modders making USI-LS compatible parts
+
+0.3.4 - 2016.01.25
+------------------
+Fixed a typo in the hab multiplier foruma that used crew capacity not current crew
+The cupola now acts as a hab multiplier
+
+0.3.3 - 2016.01.24
+------------------
+Fixed a few formula bugs, and added a crew capacity cap for hab multipliers
+
+0.3.2 - 2016.01.20 
+------------------
+Fixed an issue where crew were being doubled when showing the supplies left in the UI
+Updated a few issues where the Kerbal's supply counter was not updating properly
+Wear is off by default, and when not enabled, will not show in the GUI
+
+0.3.1 - 2016.01.19
+------------------
+Bundled USITools
+
+0.3.0 - 2016.01.18
+------------------
+EVA timer is now based on how long the kerbal has been EVA.
+Habitation space is now a thing - see the forum for details.  
+The in-flight view has had a visual refresh to reflect the new data.
+Multiple LS configs are now supported, with a delta inclusive of the most pessimistic changes being used.
+Added displays to the tracking station, space center, and VAB/SPH
+SPH display includes build aid information for the current vessel
+Reduced mass of Nom-O-Matic 5000
+Kerbals no longer raid the supply tins - but they will unlock all of them.
+Corrected stack nodes for nom tanks
+Kerbals in command seats should properly consume supplies
+Recyclers and Habitation calculations, if enabled, can extend to nearby landed vessels to better facilitate disconnected bases.
+
 0.2.1 - 2016.01.01
 ------------------
 Fixed bug where crew were starving on Kerbin
