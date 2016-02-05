@@ -53,6 +53,7 @@
   <ItemGroup>
     <Compile Include="AddScenarioModules.cs" />
     <Compile Include="LifeSupportConfig.cs" />
+    <Compile Include="LifeSupportMonitor_Editor.cs" />
     <Compile Include="LifeSupportUtilities.cs" />
     <Compile Include="ModuleHabitation.cs" />
     <Compile Include="ModuleLifeSupport.cs" />

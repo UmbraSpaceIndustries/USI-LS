@@ -21,23 +21,15 @@ namespace LifeSupport
                 {
                     Fields["wearPercent"].guiActive = false;
                 }
-                _lastCrewCount = part.protoModuleCrew.Count;
             }
         }
 
-        private ConversionRecipe _lsRecipe;
-        private int _lastCrewCount;
 
         private ConversionRecipe LifeSupportRecipe
         {
             get
             {
-                if (_lsRecipe != null && _lastCrewCount == part.protoModuleCrew.Count)
-                    return _lsRecipe;
-
-                _lsRecipe = GenerateLSRecipe();
-                _lastCrewCount = part.protoModuleCrew.Count;
-                return _lsRecipe;
+                return GenerateLSRecipe();
             }
         }
 
@@ -94,7 +86,7 @@ namespace LifeSupport
 
         public void FixedUpdate()
         {
-            if (_lastCrewCount == 0)
+            if (part.protoModuleCrew.Count == 0)
                 return;
 
             if (Planetarium.GetUniversalTime() < _lastProcessingTime + _checkInterval)
@@ -159,8 +151,9 @@ namespace LifeSupport
                 wearPercent = "Like New";
             }
 
-            //How close before we assume we're done?
+            //we will add a bit of a fudge factor for supplies
             var tolerance = deltaTime/2f;
+
 
             foreach (var c in part.protoModuleCrew)
             {
@@ -186,12 +179,12 @@ namespace LifeSupport
                         k.TimeEnteredVessel = Planetarium.GetUniversalTime();
                     }
                 }
-                isGrouchyHab = CheckHabSideEffects(k, c, v);
+                isGrouchyHab = CheckHabSideEffects(k, v);
 
                 //Second - Supply
                 if (!LifeSupportManager.IsOnKerbin(part.vessel) && (deltaTime - result.TimeFactor > tolerance))
                 {
-                    isGrouchySupplies = CheckSupplySideEffects(k, c);
+                    isGrouchySupplies = CheckSupplySideEffects(k);
                 }
                 else
                 {
@@ -203,11 +196,33 @@ namespace LifeSupport
                 k.LastUpdate = Planetarium.GetUniversalTime();
                 if (!isGrouchyHab && !isGrouchySupplies)
                     RemoveGrouchiness(c, k);
+
+                if (deltaTime < _checkInterval*2)
+                {
+                    if (isGrouchyHab)
+                    {
+                        ApplyEffect(k, c,
+                            LifeSupportManager.isVet(k.KerbalName)
+                                ? LifeSupportSetup.Instance.LSConfig.NoHomeEffectVets
+                                : LifeSupportSetup.Instance.LSConfig.NoHomeEffect);
+                    }
+                    if (isGrouchySupplies)
+                    {
+                        ApplyEffect(k, c,
+                            LifeSupportManager.isVet(k.KerbalName)
+                                ? LifeSupportSetup.Instance.LSConfig.NoSupplyEffectVets
+                                : LifeSupportSetup.Instance.LSConfig.NoSupplyEffect);
+                    }
+                }
+
+
                 LifeSupportManager.Instance.TrackKerbal(k);
                 var supAmpunt = _resBroker.AmountAvailable(part, "Supplies", deltaTime, "ALL_VESSEL");
-                v.SuppliesLeft = supAmpunt/LifeSupportSetup.Instance.LSConfig.SupplyAmount/part.vessel.GetCrewCount()/
-                                 LifeSupportManager.GetRecyclerMultiplier(vessel);
+                v.SuppliesLeft = supAmpunt/LifeSupportSetup.Instance.LSConfig.SupplyAmount/
+                                    part.vessel.GetCrewCount()/
+                                    LifeSupportManager.GetRecyclerMultiplier(vessel);
             }
+
             LifeSupportManager.Instance.TrackVessel(v);
         }
 
@@ -222,15 +237,17 @@ namespace LifeSupport
                 var supAmount = LifeSupportSetup.Instance.LSConfig.SupplyAmount;
                 var scrapAmount = LifeSupportSetup.Instance.LSConfig.WasteAmount;
                 var repAmount = LifeSupportSetup.Instance.LSConfig.ReplacementPartAmount;
-
                 if (part.Resources.Contains("ReplacementParts"))
                 {
                     recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = repAmount * numCrew, ResourceName = "ReplacementParts", DumpExcess = false });
                 }
 
+                var supRatio = supAmount*numCrew*recPercent;
+                var mulchRatio = scrapAmount*numCrew*recPercent;
+
                 recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = ecAmount * numCrew, ResourceName = "ElectricCharge", DumpExcess = true });
-                recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = supAmount * numCrew * recPercent, ResourceName = "Supplies", DumpExcess = true });
-                recipe.Outputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = scrapAmount * numCrew * recPercent, ResourceName = "Mulch", DumpExcess = true });
+                recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = supRatio, ResourceName = "Supplies", DumpExcess = true });
+                recipe.Outputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = mulchRatio, ResourceName = "Mulch", DumpExcess = true });
                 return recipe;
             }
 
@@ -265,7 +282,7 @@ namespace LifeSupport
         private double _checkInterval = 1d;
         private double _lastProcessingTime;
 
-        private bool CheckSupplySideEffects(LifeSupportStatus kStat, ProtoCrewMember crew)
+        private bool CheckSupplySideEffects(LifeSupportStatus kStat)
         {
             var curTime = Planetarium.GetUniversalTime();
             var SnackMax = LifeSupportSetup.Instance.LSConfig.SupplyTime;
@@ -274,16 +291,12 @@ namespace LifeSupport
 
             if (SnackTime > SnackMax)
             {
-                ApplyEffect(kStat, crew,
-                    LifeSupportManager.isVet(kStat.KerbalName)
-                        ? LifeSupportSetup.Instance.LSConfig.NoSupplyEffectVets
-                        : LifeSupportSetup.Instance.LSConfig.NoSupplyEffect);
                 return true;
             }
             return false;
         }
 
-        private bool CheckHabSideEffects(LifeSupportStatus kStat, ProtoCrewMember crew, VesselSupplyStatus vsl)
+        private bool CheckHabSideEffects(LifeSupportStatus kStat, VesselSupplyStatus vsl)
         {
             var habTime = LifeSupportManager.GetTotalHabTime(vsl);
             if (kStat.LastOnKerbin < 1)
@@ -295,10 +308,6 @@ namespace LifeSupport
 
             if (Planetarium.GetUniversalTime() > kStat.MaxOffKerbinTime || (Planetarium.GetUniversalTime() - kStat.TimeEnteredVessel) > habTime)
             {
-                ApplyEffect(kStat, crew,
-                    LifeSupportManager.isVet(kStat.KerbalName)
-                        ? LifeSupportSetup.Instance.LSConfig.NoHomeEffectVets
-                        : LifeSupportSetup.Instance.LSConfig.NoHomeEffect);
                 return true;
             }
             return false;
@@ -313,6 +322,7 @@ namespace LifeSupport
                 c.type = ProtoCrewMember.KerbalType.Crew;
                 KerbalRoster.SetExperienceTrait(c, k.OldTrait);
                 k.IsGrouchy = false;
+                LifeSupportManager.Instance.TrackKerbal(k);
             }
         }
 
@@ -337,8 +347,8 @@ namespace LifeSupport
                     if (crew.type != ProtoCrewMember.KerbalType.Tourist)
                     {
                         msg = string.Format("{0} refuses to work", crew.name);
-                        crew.type = ProtoCrewMember.KerbalType.Tourist;
                         kStat.OldTrait = crew.experienceTrait.Title;
+                        crew.type = ProtoCrewMember.KerbalType.Tourist;
                         KerbalRoster.SetExperienceTrait(crew, "Tourist");
                         kStat.IsGrouchy = true;
                         LifeSupportManager.Instance.TrackKerbal(kStat);
@@ -347,8 +357,8 @@ namespace LifeSupport
                 case 2:  //Mutinous
                     {
                         msg = string.Format("{0} has become mutinous", crew.name);
-                        crew.type = ProtoCrewMember.KerbalType.Tourist;
                         kStat.OldTrait = crew.experienceTrait.Title;
+                        crew.type = ProtoCrewMember.KerbalType.Tourist;
                         KerbalRoster.SetExperienceTrait(crew, "Tourist");
                         kStat.IsGrouchy = true;
                         LifeSupportManager.Instance.TrackKerbal(kStat);
