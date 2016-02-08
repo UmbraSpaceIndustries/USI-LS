@@ -220,7 +220,7 @@ namespace LifeSupport
 
             foreach (var r in vessel.FindPartModulesImplementing<ModuleLifeSupportRecycler>())
             {
-                if (r.IsActivated)
+                if (r.RecyclerIsActive)
                 {
                     if (r.RecyclePercent > recyclerCap)
                         recyclerCap = r.RecyclePercent;

@@ -1,3 +1,7 @@
+0.3.10 - 2016.02.08
+-------------------
+Fixed an issue where recyclers were working without their resources
+
 0.3.9 - 2016.02.04
 -------------------
 Fixed issue that was causing some life support stats to vanish
