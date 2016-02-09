@@ -220,7 +220,7 @@ namespace LifeSupport
 
             foreach (var r in vessel.FindPartModulesImplementing<ModuleLifeSupportRecycler>())
             {
-                if (r.RecyclerIsActive)
+                if (r.RecyclerIsActive && r.IsActivated)
                 {
                     if (r.RecyclePercent > recyclerCap)
                         recyclerCap = r.RecyclePercent;
@@ -237,7 +237,7 @@ namespace LifeSupport
             {
                 foreach (var r in v.FindPartModulesImplementing<ModuleLifeSupportRecycler>())
                 {
-                    if (r.IsActivated)
+                    if (r.IsActivated && r.RecyclerIsActive)
                     {
                         if (r.RecyclePercent > recyclerCap)
                             recyclerCap = r.RecyclePercent;
@@ -293,7 +293,10 @@ namespace LifeSupport
                 var mod = p.FindModuleImplementing<ModuleLifeSupportRecycler>();
                 if (mod == null) 
                     continue;
-                
+
+                if (!mod.RecyclerIsActive)
+                    continue;
+
                 if (mod.RecyclePercent > recyclerCap)
                     recyclerCap = mod.RecyclePercent;
                 var recPercent = mod.RecyclePercent;
