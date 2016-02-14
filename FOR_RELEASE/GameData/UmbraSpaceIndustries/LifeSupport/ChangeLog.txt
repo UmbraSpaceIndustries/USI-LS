@@ -1,3 +1,17 @@
+0.3.11 - 2016.02.08
+-------------------
+Increased default hab multiplier by 5x (this will remain as the default for MKS-Lite, but not for UKS which will use the default of 1x)
+
+0.3.10 - 2016.02.08
+-------------------
+Fixed an issue where recyclers were working without their resources
+
+0.3.9 - 2016.02.04
+-------------------
+Fixed issue that was causing some life support stats to vanish
+Fixed an issue where recyclers were not.. well... recycling.
+Fixed an issue that would potentially make permanent tourists
+
 0.3.8 - 2016.02.03
 ------------------
 Performance update, general bug fixing
