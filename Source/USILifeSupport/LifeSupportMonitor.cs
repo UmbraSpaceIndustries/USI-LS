@@ -286,6 +286,7 @@ namespace LifeSupport
                 if (Planetarium.GetUniversalTime() - vsl.LastUpdate > 2)
                     lblColor = "C4C4C4";
                 vstat.VesselName = String.Format("<color=#{0}>{1}</color>", lblColor, vsl.VesselName);
+                vstat.VesselId = vsl.VesselId;
                 vstat.LastUpdate = vsl.LastUpdate;
                 var sitString = "Orbiting";
                 if (thisVessel.Splashed || thisVessel.heightFromTerrain < 1000)
@@ -311,10 +312,11 @@ namespace LifeSupport
                     cStat.CrewName = String.Format("<color=#FFFFFF>{0} ({1})</color>", c.name,c.experienceTrait.Title.Substring(0,1));
 
                     var snacksLeft = supAmount / supPerDay * 60 * 60 * 6;
-                    if (supAmount <= ResourceUtilities.FLOAT_TOLERANCE && !LifeSupportManager.IsOnKerbin(thisVessel))
+                    if (supAmount <= LifeSupportSetup.Instance.LSConfig.SupplyAmount && !LifeSupportManager.IsOnKerbin(thisVessel))
                     {
                         snacksLeft = cls.LastMeal - Planetarium.GetUniversalTime();
                     }
+                    var lblSupTime = LifeSupportUtilities.SecondsToKerbinTime(snacksLeft);
 
                     var lblSup = "6FFF00";
                     if (snacksLeft < 60 * 60 * 6 * 15) //15 days
@@ -325,12 +327,9 @@ namespace LifeSupport
                     {
                         lblSup = "FFAE00";
                     }
-                    if (snacksLeft < -60 * 60 * 6 * 15)
-                    {
-                        lblSup = "FF5E5E";
-                    }
-                    cStat.SupplyLabel = String.Format("<color=#{0}>{1}</color>",lblSup,LifeSupportUtilities.SecondsToKerbinTime(snacksLeft));
+                    cStat.SupplyLabel = String.Format("<color=#{0}>{1}</color>",lblSup,lblSupTime);
                     var timeLeft = Math.Min(cls.MaxOffKerbinTime - Planetarium.GetUniversalTime(), habTime - (Planetarium.GetUniversalTime() - cls.TimeEnteredVessel));
+                    timeLeft = Math.Max(0, timeLeft);
 
                     var lblHab = "6FFF00";
                     if (timeLeft < 60 * 60 * 6 * 15) //15 days
@@ -366,7 +365,6 @@ namespace LifeSupport
                 _lastGUIUpdate = Planetarium.GetUniversalTime();
                 _guiStats = UpdateGUIStats();
                 CheckEVAKerbals();
-                LifeSupportManager.Instance.UpdateVesselStats();
             }
 
             GUILayout.BeginVertical();
@@ -376,7 +374,7 @@ namespace LifeSupport
 
             try
             {
-                foreach (var v in _guiStats.OrderByDescending(s => (int)s.LastUpdate + " " + s.VesselName))
+                foreach (var v in _guiStats.OrderByDescending(s => (int)(s.LastUpdate / 10) + " " + s.VesselId))
                 {
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("", _labelStyle, GUILayout.Width(10));
@@ -450,6 +448,7 @@ namespace LifeSupport
     public class LifeSupportVesselDisplayStat
     {
         public string VesselName { get; set; }
+        public string VesselId { get; set; }
         public string SummaryLabel { get; set; }
         public double LastUpdate { get; set; }
 

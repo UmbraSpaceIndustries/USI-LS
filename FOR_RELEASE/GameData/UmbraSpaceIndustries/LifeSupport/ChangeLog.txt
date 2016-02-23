@@ -1,6 +1,11 @@
+0.3.12 - 2016.02.13
+-------------------
+Various display bug fixes
+
 0.3.11 - 2016.02.08
 -------------------
 Increased default hab multiplier by 5x (this will remain as the default for MKS-Lite, but not for UKS which will use the default of 1x)
+Fixed an issue where recyclers were not shutting off (boo!)
 
 0.3.10 - 2016.02.08
 -------------------

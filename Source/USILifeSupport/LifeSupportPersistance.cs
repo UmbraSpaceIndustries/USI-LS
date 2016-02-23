@@ -150,19 +150,19 @@ namespace LifeSupport
             _VesselInfo.Add(vInfo);
         }
 
-        public void DeleteStatusNode(LifeSupportStatus kerbal)
+        public void DeleteStatusNode(string kName)
         {
-            if (_StatusInfo.All(n => n.KerbalName != kerbal.KerbalName))
+            if (_StatusInfo.All(n => n.KerbalName != kName))
                 return;
-            var k = _StatusInfo.First(n => n.KerbalName == kerbal.KerbalName);
+            var k = _StatusInfo.First(n => n.KerbalName == kName);
             _StatusInfo.Remove(k);
         }
 
-        public void DeleteVesselNode(VesselSupplyStatus vInfo)
+        public void DeleteVesselNode(string vId)
         {
-            if (_VesselInfo.All(n => n.VesselId != vInfo.VesselId))
+            if (_VesselInfo.All(n => n.VesselId != vId))
                 return;
-            var v = _VesselInfo.First(n => n.VesselId == vInfo.VesselId);
+            var v = _VesselInfo.First(n => n.VesselId == vId);
             _VesselInfo.Remove(v);
         }
         public static List<LifeSupportStatus> ImportStatusNodeList(ConfigNode[] nodes)

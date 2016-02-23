@@ -157,6 +157,7 @@ namespace LifeSupport
 
             foreach (var c in part.protoModuleCrew)
             {
+                //print("Checking " + c.name);
                 bool isGrouchyHab = false;
                 bool isGrouchySupplies = false;
 
@@ -175,6 +176,7 @@ namespace LifeSupport
                 {
                     if (part.vessel.id.ToString() != k.LastVesselId)
                     {
+                        //print(String.Format("Tracking {0} on {1}", k.KerbalName, k.LastVesselId));
                         k.LastVesselId = part.vessel.id.ToString();
                         k.TimeEnteredVessel = Planetarium.GetUniversalTime();
                     }
@@ -214,8 +216,6 @@ namespace LifeSupport
                                 : LifeSupportSetup.Instance.LSConfig.NoSupplyEffect);
                     }
                 }
-
-
                 LifeSupportManager.Instance.TrackKerbal(k);
                 var supAmpunt = _resBroker.AmountAvailable(part, "Supplies", deltaTime, "ALL_VESSEL");
                 v.SuppliesLeft = supAmpunt/LifeSupportSetup.Instance.LSConfig.SupplyAmount/
