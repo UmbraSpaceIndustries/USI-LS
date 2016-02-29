@@ -86,9 +86,6 @@ namespace LifeSupport
 
         public void FixedUpdate()
         {
-            if (part.protoModuleCrew.Count == 0)
-                return;
-
             if (Planetarium.GetUniversalTime() < _lastProcessingTime + _checkInterval)
                 return;
 
@@ -112,115 +109,118 @@ namespace LifeSupport
 
             CheckForDeadKerbals();
 
-            //Update Hab info
-            var habMulti = 0d;
-            var habTime = 0d;
-            var totParts = 0d;
-            var maxParts = 0d;
-            var habMods = part.vessel.FindPartModulesImplementing<ModuleHabitation>();
-            foreach (var hab in habMods)
+            if (part.protoModuleCrew.Count > 0)
             {
-                //Next.  Certain modules, in addition to crew capacity, have living space.
-                habTime += hab.KerbalMonths;
-                //Lastly.  Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
-                habMulti += (hab.HabMultiplier*Math.Min(1, hab.CrewCapacity/v.NumCrew));
-            }
-
-            v.ExtraHabSpace = habTime;
-            v.VesselHabMultiplier = habMulti;
-            //We also have to temper this with whether or not these parts are worn out.
-            if (part.Resources.Contains("ReplacementParts"))
-            {
-                var res = part.Resources["ReplacementParts"];
-                totParts = res.amount;
-                maxParts = res.maxAmount;
-            }
-            //Worn out parts have a corresponding negative effect.
-            if (maxParts > 0)
-            {
-                v.VesselHabMultiplier *= (totParts/maxParts);
-                v.ExtraHabSpace *= (totParts/maxParts);
-                if (totParts < 1)
-                    wearPercent = "Broken!";
-                else
-                    wearPercent = String.Format("{0:0.00}%", (1d - (totParts/maxParts))*100);
-
-            }
-            else
-            {
-                wearPercent = "Like New";
-            }
-
-            //we will add a bit of a fudge factor for supplies
-            var tolerance = deltaTime/2f;
-
-
-            foreach (var c in part.protoModuleCrew)
-            {
-                //print("Checking " + c.name);
-                bool isGrouchyHab = false;
-                bool isGrouchySupplies = false;
-
-                //Fetch them from the queue
-                var k = LifeSupportManager.Instance.FetchKerbal(c);
-                //Update our stuff
-
-                //First - Hab effects.
-                if (LifeSupportManager.IsOnKerbin(part.vessel))
+                //Update Hab info
+                var habMulti = 0d;
+                var habTime = 0d;
+                var totParts = 0d;
+                var maxParts = 0d;
+                var habMods = part.vessel.FindPartModulesImplementing<ModuleHabitation>();
+                foreach (var hab in habMods)
                 {
-                    k.LastOnKerbin = Planetarium.GetUniversalTime();
-                    k.MaxOffKerbinTime = Planetarium.GetUniversalTime() + 972000000;
-                    k.TimeEnteredVessel = Planetarium.GetUniversalTime();
+                    //Next.  Certain modules, in addition to crew capacity, have living space.
+                    habTime += hab.KerbalMonths;
+                    //Lastly.  Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
+                    habMulti += (hab.HabMultiplier*Math.Min(1, hab.CrewCapacity/v.NumCrew));
+                }
+    
+                v.ExtraHabSpace = habTime;
+                v.VesselHabMultiplier = habMulti;
+                //We also have to temper this with whether or not these parts are worn out.
+                if (part.Resources.Contains("ReplacementParts"))
+                {
+                    var res = part.Resources["ReplacementParts"];
+                    totParts = res.amount;
+                    maxParts = res.maxAmount;
+                }
+                //Worn out parts have a corresponding negative effect.
+                if (maxParts > 0)
+                {
+                    v.VesselHabMultiplier *= (totParts/maxParts);
+                    v.ExtraHabSpace *= (totParts/maxParts);
+                    if (totParts < 1)
+                        wearPercent = "Broken!";
+                    else
+                        wearPercent = String.Format("{0:0.00}%", (1d - (totParts/maxParts))*100);
+    
                 }
                 else
                 {
-                    if (part.vessel.id.ToString() != k.LastVesselId)
+                    wearPercent = "Like New";
+                }
+    
+                //we will add a bit of a fudge factor for supplies
+                var tolerance = deltaTime/2f;
+    
+    
+                foreach (var c in part.protoModuleCrew)
+                {
+                    //print("Checking " + c.name);
+                    bool isGrouchyHab = false;
+                    bool isGrouchySupplies = false;
+    
+                    //Fetch them from the queue
+                    var k = LifeSupportManager.Instance.FetchKerbal(c);
+                    //Update our stuff
+    
+                    //First - Hab effects.
+                    if (LifeSupportManager.IsOnKerbin(part.vessel))
                     {
-                        //print(String.Format("Tracking {0} on {1}", k.KerbalName, k.LastVesselId));
-                        k.LastVesselId = part.vessel.id.ToString();
+                        k.LastOnKerbin = Planetarium.GetUniversalTime();
+                        k.MaxOffKerbinTime = Planetarium.GetUniversalTime() + 972000000;
                         k.TimeEnteredVessel = Planetarium.GetUniversalTime();
                     }
-                }
-                isGrouchyHab = CheckHabSideEffects(k, v);
-
-                //Second - Supply
-                if (!LifeSupportManager.IsOnKerbin(part.vessel) && (deltaTime - result.TimeFactor > tolerance))
-                {
-                    isGrouchySupplies = CheckSupplySideEffects(k);
-                }
-                else
-                {
-                    //All is well
-                    k.LastMeal = lastUpdateTime;
-                    v.LastFeeding = lastUpdateTime;
-                }
-
-                k.LastUpdate = Planetarium.GetUniversalTime();
-                if (!isGrouchyHab && !isGrouchySupplies)
-                    RemoveGrouchiness(c, k);
-
-                if (deltaTime < _checkInterval*2)
-                {
-                    if (isGrouchyHab)
+                    else
                     {
-                        ApplyEffect(k, c,
-                            LifeSupportManager.isVet(k.KerbalName)
-                                ? LifeSupportSetup.Instance.LSConfig.NoHomeEffectVets
-                                : LifeSupportSetup.Instance.LSConfig.NoHomeEffect);
+                        if (part.vessel.id.ToString() != k.LastVesselId)
+                        {
+                            //print(String.Format("Tracking {0} on {1}", k.KerbalName, k.LastVesselId));
+                            k.LastVesselId = part.vessel.id.ToString();
+                            k.TimeEnteredVessel = Planetarium.GetUniversalTime();
+                        }
                     }
-                    if (isGrouchySupplies)
+                    isGrouchyHab = CheckHabSideEffects(k, v);
+    
+                    //Second - Supply
+                    if (!LifeSupportManager.IsOnKerbin(part.vessel) && (deltaTime - result.TimeFactor > tolerance))
                     {
-                        ApplyEffect(k, c,
-                            LifeSupportManager.isVet(k.KerbalName)
-                                ? LifeSupportSetup.Instance.LSConfig.NoSupplyEffectVets
-                                : LifeSupportSetup.Instance.LSConfig.NoSupplyEffect);
+                        isGrouchySupplies = CheckSupplySideEffects(k);
                     }
+                    else
+                    {
+                        //All is well
+                        k.LastMeal = lastUpdateTime;
+                        v.LastFeeding = lastUpdateTime;
+                    }
+    
+                    k.LastUpdate = Planetarium.GetUniversalTime();
+                    if (!isGrouchyHab && !isGrouchySupplies)
+                        RemoveGrouchiness(c, k);
+    
+                    if (deltaTime < _checkInterval*2)
+                    {
+                        if (isGrouchyHab)
+                        {
+                            ApplyEffect(k, c,
+                                LifeSupportManager.isVet(k.KerbalName)
+                                    ? LifeSupportSetup.Instance.LSConfig.NoHomeEffectVets
+                                    : LifeSupportSetup.Instance.LSConfig.NoHomeEffect);
+                        }
+                        if (isGrouchySupplies)
+                        {
+                            ApplyEffect(k, c,
+                                LifeSupportManager.isVet(k.KerbalName)
+                                    ? LifeSupportSetup.Instance.LSConfig.NoSupplyEffectVets
+                                    : LifeSupportSetup.Instance.LSConfig.NoSupplyEffect);
+                        }
+                    }
+                    LifeSupportManager.Instance.TrackKerbal(k);
+                    var supAmpunt = _resBroker.AmountAvailable(part, "Supplies", deltaTime, "ALL_VESSEL");
+                    v.SuppliesLeft = supAmpunt/LifeSupportSetup.Instance.LSConfig.SupplyAmount/
+                                        part.vessel.GetCrewCount()/
+                                        LifeSupportManager.GetRecyclerMultiplier(vessel);
                 }
-                LifeSupportManager.Instance.TrackKerbal(k);
-                var supAmpunt = _resBroker.AmountAvailable(part, "Supplies", deltaTime, "ALL_VESSEL");
-                v.SuppliesLeft = supAmpunt/LifeSupportSetup.Instance.LSConfig.SupplyAmount/
-                                    part.vessel.GetCrewCount()/
-                                    LifeSupportManager.GetRecyclerMultiplier(vessel);
             }
 
             LifeSupportManager.Instance.TrackVessel(v);
