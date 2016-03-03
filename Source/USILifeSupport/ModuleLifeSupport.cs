@@ -90,6 +90,9 @@ namespace LifeSupport
         {
             try
             {
+                bool isLongLoop = false;
+                bool offKerbin = !LifeSupportManager.IsOnKerbin(part.vessel);
+                
                 UnlockTins();
                 //Check our time
                 double deltaTime = GetDeltaTime();
@@ -97,105 +100,113 @@ namespace LifeSupport
                 if (deltaTime < ResourceUtilities.FLOAT_TOLERANCE)
                     return;
 
-                //nom nom nom!
-                ConverterResults result = ResConverter.ProcessRecipe(deltaTime, LifeSupportRecipe, part, this, 1f);
+                if (Planetarium.GetUniversalTime() >= _lastProcessingTime + _checkInterval)
+                {
+                    isLongLoop = true;
+                    _lastProcessingTime = Planetarium.GetUniversalTime();
+                }
 
 
-                //Only check effects periodically, this is for performance reasons.
-                if (Planetarium.GetUniversalTime() < _lastProcessingTime + _checkInterval)
-                    return;
-
-                _lastProcessingTime = Planetarium.GetUniversalTime();
-
-
+                     
                 var v = LifeSupportManager.Instance.FetchVessel(part.vessel.id.ToString());
                 v.LastUpdate = Planetarium.GetUniversalTime();
                 v.VesselName = part.vessel.vesselName;
                 v.NumCrew = part.vessel.GetCrewCount();
-                v.RecyclerMultiplier = (float) LifeSupportManager.GetRecyclerMultiplier(part.vessel);
                 v.CrewCap = part.vessel.GetCrewCapacity();
-
-                CheckForDeadKerbals();
+                if (isLongLoop)
+                {
+                    v.RecyclerMultiplier = (float) LifeSupportManager.GetRecyclerMultiplier(part.vessel);
+                    CheckForDeadKerbals();
+                }
 
                 if (part.protoModuleCrew.Count > 0)
                 {
-                    //Update Hab info
-                    var habMulti = 0d;
-                    var habTime = 0d;
-                    var totParts = 0d;
-                    var maxParts = 0d;
-                    var habMods = part.vessel.FindPartModulesImplementing<ModuleHabitation>();
-
-                    foreach (var hab in habMods)
+                    #region Long loop - Vessel
+                    //Only check effects periodically, this is for performance reasons.
+                    if (isLongLoop)
                     {
-                        //Next.  Certain modules, in addition to crew capacity, have living space.
-                        habTime += hab.KerbalMonths;
-                        //Lastly.  Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
-                        habMulti += (hab.HabMultiplier*Math.Min(1, hab.CrewCapacity/v.NumCrew));
-                    }
+                        //Update Hab info
+                        var habMulti = 0d;
+                        var habTime = 0d;
+                        var totParts = 0d;
+                        var maxParts = 0d;
+                        var habMods = part.vessel.FindPartModulesImplementing<ModuleHabitation>();
 
-                    v.ExtraHabSpace = habTime;
-                    v.VesselHabMultiplier = habMulti;
-                    //We also have to temper this with whether or not these parts are worn out.
-                    if (part.Resources.Contains("ReplacementParts"))
-                    {
-                        var res = part.Resources["ReplacementParts"];
-                        totParts = res.amount;
-                        maxParts = res.maxAmount;
-                    }
+                        foreach (var hab in habMods)
+                        {
+                            //Next.  Certain modules, in addition to crew capacity, have living space.
+                            habTime += hab.KerbalMonths;
+                            //Lastly.  Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
+                            habMulti += (hab.HabMultiplier * Math.Min(1, hab.CrewCapacity / v.NumCrew));
+                        }
 
-                    //Worn out parts have a corresponding negative effect.
-                    if (maxParts > 0)
-                    {
-                        v.VesselHabMultiplier *= (totParts/maxParts);
-                        v.ExtraHabSpace *= (totParts/maxParts);
-                        if (totParts < 1)
-                            wearPercent = "Broken!";
+                        v.ExtraHabSpace = habTime;
+                        v.VesselHabMultiplier = habMulti;
+                        //We also have to temper this with whether or not these parts are worn out.
+                        if (part.Resources.Contains("ReplacementParts"))
+                        {
+                            var res = part.Resources["ReplacementParts"];
+                            totParts = res.amount;
+                            maxParts = res.maxAmount;
+                        }
+
+                        //Worn out parts have a corresponding negative effect.
+                        if (maxParts > 0)
+                        {
+                            v.VesselHabMultiplier *= (totParts / maxParts);
+                            v.ExtraHabSpace *= (totParts / maxParts);
+                            if (totParts < 1)
+                                wearPercent = "Broken!";
+                            else
+                                wearPercent = String.Format("{0:0.00}%", (1d - (totParts / maxParts)) * 100);
+
+                        }
                         else
-                            wearPercent = String.Format("{0:0.00}%", (1d - (totParts/maxParts))*100);
-
+                        {
+                            wearPercent = "Like New";
+                        }
                     }
-                    else
-                    {
-                        wearPercent = "Like New";
-                    }
-
+                    #endregion
                     //we will add a bit of a fudge factor for supplies
                     var tolerance = deltaTime/2f;
-
+                    //nom nom nom!
+                    ConverterResults result = ResConverter.ProcessRecipe(deltaTime, LifeSupportRecipe, part, this, 1f);
 
                     foreach (var c in part.protoModuleCrew)
                     {
-                        //print("Checking " + c.name);
                         bool isGrouchyHab = false;
                         bool isGrouchySupplies = false;
-
                         //Fetch them from the queue
                         var k = LifeSupportManager.Instance.FetchKerbal(c);
                         //Update our stuff
 
-                        //First - Hab effects.
-                        if (LifeSupportManager.IsOnKerbin(part.vessel))
+                        #region Long Loop - Crew
+                        if (isLongLoop)
                         {
-                            k.LastOnKerbin = Planetarium.GetUniversalTime();
-                            k.MaxOffKerbinTime = 648000;
-                            k.TimeEnteredVessel = Planetarium.GetUniversalTime();
-                        }
-                        else
-                        {
-                            if (part.vessel.id.ToString() != k.CurrentVesselId)
+                            //First - Hab effects.
+                            if (LifeSupportManager.IsOnKerbin(part.vessel))
                             {
-                                if (part.vessel.id.ToString() != k.PreviousVesselId)
-                                    k.TimeEnteredVessel = Planetarium.GetUniversalTime();
-
-                                k.PreviousVesselId = k.CurrentVesselId;
-                                k.CurrentVesselId = part.vessel.id.ToString();
+                                k.LastOnKerbin = Planetarium.GetUniversalTime();
+                                k.MaxOffKerbinTime = 648000;
+                                k.TimeEnteredVessel = Planetarium.GetUniversalTime();
                             }
-                        }
-                        isGrouchyHab = CheckHabSideEffects(k, v);
+                            else
+                            {
+                                if (part.vessel.id.ToString() != k.CurrentVesselId)
+                                {
+                                    if (part.vessel.id.ToString() != k.PreviousVesselId)
+                                        k.TimeEnteredVessel = Planetarium.GetUniversalTime();
 
+                                    k.PreviousVesselId = k.CurrentVesselId;
+                                    k.CurrentVesselId = part.vessel.id.ToString();
+                                }
+                            }
+                            isGrouchyHab = CheckHabSideEffects(k, v);
+                        }
+                        #endregion - Crew
                         //Second - Supply
-                        if (!LifeSupportManager.IsOnKerbin(part.vessel) && (deltaTime - result.TimeFactor > tolerance))
+  
+                        if (offKerbin && (deltaTime - result.TimeFactor > tolerance))
                         {
                             isGrouchySupplies = CheckSupplySideEffects(k);
                         }
@@ -228,10 +239,10 @@ namespace LifeSupport
                             }
                         }
                         LifeSupportManager.Instance.TrackKerbal(k);
-                        var supAmpunt = _resBroker.AmountAvailable(part, "Supplies", deltaTime, "ALL_VESSEL");
-                        v.SuppliesLeft = supAmpunt/LifeSupportSetup.Instance.LSConfig.SupplyAmount/
+                        var supAmount = _resBroker.AmountAvailable(part, "Supplies", deltaTime, "ALL_VESSEL");
+                        v.SuppliesLeft = supAmount/LifeSupportSetup.Instance.LSConfig.SupplyAmount/
                                          part.vessel.GetCrewCount()/
-                                         LifeSupportManager.GetRecyclerMultiplier(vessel);
+                                         v.RecyclerMultiplier;
                     }
                 }
                 LifeSupportManager.Instance.TrackVessel(v);
@@ -243,29 +254,30 @@ namespace LifeSupport
         }
 
         private ConversionRecipe GenerateLSRecipe()
+        {
+            //This is where the rubber hits the road.  Let us see if we can
+            //keep our Kerbals cozy and warm.
+            var v = LifeSupportManager.Instance.FetchVessel(part.vessel.id.ToString());
+            var recipe = new ConversionRecipe();
+            var numCrew = part.protoModuleCrew.Count;
+            var recPercent = v.RecyclerMultiplier;
+            var ecAmount = LifeSupportSetup.Instance.LSConfig.ECAmount;
+            var supAmount = LifeSupportSetup.Instance.LSConfig.SupplyAmount;
+            var scrapAmount = LifeSupportSetup.Instance.LSConfig.WasteAmount;
+            var repAmount = LifeSupportSetup.Instance.LSConfig.ReplacementPartAmount;
+            if (part.Resources.Contains("ReplacementParts"))
             {
-                //This is where the rubber hits the road.  Let us see if we can
-                //keep our Kerbals cozy and warm.
-                var recipe = new ConversionRecipe();
-                var numCrew = part.protoModuleCrew.Count;
-                var recPercent = LifeSupportManager.GetRecyclerMultiplier(part.vessel);
-                var ecAmount = LifeSupportSetup.Instance.LSConfig.ECAmount;
-                var supAmount = LifeSupportSetup.Instance.LSConfig.SupplyAmount;
-                var scrapAmount = LifeSupportSetup.Instance.LSConfig.WasteAmount;
-                var repAmount = LifeSupportSetup.Instance.LSConfig.ReplacementPartAmount;
-                if (part.Resources.Contains("ReplacementParts"))
-                {
-                    recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = repAmount * numCrew, ResourceName = "ReplacementParts", DumpExcess = false });
-                }
-
-                var supRatio = supAmount*numCrew*recPercent;
-                var mulchRatio = scrapAmount*numCrew*recPercent;
-
-                recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = ecAmount * numCrew, ResourceName = "ElectricCharge", DumpExcess = true });
-                recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = supRatio, ResourceName = "Supplies", DumpExcess = true });
-                recipe.Outputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = mulchRatio, ResourceName = "Mulch", DumpExcess = true });
-                return recipe;
+                recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = repAmount * numCrew, ResourceName = "ReplacementParts", DumpExcess = false });
             }
+
+            var supRatio = supAmount*numCrew*recPercent;
+            var mulchRatio = scrapAmount*numCrew*recPercent;
+
+            recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = ecAmount * numCrew, ResourceName = "ElectricCharge", DumpExcess = true });
+            recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = supRatio, ResourceName = "Supplies", DumpExcess = true });
+            recipe.Outputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = mulchRatio, ResourceName = "Mulch", DumpExcess = true });
+            return recipe;
+        }
 
         private void UnlockTins()
         {
