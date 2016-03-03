@@ -90,7 +90,8 @@ namespace LifeSupport
         {
             try
             {
-                bool isLongLoop = false; 
+                bool isLongLoop = false;
+                bool offKerbin = !LifeSupportManager.IsOnKerbin(part.vessel);
                 
                 UnlockTins();
                 //Check our time
@@ -105,9 +106,8 @@ namespace LifeSupport
                     _lastProcessingTime = Planetarium.GetUniversalTime();
                 }
 
-                //nom nom nom!
-                ConverterResults result = ResConverter.ProcessRecipe(deltaTime, LifeSupportRecipe, part, this, 1f);
 
+                     
                 var v = LifeSupportManager.Instance.FetchVessel(part.vessel.id.ToString());
                 v.LastUpdate = Planetarium.GetUniversalTime();
                 v.VesselName = part.vessel.vesselName;
@@ -169,6 +169,8 @@ namespace LifeSupport
                     #endregion
                     //we will add a bit of a fudge factor for supplies
                     var tolerance = deltaTime/2f;
+                    //nom nom nom!
+                    ConverterResults result = ResConverter.ProcessRecipe(deltaTime, LifeSupportRecipe, part, this, 1f);
 
                     foreach (var c in part.protoModuleCrew)
                     {
@@ -203,7 +205,8 @@ namespace LifeSupport
                         }
                         #endregion - Crew
                         //Second - Supply
-                        if (!LifeSupportManager.IsOnKerbin(part.vessel) && (deltaTime - result.TimeFactor > tolerance))
+  
+                        if (offKerbin && (deltaTime - result.TimeFactor > tolerance))
                         {
                             isGrouchySupplies = CheckSupplySideEffects(k);
                         }
@@ -251,30 +254,30 @@ namespace LifeSupport
         }
 
         private ConversionRecipe GenerateLSRecipe()
+        {
+            //This is where the rubber hits the road.  Let us see if we can
+            //keep our Kerbals cozy and warm.
+            var v = LifeSupportManager.Instance.FetchVessel(part.vessel.id.ToString());
+            var recipe = new ConversionRecipe();
+            var numCrew = part.protoModuleCrew.Count;
+            var recPercent = v.RecyclerMultiplier;
+            var ecAmount = LifeSupportSetup.Instance.LSConfig.ECAmount;
+            var supAmount = LifeSupportSetup.Instance.LSConfig.SupplyAmount;
+            var scrapAmount = LifeSupportSetup.Instance.LSConfig.WasteAmount;
+            var repAmount = LifeSupportSetup.Instance.LSConfig.ReplacementPartAmount;
+            if (part.Resources.Contains("ReplacementParts"))
             {
-                //This is where the rubber hits the road.  Let us see if we can
-                //keep our Kerbals cozy and warm.
-                var v = LifeSupportManager.Instance.FetchVessel(part.vessel.id.ToString());
-                var recipe = new ConversionRecipe();
-                var numCrew = v.NumCrew;
-                var recPercent = v.RecyclerMultiplier;
-                var ecAmount = LifeSupportSetup.Instance.LSConfig.ECAmount;
-                var supAmount = LifeSupportSetup.Instance.LSConfig.SupplyAmount;
-                var scrapAmount = LifeSupportSetup.Instance.LSConfig.WasteAmount;
-                var repAmount = LifeSupportSetup.Instance.LSConfig.ReplacementPartAmount;
-                if (part.Resources.Contains("ReplacementParts"))
-                {
-                    recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = repAmount * numCrew, ResourceName = "ReplacementParts", DumpExcess = false });
-                }
-
-                var supRatio = supAmount*numCrew*recPercent;
-                var mulchRatio = scrapAmount*numCrew*recPercent;
-
-                recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = ecAmount * numCrew, ResourceName = "ElectricCharge", DumpExcess = true });
-                recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = supRatio, ResourceName = "Supplies", DumpExcess = true });
-                recipe.Outputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = mulchRatio, ResourceName = "Mulch", DumpExcess = true });
-                return recipe;
+                recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = repAmount * numCrew, ResourceName = "ReplacementParts", DumpExcess = false });
             }
+
+            var supRatio = supAmount*numCrew*recPercent;
+            var mulchRatio = scrapAmount*numCrew*recPercent;
+
+            recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = ecAmount * numCrew, ResourceName = "ElectricCharge", DumpExcess = true });
+            recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = supRatio, ResourceName = "Supplies", DumpExcess = true });
+            recipe.Outputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = mulchRatio, ResourceName = "Mulch", DumpExcess = true });
+            return recipe;
+        }
 
         private void UnlockTins()
         {
