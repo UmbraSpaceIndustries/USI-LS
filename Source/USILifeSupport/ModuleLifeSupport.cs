@@ -36,7 +36,6 @@ namespace LifeSupport
 
         protected IResourceBroker _resBroker;
         protected ResourceConverter _resConverter;
-        protected double lastUpdateTime;
 
         public ResourceConverter ResConverter
         {
@@ -48,42 +47,38 @@ namespace LifeSupport
             get { return _resBroker ?? (_resBroker = new ResourceBroker()); }
         }
 
-        protected double GetDeltaTime()
+        protected void CalculateKerbalSupplySeconds(out double supplySeconds, out double mealTime, out double deltaTime)
         {
-            if (Time.timeSinceLevelLoad < 1.0f || !FlightGlobals.ready)
+            double now = Planetarium.GetUniversalTime();
+            double previousMeal = now;
+
+            foreach (ProtoCrewMember m in part.protoModuleCrew)
             {
-                return -1;
+                LifeSupportStatus status = LifeSupportManager.Instance.FetchKerbal(m);
+                previousMeal = Math.Min(previousMeal, status.LastMeal);
             }
 
-            if (Math.Abs(lastUpdateTime) < ResourceUtilities.FLOAT_TOLERANCE)
+            supplySeconds = 0;
+
+            if (previousMeal >= now)
             {
-                // Just started running
-                lastUpdateTime = Planetarium.GetUniversalTime();
-                return -1;
+                mealTime = now;
+                deltaTime = 0;
+                return;
             }
 
-            double maxDeltaTime = ResourceUtilities.GetMaxDeltaTime();
-            double deltaTime = Math.Min(Planetarium.GetUniversalTime() - lastUpdateTime, maxDeltaTime);
-                
-            lastUpdateTime += deltaTime;
-            return deltaTime;
-        }
+            mealTime = Math.Min(now, previousMeal + ResourceUtilities.GetMaxDeltaTime());
+            deltaTime = mealTime - previousMeal;
 
+            foreach (ProtoCrewMember m in part.protoModuleCrew)
+            {
+                LifeSupportStatus status = LifeSupportManager.Instance.FetchKerbal(m);
 
-        public override void OnLoad(ConfigNode node)
-        {
-            base.OnLoad(node);
-            if (!HighLogic.LoadedSceneIsFlight)
-                return;
-            lastUpdateTime = ResourceUtilities.GetValue(node, "lastUpdateTime", lastUpdateTime);
-        }
-
-        public override void OnSave(ConfigNode node)
-        {
-            base.OnSave(node);
-            if (!HighLogic.LoadedSceneIsFlight)
-                return;
-            node.AddValue("lastUpdateTime", lastUpdateTime);
+                if (status.LastMeal < mealTime)
+                {
+                    supplySeconds += mealTime - status.LastMeal;
+                }
+            }
         }
 
         public void FixedUpdate()
@@ -95,9 +90,12 @@ namespace LifeSupport
                 
                 UnlockTins();
                 //Check our time
-                double deltaTime = GetDeltaTime();
+                double supplySeconds;
+                double mealTime;
+                double deltaTime;
+                CalculateKerbalSupplySeconds(out supplySeconds, out mealTime, out deltaTime);
 
-                if (deltaTime < ResourceUtilities.FLOAT_TOLERANCE)
+                if (supplySeconds < ResourceUtilities.FLOAT_TOLERANCE)
                     return;
 
                 if (Planetarium.GetUniversalTime() >= _lastProcessingTime + _checkInterval)
@@ -168,9 +166,9 @@ namespace LifeSupport
                     }
                     #endregion
                     //we will add a bit of a fudge factor for supplies
-                    var tolerance = deltaTime/2f;
+                    var tolerance = supplySeconds / 2f;
                     //nom nom nom!
-                    ConverterResults result = ResConverter.ProcessRecipe(deltaTime, LifeSupportRecipe, part, this, 1f);
+                    ConverterResults result = ResConverter.ProcessRecipe(supplySeconds, LifeSupportRecipe, part, this, 1f);
 
                     foreach (var c in part.protoModuleCrew)
                     {
@@ -206,22 +204,22 @@ namespace LifeSupport
                         #endregion - Crew
                         //Second - Supply
   
-                        if (offKerbin && (deltaTime - result.TimeFactor > tolerance))
+                        if (offKerbin && (supplySeconds - result.TimeFactor > tolerance))
                         {
                             isGrouchySupplies = CheckSupplySideEffects(k);
+                            k.LastUpdate = Math.Min(Planetarium.GetUniversalTime(), k.LastUpdate + deltaTime);
                         }
                         else
                         {
                             //All is well
-                            k.LastMeal = lastUpdateTime;
-                            v.LastFeeding = lastUpdateTime;
+                            k.LastUpdate = k.LastMeal = Math.Max(k.LastMeal, mealTime);
+                            v.LastFeeding = Math.Max(v.LastFeeding, mealTime);
                         }
 
-                        k.LastUpdate = Planetarium.GetUniversalTime();
                         if (!isGrouchyHab && !isGrouchySupplies)
                             RemoveGrouchiness(c, k);
 
-                        if (deltaTime < _checkInterval*2)
+                        if (k.LastUpdate + _checkInterval * 2 > Planetarium.GetUniversalTime())
                         {
                             if (isGrouchyHab)
                             {
@@ -239,7 +237,7 @@ namespace LifeSupport
                             }
                         }
                         LifeSupportManager.Instance.TrackKerbal(k);
-                        var supAmount = _resBroker.AmountAvailable(part, "Supplies", deltaTime, "ALL_VESSEL");
+                        var supAmount = _resBroker.AmountAvailable(part, "Supplies", supplySeconds, "ALL_VESSEL");
                         v.SuppliesLeft = supAmount/LifeSupportSetup.Instance.LSConfig.SupplyAmount/
                                          part.vessel.GetCrewCount()/
                                          v.RecyclerMultiplier;
@@ -259,7 +257,6 @@ namespace LifeSupport
             //keep our Kerbals cozy and warm.
             var v = LifeSupportManager.Instance.FetchVessel(part.vessel.id.ToString());
             var recipe = new ConversionRecipe();
-            var numCrew = part.protoModuleCrew.Count;
             var recPercent = v.RecyclerMultiplier;
             var ecAmount = LifeSupportSetup.Instance.LSConfig.ECAmount;
             var supAmount = LifeSupportSetup.Instance.LSConfig.SupplyAmount;
@@ -267,13 +264,13 @@ namespace LifeSupport
             var repAmount = LifeSupportSetup.Instance.LSConfig.ReplacementPartAmount;
             if (part.Resources.Contains("ReplacementParts"))
             {
-                recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = repAmount * numCrew, ResourceName = "ReplacementParts", DumpExcess = false });
+                recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = repAmount, ResourceName = "ReplacementParts", DumpExcess = false });
             }
 
-            var supRatio = supAmount*numCrew*recPercent;
-            var mulchRatio = scrapAmount*numCrew*recPercent;
+            var supRatio = supAmount * recPercent;
+            var mulchRatio = scrapAmount * recPercent;
 
-            recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = ecAmount * numCrew, ResourceName = "ElectricCharge", DumpExcess = true });
+            recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = ecAmount, ResourceName = "ElectricCharge", DumpExcess = true });
             recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = supRatio, ResourceName = "Supplies", DumpExcess = true });
             recipe.Outputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = mulchRatio, ResourceName = "Mulch", DumpExcess = true });
             return recipe;
