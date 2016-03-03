@@ -236,10 +236,10 @@ namespace LifeSupport
                             }
                         }
                         LifeSupportManager.Instance.TrackKerbal(k);
-                        var supAmpunt = _resBroker.AmountAvailable(part, "Supplies", deltaTime, "ALL_VESSEL");
-                        v.SuppliesLeft = supAmpunt/LifeSupportSetup.Instance.LSConfig.SupplyAmount/
+                        var supAmount = _resBroker.AmountAvailable(part, "Supplies", deltaTime, "ALL_VESSEL");
+                        v.SuppliesLeft = supAmount/LifeSupportSetup.Instance.LSConfig.SupplyAmount/
                                          part.vessel.GetCrewCount()/
-                                         LifeSupportManager.GetRecyclerMultiplier(vessel);
+                                         v.RecyclerMultiplier;
                     }
                 }
                 LifeSupportManager.Instance.TrackVessel(v);
