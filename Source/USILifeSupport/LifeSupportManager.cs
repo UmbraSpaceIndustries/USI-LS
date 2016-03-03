@@ -69,12 +69,19 @@ namespace LifeSupport
         
         public void UntrackKerbal(string kname)
         {
-            if (!IsKerbalTracked(kname))
-                return;
-            var kerbal = LifeSupportInfo.First(k => k.KerbalName == kname);
-            LifeSupportInfo.Remove(kerbal);
-            //For saving to our scenario data
-            LifeSupportScenario.Instance.settings.DeleteStatusNode(kname);
+            try
+            {
+                if (!IsKerbalTracked(kname))
+                    return;
+                var kerbal = LifeSupportInfo.First(k => k.KerbalName == kname);
+                LifeSupportInfo.Remove(kerbal);
+                //For saving to our scenario data
+                LifeSupportScenario.Instance.settings.DeleteStatusNode(kname);
+            }
+            catch (Exception ex)
+            {
+                print(String.Format("ERROR {0} IN UntrackKerbal", ex.Message));
+            }
         }
         public LifeSupportStatus FetchKerbal(ProtoCrewMember crew)
         {
@@ -84,9 +91,10 @@ namespace LifeSupport
                 k.KerbalName = crew.name;
                 k.LastMeal = Planetarium.GetUniversalTime();
                 k.LastOnKerbin = Planetarium.GetUniversalTime();
-                k.MaxOffKerbinTime = Planetarium.GetUniversalTime() + 972000000;
+                k.MaxOffKerbinTime = 648000;
                 k.TimeEnteredVessel = Planetarium.GetUniversalTime();
-                k.LastVesselId = "??UNKNOWN??";
+                k.CurrentVesselId = "?UNKNOWN?";
+                k.PreviousVesselId = "??UNKNOWN??";
                 k.LastUpdate = Planetarium.GetUniversalTime();
                 k.IsGrouchy = false;
                 k.OldTrait = crew.experienceTrait.Title;
@@ -202,7 +210,7 @@ namespace LifeSupport
                 return 1d;
 
             var recyclerCap = 0f;
-            var recyclerVal = 1f;
+            var recyclerTot = 0f;
             var crewCount = GetColonyCrewCount(vessel);
 
             foreach (var r in vessel.FindPartModulesImplementing<ModuleLifeSupportRecycler>())
@@ -215,7 +223,7 @@ namespace LifeSupport
                     if (r.CrewCapacity < crewCount)
                         recPercent *= r.CrewCapacity/(float) crewCount;
 
-                    recyclerVal *= (1f - recPercent);
+                    recyclerTot += recPercent;
                 }
             }
 
@@ -232,11 +240,13 @@ namespace LifeSupport
                         if (r.CrewCapacity < crewCount)
                             recPercent *= r.CrewCapacity / (float)crewCount;
 
-                        recyclerVal *= (1f - recPercent);
+                        recyclerTot += recPercent;
                     }
                 }
             } 
-            return Math.Max(recyclerVal, (1f - recyclerCap));
+            //Inverse because this is a multiplier - low is good!                
+            double retVal = 1d - (Math.Min(recyclerTot, recyclerCap));
+            return retVal;
         }
 
 
@@ -273,7 +283,7 @@ namespace LifeSupport
                 return 1d;
 
             var recyclerCap = 0f;
-            var recyclerVal = 1f;
+            var recyclerTot = 0f;
 
             foreach (var p in pList)
             {
@@ -290,10 +300,11 @@ namespace LifeSupport
                 if (mod.CrewCapacity < crewCount)
                     recPercent *= mod.CrewCapacity / (float)crewCount;
 
-                recyclerVal *= (1f - recPercent);
+                recyclerTot += recPercent;
             }
-            
-            return Math.Max(recyclerVal, (1f - recyclerCap));
+            //Inverse because this is a multiplier - low is good!                
+            double retVal = 1d - (Math.Min(recyclerTot, recyclerCap));
+            return retVal;
         }
         public static bool IsOnKerbin(Vessel v)
         {

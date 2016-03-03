@@ -27,7 +27,7 @@ namespace LifeSupport
     public class LifeSupportMonitor : MonoBehaviour
     {
         private ApplicationLauncherButton orbLogButton;
-        private Rect _windowPosition = new Rect(300, 60, 620, 400);
+        private Rect _windowPosition = new Rect(300, 60, 820, 400);
         private GUIStyle _windowStyle;
         private GUIStyle _labelStyle;
         private GUIStyle _buttonStyle;
@@ -289,9 +289,13 @@ namespace LifeSupport
                 vstat.VesselId = vsl.VesselId;
                 vstat.LastUpdate = vsl.LastUpdate;
                 var sitString = "Orbiting";
-                if (thisVessel.Splashed || thisVessel.heightFromTerrain < 1000)
-                    sitString = "Splashed"; 
-                if (thisVessel.Landed || thisVessel.heightFromTerrain < 1000)
+
+
+                thisVessel.checkSplashed();
+                if (thisVessel.Splashed)
+                    sitString = "Splashed";
+                thisVessel.checkLanded();
+                if (thisVessel.Landed)
                     sitString = "Landed";
 
                 var habString = "indefinite";
@@ -328,26 +332,49 @@ namespace LifeSupport
                         lblSup = "FFAE00";
                     }
                     cStat.SupplyLabel = String.Format("<color=#{0}>{1}</color>",lblSup,lblSupTime);
-                    var timeLeft = Math.Min(cls.MaxOffKerbinTime - Planetarium.GetUniversalTime(), habTime - (Planetarium.GetUniversalTime() - cls.TimeEnteredVessel));
-                    timeLeft = Math.Max(0, timeLeft);
+
+
+                    var habTimeLeft = habTime - (Planetarium.GetUniversalTime() - cls.TimeEnteredVessel);
+                    var homeTimeLeft = cls.MaxOffKerbinTime - Planetarium.GetUniversalTime();
 
                     var lblHab = "6FFF00";
-                    if (timeLeft < 60 * 60 * 6 * 15) //15 days
+                    if (habTimeLeft < 60 * 60 * 6 * 15) //15 days
                     {
                         lblHab = "FFE100";
                     }
-                    if (timeLeft < 0)
+                    if (habTimeLeft < 0)
                     {
                         lblHab = "FFAE00";
                     }
-                    if (timeLeft < -60 * 60 * 6 * 15)
+                    if (habTimeLeft < -60 * 60 * 6 * 15)
                     {
                         lblHab = "FF5E5E";
                     }
                     var crewHabString = "indefinite";
                     if (useHabPenalties)
-                        crewHabString = LifeSupportUtilities.SecondsToKerbinTime(timeLeft);
+                        crewHabString = LifeSupportUtilities.SecondsToKerbinTime(habTimeLeft);
                     cStat.HabLabel = String.Format("<color=#{0}>{1}</color>", lblHab, crewHabString);
+
+
+                    var lblHome = "6FFF00";
+                    if (homeTimeLeft < 60 * 60 * 6 * 15) //15 days
+                    {
+                        lblHome = "FFE100";
+                    }
+                    if (homeTimeLeft < 0)
+                    {
+                        lblHome = "FFAE00";
+                    }
+                    if (homeTimeLeft < -60 * 60 * 6 * 15)
+                    {
+                        lblHome = "FF5E5E";
+                    }
+                    var crewHomeString = "indefinite";
+                    if (useHabPenalties)
+                        crewHomeString = LifeSupportUtilities.SecondsToKerbinTime(homeTimeLeft);
+                    cStat.HomeLabel = String.Format("<color=#{0}>{1}</color>", lblHome, crewHomeString);
+                    
+                    
                     vstat.crew.Add(cStat);
                 }
                 statList.Add(vstat);
@@ -368,7 +395,7 @@ namespace LifeSupport
             }
 
             GUILayout.BeginVertical();
-            scrollPos = GUILayout.BeginScrollView(scrollPos, _scrollStyle, GUILayout.Width(600), GUILayout.Height(350));
+            scrollPos = GUILayout.BeginScrollView(scrollPos, _scrollStyle, GUILayout.Width(800), GUILayout.Height(350));
             GUILayout.BeginVertical();
 
 
@@ -386,10 +413,12 @@ namespace LifeSupport
                         GUILayout.BeginHorizontal();
                         GUILayout.Label("", _labelStyle, GUILayout.Width(30));
                         GUILayout.Label(c.CrewName, _labelStyle, GUILayout.Width(135));
-                        GUILayout.Label("<color=#EDEDED>sup:</color>", _labelStyle, GUILayout.Width(32));
-                        GUILayout.Label(c.SupplyLabel, _labelStyle, GUILayout.Width(155));
-                        GUILayout.Label("<color=#EDEDED>hab:</color>", _labelStyle, GUILayout.Width(32));
-                        GUILayout.Label(c.HabLabel, _labelStyle, GUILayout.Width(155));
+                        GUILayout.Label("<color=#EDEDED>sup:</color>", _labelStyle, GUILayout.Width(35));
+                        GUILayout.Label(c.SupplyLabel, _labelStyle, GUILayout.Width(145));
+                        GUILayout.Label("<color=#EDEDED>hab:</color>", _labelStyle, GUILayout.Width(35));
+                        GUILayout.Label(c.HabLabel, _labelStyle, GUILayout.Width(145));
+                        GUILayout.Label("<color=#EDEDED>home:</color>", _labelStyle, GUILayout.Width(40));
+                        GUILayout.Label(c.HomeLabel, _labelStyle, GUILayout.Width(145));
                         GUILayout.EndHorizontal();
                     }
                 }
@@ -436,7 +465,7 @@ namespace LifeSupport
         private void InitStyles()
         {
             _windowStyle = new GUIStyle(HighLogic.Skin.window);
-            _windowStyle.fixedWidth = 620f;
+            _windowStyle.fixedWidth = 820f;
             _windowStyle.fixedHeight = 400f;
             _labelStyle = new GUIStyle(HighLogic.Skin.label);
             _buttonStyle = new GUIStyle(HighLogic.Skin.button);
@@ -460,6 +489,7 @@ namespace LifeSupport
         public string CrewName { get; set; }
         public string SupplyLabel { get; set; }
         public string HabLabel { get; set; }
+        public string HomeLabel { get; set; }
     }
 
 }
