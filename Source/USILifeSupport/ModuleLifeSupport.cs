@@ -199,7 +199,12 @@ namespace LifeSupport
                                     k.CurrentVesselId = part.vessel.id.ToString();
                                 }
                             }
-                            isGrouchyHab = CheckHabSideEffects(k, v);
+                            if ((LifeSupportManager.isVet(k.KerbalName)
+                                            ? LifeSupportSetup.Instance.LSConfig.NoHomeEffectVets
+                                            : LifeSupportSetup.Instance.LSConfig.NoHomeEffect) > 0)
+                            {
+                                isGrouchyHab = CheckHabSideEffects(k, v);
+                            }
                         }
                         #endregion - Crew
                         //Second - Supply
