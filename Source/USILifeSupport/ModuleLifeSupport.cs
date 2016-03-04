@@ -81,8 +81,17 @@ namespace LifeSupport
             }
         }
 
+        private int firstFixedUpdate = 1;
         public void FixedUpdate()
         {
+            // When switching scenes to a vessel FixedUpdate will get called before the scenario is restored from configuration.
+            // In this case changes to the vessel will remain but changes to the scenario will get undone (causing over-consumption
+            // of supplies). Delaying processing prevents that from happening.
+            if (firstFixedUpdate > 0)
+            {
+                firstFixedUpdate = 0;
+                return;
+            }
             try
             {
                 bool isLongLoop = false;
