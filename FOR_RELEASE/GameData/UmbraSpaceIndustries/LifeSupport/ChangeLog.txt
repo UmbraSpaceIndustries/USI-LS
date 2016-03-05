@@ -1,3 +1,23 @@
+0.3.15 - 2015.03.03
+-------------------
+Fixed that bug.  For real this time.
+
+0.3.14 - 2015.03.03
+-------------------
+Fixed a bug with resource consumption
+
+0.3.13 - 2016.03.02
+-------------------
+Remove ReplacementParts input ressource from MPL (thanks far-lobyte!)
+Fixed issue with empty vessels and supply consumption upon Kerbals entering (thanks JPLRepo!)
+added more info to the VAB info windows (Thanks bennord!)
+Orbiting/Splashed/Landed should display correctly now.
+Both hab time and homesickness time are shown.  When either timer expires, the habitation effect takes place.
+Corrected an issue that was causing hab time to incorrectly reset.
+Fixed an issue where supply consumption was out of sync with recyclers/etc. during catch-up mechanics.
+Fixed an issue causing diminishing returns for recyclers 
+Fixed an issue where certain settings were not having effects
+
 0.3.12 - 2016.02.13
 -------------------
 Various display bug fixes
