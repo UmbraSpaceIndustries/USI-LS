@@ -113,8 +113,8 @@ namespace LifeSupport
             CheckForDeadKerbals();
 
             //Update Hab info
-            var habMulti = CalculateVeseelHabMultiplier(part.vessel, v.NumCrew);
-            var habTime = CalculateVeseelHabExtraTime(part.vessel);
+            var habMulti = CalculateVesselHabMultiplier(part.vessel, v.NumCrew);
+            var habTime = CalculateVesselHabExtraTime(part.vessel);
             var totParts = 0d;
             var maxParts = 0d;
 
@@ -218,7 +218,7 @@ namespace LifeSupport
             LifeSupportManager.Instance.TrackVessel(v);
         }
 
-        public static double CalculateVeseelHabExtraTime(Vessel v)
+        public static double CalculateVesselHabExtraTime(Vessel v)
         {
             var habTime = 0d;
             foreach (var hab in v.FindPartModulesImplementing<ModuleHabitation>())
@@ -229,7 +229,7 @@ namespace LifeSupport
             return habTime;
         }
 
-        public static double CalculateVeseelHabMultiplier(Vessel v, int numCrew)
+        public static double CalculateVesselHabMultiplier(Vessel v, int numCrew)
         {
             var habMulti = 0d;
             foreach (var hab in v.FindPartModulesImplementing<ModuleHabitation>())

@@ -260,8 +260,8 @@ namespace LifeSupport
             foreach (var v in vList)
             {
                 // Calculate HabSpace and HabMult after we know totCurCrew and totMaxCrew
-                totHabSpace += (LifeSupportSetup.Instance.LSConfig.BaseHabTime * totMaxCrew) + ModuleLifeSupport.CalculateVeseelHabExtraTime(v);
-                totHabMult += ModuleLifeSupport.CalculateVeseelHabMultiplier(v, totCurCrew);
+                totHabSpace += (LifeSupportSetup.Instance.LSConfig.BaseHabTime * totMaxCrew) + ModuleLifeSupport.CalculateVesselHabExtraTime(v);
+                totHabMult += ModuleLifeSupport.CalculateVesselHabMultiplier(v, totCurCrew);
             }
             totHabMult += USI_GlobalBonuses.Instance.GetHabBonus(vsl.mainBody.flightGlobalsIndex);
             double habTotal = totHabSpace / (double)totCurCrew * (totHabMult + 1) * LifeSupportSetup.Instance.LSConfig.HabMultiplier;
