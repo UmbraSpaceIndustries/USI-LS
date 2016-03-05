@@ -113,18 +113,10 @@ namespace LifeSupport
             CheckForDeadKerbals();
 
             //Update Hab info
-            var habMulti = 0d;
-            var habTime = 0d;
+            var habMulti = CalculateVeseelHabMultiplier(part.vessel, v.NumCrew);
+            var habTime = CalculateVeseelHabExtraTime(part.vessel);
             var totParts = 0d;
             var maxParts = 0d;
-            var habMods = part.vessel.FindPartModulesImplementing<ModuleHabitation>();
-            foreach (var hab in habMods)
-            {
-                //Next.  Certain modules, in addition to crew capacity, have living space.
-                habTime += hab.KerbalMonths;
-                //Lastly.  Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
-                habMulti += (hab.HabMultiplier*Math.Min(1, hab.CrewCapacity/v.NumCrew));
-            }
 
             v.ExtraHabSpace = habTime;
             v.VesselHabMultiplier = habMulti;
@@ -224,6 +216,28 @@ namespace LifeSupport
             }
 
             LifeSupportManager.Instance.TrackVessel(v);
+        }
+
+        public static double CalculateVeseelHabExtraTime(Vessel v)
+        {
+            var habTime = 0d;
+            foreach (var hab in v.FindPartModulesImplementing<ModuleHabitation>())
+            {
+                //Next.  Certain modules, in addition to crew capacity, have living space.
+                habTime += hab.KerbalMonths;
+            }
+            return habTime;
+        }
+
+        public static double CalculateVeseelHabMultiplier(Vessel v, int numCrew)
+        {
+            var habMulti = 0d;
+            foreach (var hab in v.FindPartModulesImplementing<ModuleHabitation>())
+            {
+                //Lastly.  Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
+                habMulti += (hab.HabMultiplier * Math.Min(1, hab.CrewCapacity / numCrew));
+            }
+            return habMulti;
         }
 
         private ConversionRecipe GenerateLSRecipe()
