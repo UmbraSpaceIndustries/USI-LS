@@ -252,11 +252,18 @@ namespace LifeSupport
 
         internal static double GetTotalHabTime(VesselSupplyStatus sourceVessel)
         {
+            int numSharedVessels = 0;
+            return GetTotalHabTime(sourceVessel, out numSharedVessels);
+        }
+
+        internal static double GetTotalHabTime(VesselSupplyStatus sourceVessel, out int numSharedVessels)
+        {
             var vsl = FlightGlobals.Vessels.FirstOrDefault(v => v.id.ToString() == sourceVessel.VesselId);
             double totHabSpace = (LifeSupportSetup.Instance.LSConfig.BaseHabTime * sourceVessel.CrewCap) + sourceVessel.ExtraHabSpace;
             double totHabMult = sourceVessel.VesselHabMultiplier;
             int totCurCrew = sourceVessel.NumCrew;
             int totMaxCrew = sourceVessel.CrewCap;
+            numSharedVessels = 0;
 
             var vList = LogisticsTools.GetNearbyVessels((float)LifeSupportSetup.Instance.LSConfig.HabRange, false, vsl, false);
             foreach (var v in vList)
@@ -264,8 +271,14 @@ namespace LifeSupport
                 //Hab time starts with our baseline of the crew hab plus extra hab.
                 //We then multiply it out based on the crew ratio, our global multiplier, and the vessel's multipler.
                 //First - crew capacity. 
-                totMaxCrew += v.GetCrewCapacity();
+                int crewCap = v.GetCrewCapacity();
+                totMaxCrew += crewCap;
                 totCurCrew += v.GetCrewCount();
+
+                if (crewCap > 0)
+                {
+                    numSharedVessels++;
+                }
             }
             foreach (var v in vList)
             {
