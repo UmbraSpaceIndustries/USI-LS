@@ -92,7 +92,7 @@ namespace LifeSupport
             {
                 bool isLongLoop = false;
                 bool offKerbin = !LifeSupportManager.IsOnKerbin(part.vessel);
-                
+
                 UnlockTins();
                 //Check our time
                 double deltaTime = GetDeltaTime();
@@ -107,7 +107,7 @@ namespace LifeSupport
                 }
 
 
-                     
+
                 var v = LifeSupportManager.Instance.FetchVessel(part.vessel.id.ToString());
                 v.LastUpdate = Planetarium.GetUniversalTime();
                 v.VesselName = part.vessel.vesselName;
@@ -115,7 +115,7 @@ namespace LifeSupport
                 v.CrewCap = part.vessel.GetCrewCapacity();
                 if (isLongLoop)
                 {
-                    v.RecyclerMultiplier = (float) LifeSupportManager.GetRecyclerMultiplier(part.vessel);
+                    v.RecyclerMultiplier = (float)LifeSupportManager.GetRecyclerMultiplier(part.vessel);
                     CheckForDeadKerbals();
                 }
 
@@ -126,19 +126,12 @@ namespace LifeSupport
                     if (isLongLoop)
                     {
                         //Update Hab info
-                        var habMulti = 0d;
-                        var habTime = 0d;
+
+                        var habMulti = CalculateVesselHabMultiplier(part.vessel, v.NumCrew);
+                        var habTime = CalculateVesselHabExtraTime(part.vessel);
                         var totParts = 0d;
                         var maxParts = 0d;
-                        var habMods = part.vessel.FindPartModulesImplementing<ModuleHabitation>();
-
-                        foreach (var hab in habMods)
-                        {
-                            //Next.  Certain modules, in addition to crew capacity, have living space.
-                            habTime += hab.KerbalMonths;
-                            //Lastly.  Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
-                            habMulti += (hab.HabMultiplier * Math.Min(1, hab.CrewCapacity / v.NumCrew));
-                        }
+                        
 
                         v.ExtraHabSpace = habTime;
                         v.VesselHabMultiplier = habMulti;
@@ -168,7 +161,7 @@ namespace LifeSupport
                     }
                     #endregion
                     //we will add a bit of a fudge factor for supplies
-                    var tolerance = deltaTime/2f;
+                    var tolerance = deltaTime / 2f;
                     //nom nom nom!
                     ConverterResults result = ResConverter.ProcessRecipe(deltaTime, LifeSupportRecipe, part, this, 1f);
 
@@ -205,7 +198,7 @@ namespace LifeSupport
                         }
                         #endregion - Crew
                         //Second - Supply
-  
+
                         if (offKerbin && (deltaTime - result.TimeFactor > tolerance))
                         {
                             isGrouchySupplies = CheckSupplySideEffects(k);
@@ -221,7 +214,7 @@ namespace LifeSupport
                         if (!isGrouchyHab && !isGrouchySupplies)
                             RemoveGrouchiness(c, k);
 
-                        if (deltaTime < _checkInterval*2)
+                        if (deltaTime < _checkInterval * 2)
                         {
                             if (isGrouchyHab)
                             {
@@ -240,8 +233,8 @@ namespace LifeSupport
                         }
                         LifeSupportManager.Instance.TrackKerbal(k);
                         var supAmount = _resBroker.AmountAvailable(part, "Supplies", deltaTime, "ALL_VESSEL");
-                        v.SuppliesLeft = supAmount/LifeSupportSetup.Instance.LSConfig.SupplyAmount/
-                                         part.vessel.GetCrewCount()/
+                        v.SuppliesLeft = supAmount / LifeSupportSetup.Instance.LSConfig.SupplyAmount /
+                                         part.vessel.GetCrewCount() /
                                          v.RecyclerMultiplier;
                     }
                 }
@@ -249,8 +242,30 @@ namespace LifeSupport
             }
             catch (Exception ex)
             {
-                print(String.Format("ERROR {0} IN ModuleLifeSupport",ex.Message));
+                print(String.Format("ERROR {0} IN ModuleLifeSupport", ex.Message));
             }
+        }
+
+        public static double CalculateVesselHabExtraTime(Vessel v)
+        {
+            var habTime = 0d;
+            foreach (var hab in v.FindPartModulesImplementing<ModuleHabitation>())
+            {
+                //Next.  Certain modules, in addition to crew capacity, have living space.
+                habTime += hab.KerbalMonths;
+            }
+            return habTime;
+        }
+
+        public static double CalculateVesselHabMultiplier(Vessel v, int numCrew)
+        {
+            var habMulti = 0d;
+            foreach (var hab in v.FindPartModulesImplementing<ModuleHabitation>())
+            {
+                //Lastly.  Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
+                habMulti += (hab.HabMultiplier * Math.Min(1, hab.CrewCapacity / numCrew));
+            }
+            return habMulti;
         }
 
         private ConversionRecipe GenerateLSRecipe()
