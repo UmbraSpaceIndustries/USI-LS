@@ -91,8 +91,10 @@ namespace LifeSupport
             try
             {
                 bool isLongLoop = false;
-                bool offKerbin = !LifeSupportManager.IsOnKerbin(part.vessel);
-                
+                bool offKerbin = true;
+                if(HighLogic.LoadedSceneIsFlight)
+                    offKerbin = !LifeSupportManager.IsOnKerbin(part.vessel);
+
                 UnlockTins();
                 //Check our time
                 double deltaTime = GetDeltaTime();
@@ -105,9 +107,6 @@ namespace LifeSupport
                     isLongLoop = true;
                     _lastProcessingTime = Planetarium.GetUniversalTime();
                 }
-
-
-                     
                 var v = LifeSupportManager.Instance.FetchVessel(part.vessel.id.ToString());
                 v.LastUpdate = Planetarium.GetUniversalTime();
                 v.VesselName = part.vessel.vesselName;
