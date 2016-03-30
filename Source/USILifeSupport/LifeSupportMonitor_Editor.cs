@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
+using KSP.UI.Screens;
 using UnityEngine;
 
 namespace LifeSupport
@@ -18,6 +19,8 @@ namespace LifeSupport
         private GUIStyle _scrollStyle;
         private Vector2 scrollPos = Vector2.zero;
         private bool _hasInitStyles = false;
+        public static bool renderDisplay = false;
+
 
         void Awake()
         {
@@ -31,7 +34,7 @@ namespace LifeSupport
 
         private void GuiOn()
         {
-            RenderingManager.AddToPostDrawQueue(144, Ondraw);
+            renderDisplay = true;
         }
 
         public void Start()
@@ -42,7 +45,19 @@ namespace LifeSupport
 
         private void GuiOff()
         {
-            RenderingManager.RemoveFromPostDrawQueue(144, Ondraw);
+            renderDisplay = false;
+        }
+
+        private void OnGUI()
+        {
+            if (!renderDisplay)
+                return;
+
+            if (Event.current.type == EventType.Repaint || Event.current.isMouse)
+            {
+                //preDrawQueue
+            }
+            Ondraw();
         }
 
 

@@ -10,7 +10,7 @@ namespace LifeSupport
         [KSPField] 
         public float RecyclePercent = 0f;
 
-        [KSPField] 
+        [KSPField(isPersistant = true)] 
         public bool RecyclerIsActive = false;
 
         protected override void PostProcess(ConverterResults result, double deltaTime)
