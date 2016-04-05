@@ -1,4 +1,6 @@
 obj/
 bin/
+.vs
 *.cache
+*.user
 *.zip
