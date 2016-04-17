@@ -292,14 +292,16 @@ namespace LifeSupport
                 double supmult = LifeSupportSetup.Instance.LSConfig.SupplyAmount * Convert.ToDouble(vsl.NumCrew) * vsl.RecyclerMultiplier;
                 var supPerDay = (21600*supmult);
                 var estFood = supmult*(Planetarium.GetUniversalTime() - vsl.LastFeeding);
-                var habTime = LifeSupportManager.GetTotalHabTime(vsl);
+                int numSharedHabVessels = 0;
+                var habTime = LifeSupportManager.GetTotalHabTime(vsl, out numSharedHabVessels);              
+                
                 var supAmount = GetSuppliesInVessel(thisVessel);
                 if(supAmount == 0)
                     supAmount = Math.Max(0, (vsl.SuppliesLeft * supmult) - estFood);
 
-                var lblColor = "ACFF40";
-                if (Planetarium.GetUniversalTime() - vsl.LastUpdate > 2)
-                    lblColor = "C4C4C4";
+                bool isOldData = Planetarium.GetUniversalTime() - vsl.LastUpdate > 2;
+                var lblColor = isOldData ? "C4C4C4" : "ACFF40";
+
                 vstat.VesselName = String.Format("<color=#{0}>{1}</color>", lblColor, vsl.VesselName);
                 vstat.VesselId = vsl.VesselId;
                 vstat.LastUpdate = vsl.LastUpdate;
@@ -315,14 +317,25 @@ namespace LifeSupport
 
                 var habString = "indefinite";
                 if (useHabPenalties)
-                    habString = LifeSupportUtilities.SecondsToKerbinTime(habTime,true);
-                vstat.SummaryLabel = String.Format("<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2:0}</color><color=#3DB1FF> supplies (</color><color=#9EE4FF>{3:0.0}</color><color=#3DB1FF>/day) hab for </color><color=#9EE4FF>{4}</color>"
+                {
+                    habString = LifeSupportUtilities.SecondsToKerbinTime(habTime, true);
+                }
+                vstat.SummaryLabel = String.Format(
+                    "<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2:0}</color><color=#3DB1FF> supplies (</color><color=#9EE4FF>{3:0.0}</color><color=#3DB1FF>/day) hab for </color><color=#9EE4FF>{4}</color>"                               
                     ,thisVessel.mainBody.bodyName
                     ,sitString
                     , supAmount
                     , supPerDay
                     , habString);
                 vstat.crew = new List<LifeSupportCrewDisplayStat>();
+                if (useHabPenalties)
+                {
+                    vstat.SummaryLabel += String.Format(
+                        "<color=#3DB1FF> (</color><color=#9EE4FF>{0}</color><color=#3DB1FF> {1} shared within </color><color=#9EE4FF>{2}</color><color=#3DB1FF>m)</color>",
+                        isOldData ? "?" : numSharedHabVessels.ToString(),
+                        numSharedHabVessels == 1 ? "vessel" : "vessels",
+                        LifeSupportSetup.Instance.LSConfig.HabRange);
+                }
 
                 foreach (var c in thisVessel.GetVesselCrew())
                 {
@@ -421,7 +434,7 @@ namespace LifeSupport
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("", _labelStyle, GUILayout.Width(10));
                     GUILayout.Label(v.VesselName, _labelStyle, GUILayout.Width(155));
-                    GUILayout.Label(v.SummaryLabel, _labelStyle, GUILayout.Width(370));
+                    GUILayout.Label(v.SummaryLabel, _labelStyle, GUILayout.Width(570));
                     GUILayout.EndHorizontal();
                     foreach (var c in v.crew)
                     {

@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 
 namespace LifeSupport
 {
@@ -16,6 +17,18 @@ namespace LifeSupport
         protected override void PostProcess(ConverterResults result, double deltaTime)
         {
             RecyclerIsActive = Math.Abs(result.TimeFactor - deltaTime) < ResourceUtilities.FLOAT_TOLERANCE;
+        }
+        
+        public override string GetInfo()
+        {
+            var output = new StringBuilder();
+            output.Append(base.GetInfo());
+            output.Append(Environment.NewLine);
+            output.Append(String.Format("Recycler Percent: {0}%", RecyclePercent * 100));
+            output.Append(Environment.NewLine);
+            output.Append(String.Format("Crew Affected: {0}", CrewCapacity));
+            output.Append(Environment.NewLine);
+            return output.ToString();
         }
     }
 }

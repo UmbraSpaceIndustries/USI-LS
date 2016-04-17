@@ -249,29 +249,47 @@ namespace LifeSupport
         }
 
 
-        internal static double GetTotalHabTime(VesselSupplyStatus sourceVessel)
-        {
+         internal static double GetTotalHabTime(VesselSupplyStatus sourceVessel)
+         {
+             int numSharedVessels = 0;
+             return GetTotalHabTime(sourceVessel, out numSharedVessels);
+         }
+ 
+         internal static double GetTotalHabTime(VesselSupplyStatus sourceVessel, out int numSharedVessels)
+         {
             var vsl = FlightGlobals.Vessels.FirstOrDefault(v => v.id.ToString() == sourceVessel.VesselId);
             double totHabSpace = (LifeSupportSetup.Instance.LSConfig.BaseHabTime * sourceVessel.CrewCap) + sourceVessel.ExtraHabSpace;
             double totHabMult = sourceVessel.VesselHabMultiplier;
-            double totCurCrew = sourceVessel.NumCrew;
-            double totMaxCrew = sourceVessel.CrewCap;
+
+            int totCurCrew = sourceVessel.NumCrew;
+            int totMaxCrew = sourceVessel.CrewCap;
+            numSharedVessels = 0;
 
             var vList = LogisticsTools.GetNearbyVessels((float)LifeSupportSetup.Instance.LSConfig.HabRange, false, vsl, false);
             foreach (var v in vList)
             {
-                var curVsl = LifeSupportManager.Instance.FetchVessel(v.id.ToString());
                 //Hab time starts with our baseline of the crew hab plus extra hab.
                 //We then multiply it out based on the crew ratio, our global multiplier, and the vessel's multipler.
                 //First - crew capacity. 
-                totHabSpace += (LifeSupportSetup.Instance.LSConfig.BaseHabTime * curVsl.CrewCap) + curVsl.ExtraHabSpace;
-                totCurCrew += curVsl.NumCrew;
-                totMaxCrew += curVsl.CrewCap;
-                totHabMult += curVsl.VesselHabMultiplier;
+                int crewCap = v.GetCrewCapacity();
+                totMaxCrew += crewCap;
+                totCurCrew += v.GetCrewCount();
+ 
+                if (crewCap > 0)
+                {
+                    numSharedVessels++;
+                }
+            }
+
+            foreach (var v in vList)
+            {
+               // Calculate HabSpace and HabMult after we know totCurCrew and totMaxCrew
+               totHabSpace += (LifeSupportSetup.Instance.LSConfig.BaseHabTime * totMaxCrew) + ModuleLifeSupport.CalculateVesselHabExtraTime(v);
+               totHabMult += ModuleLifeSupport.CalculateVesselHabMultiplier(v, totCurCrew);         
             }
             totHabMult += USI_GlobalBonuses.Instance.GetHabBonus(vsl.mainBody.flightGlobalsIndex);
-            double habTotal = totHabSpace / totCurCrew * (totHabMult + 1) * LifeSupportSetup.Instance.LSConfig.HabMultiplier;
-            //print(String.Format("THS: {0} TC:{1} THM: {2} HM: {3}", totHabSpace, totCurCrew, totHabMult, LifeSupportSetup.Instance.LSConfig.HabMultiplier));
+            double habTotal = totHabSpace / (double)totCurCrew * (totHabMult + 1) * LifeSupportSetup.Instance.LSConfig.HabMultiplier;
+             //print(String.Format("THS: {0} TC:{1} THM: {2} HM: {3}", totHabSpace, totCurCrew, totHabMult, LifeSupportSetup.Instance.LSConfig.HabMultiplier));
 
             return Math.Max(0,habTotal * (60d * 60d * 6d * 30d));
         }
