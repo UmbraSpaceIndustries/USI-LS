@@ -32,32 +32,22 @@ namespace LifeSupport
 
         private void CheckVesselId()
         {
-            //Something changed... and we're not blank.  If blank, just fall through, this is a new vessel.
-            if (vesselId != vessel.id.ToString() && vesselId != "")
+            //Something changed... 
+            if (vesselId != vessel.id.ToString() && !String.IsNullOrEmpty(vesselId))
             {
-                //The situation you hit this is likely a decouple or undock.  In that case, we grab the old vessel
-                //and create a new instance based on it with our new ID.  
-                if (LifeSupportManager.Instance.IsVesselTracked(vesselId))
-                {
-                    //The old vessel is tracked...
-                    if (!LifeSupportManager.Instance.IsVesselTracked(vessel.id.ToString()))
-                    {
-                        //But our new one is not.. so let's create it!
-                        var oldV = LifeSupportManager.Instance.FetchVessel(vesselId);
-                        var newV = LifeSupportManager.Instance.FetchVessel(vessel.id.ToString());
-                        newV.LastFeeding = oldV.LastFeeding;
-                        newV.LastUpdate = oldV.LastUpdate;
-                        newV.NumCrew = oldV.NumCrew;
-                        newV.RecyclerMultiplier = oldV.NumCrew;
-                        newV.CrewCap = oldV.CrewCap;
-                        newV.VesselHabMultiplier = oldV.VesselHabMultiplier;
-                        newV.ExtraHabSpace = oldV.ExtraHabSpace;
-                        newV.SuppliesLeft = oldV.SuppliesLeft;
-                        newV.VesselId = vessel.id.ToString();
-                        newV.VesselName = vessel.vesselName;
-                        LifeSupportManager.Instance.TrackVessel(newV);
-                    }
-                }
+                var oldV = LifeSupportManager.Instance.FetchVessel(vesselId);
+                var newV = LifeSupportManager.Instance.FetchVessel(vessel.id.ToString());
+                newV.LastFeeding = oldV.LastFeeding;
+                newV.LastUpdate = oldV.LastUpdate;
+                newV.NumCrew = oldV.NumCrew;
+                newV.RecyclerMultiplier = oldV.NumCrew;
+                newV.CrewCap = oldV.CrewCap;
+                newV.VesselHabMultiplier = oldV.VesselHabMultiplier;
+                newV.ExtraHabSpace = oldV.ExtraHabSpace;
+                newV.SuppliesLeft = oldV.SuppliesLeft;
+                newV.VesselId = vessel.id.ToString();
+                newV.VesselName = vessel.vesselName;
+                LifeSupportManager.Instance.TrackVessel(newV);
             }
             vesselId = vessel.id.ToString();
         }
@@ -133,7 +123,7 @@ namespace LifeSupport
                 //Check our time
                 double deltaTime = GetDeltaTime();
 
-                if (deltaTime < ResourceUtilities.FLOAT_TOLERANCE)
+                if (deltaTime < ResourceUtilities.FLOAT_TOLERANCE * 10)
                     return;
 
                 if (Planetarium.GetUniversalTime() >= _lastProcessingTime + _checkInterval)
@@ -239,7 +229,7 @@ namespace LifeSupport
                         {
                             isGrouchySupplies = CheckSupplySideEffects(k);
                         }
-                        else
+                        else if (deltaTime >= ResourceUtilities.FLOAT_TOLERANCE)
                         {
                             //All is well
                             k.LastMeal = lastUpdateTime;
