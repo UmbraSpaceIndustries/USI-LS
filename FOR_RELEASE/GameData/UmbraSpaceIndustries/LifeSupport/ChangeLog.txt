@@ -1,3 +1,7 @@
+0.4.2 - 2016.04.19
+------------------
+Fixed VAB nullref issue
+
 0.4.1 - 2016.04.16
 ------------------
 Removed conflicting resource definitions

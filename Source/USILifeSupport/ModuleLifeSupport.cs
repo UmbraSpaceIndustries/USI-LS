@@ -113,13 +113,16 @@ namespace LifeSupport
 
         public void FixedUpdate()
         {
+            if (!HighLogic.LoadedSceneIsFlight)
+                return;
+
             try
             {
                 bool isLongLoop = false;
-                bool offKerbin = !LifeSupportManager.IsOnKerbin(part.vessel);
-
+                var offKerbin = !LifeSupportManager.IsOnKerbin(part.vessel);
                 UnlockTins();
                 CheckVesselId();
+
                 //Check our time
                 double deltaTime = GetDeltaTime();
 
