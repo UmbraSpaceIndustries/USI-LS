@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using KSP.UI.Screens;
 using UnityEngine;
 using Random = System.Random;
 
@@ -27,13 +28,14 @@ namespace LifeSupport
     public class LifeSupportMonitor : MonoBehaviour
     {
         private ApplicationLauncherButton orbLogButton;
-        private Rect _windowPosition = new Rect(300, 60, 620, 400);
+        private Rect _windowPosition = new Rect(300, 60, 820, 400);
         private GUIStyle _windowStyle;
         private GUIStyle _labelStyle;
         private GUIStyle _buttonStyle;
         private GUIStyle _scrollStyle;
         private Vector2 scrollPos = Vector2.zero;
         private bool _hasInitStyles = false;
+        public static bool renderDisplay = false;
 
         void Awake()
         {
@@ -47,7 +49,7 @@ namespace LifeSupport
 
         private void GuiOn()
         {
-            RenderingManager.AddToPostDrawQueue(144, Ondraw);
+            renderDisplay = true;
         }
 
         public void Start()
@@ -58,7 +60,20 @@ namespace LifeSupport
 
         private void GuiOff()
         {
-            RenderingManager.RemoveFromPostDrawQueue(144, Ondraw);
+            renderDisplay = false;
+        }
+
+
+        private void OnGUI()
+        {
+            if (!renderDisplay)
+                return;
+
+            if (Event.current.type == EventType.Repaint || Event.current.isMouse)
+            {
+                //preDrawQueue
+            }
+            Ondraw();
         }
 
 
@@ -277,32 +292,50 @@ namespace LifeSupport
                 double supmult = LifeSupportSetup.Instance.LSConfig.SupplyAmount * Convert.ToDouble(vsl.NumCrew) * vsl.RecyclerMultiplier;
                 var supPerDay = (21600*supmult);
                 var estFood = supmult*(Planetarium.GetUniversalTime() - vsl.LastFeeding);
-                var habTime = LifeSupportManager.GetTotalHabTime(vsl);
+                int numSharedHabVessels = 0;
+                var habTime = LifeSupportManager.GetTotalHabTime(vsl, out numSharedHabVessels);              
+                
                 var supAmount = GetSuppliesInVessel(thisVessel);
                 if(supAmount == 0)
                     supAmount = Math.Max(0, (vsl.SuppliesLeft * supmult) - estFood);
 
-                var lblColor = "ACFF40";
-                if (Planetarium.GetUniversalTime() - vsl.LastUpdate > 2)
-                    lblColor = "C4C4C4";
+                bool isOldData = Planetarium.GetUniversalTime() - vsl.LastUpdate > 2;
+                var lblColor = isOldData ? "C4C4C4" : "ACFF40";
+
                 vstat.VesselName = String.Format("<color=#{0}>{1}</color>", lblColor, vsl.VesselName);
+                vstat.VesselId = vsl.VesselId;
                 vstat.LastUpdate = vsl.LastUpdate;
                 var sitString = "Orbiting";
-                if (thisVessel.Splashed || thisVessel.heightFromTerrain < 1000)
-                    sitString = "Splashed"; 
-                if (thisVessel.Landed || thisVessel.heightFromTerrain < 1000)
+
+
+                thisVessel.checkSplashed();
+                if (thisVessel.Splashed)
+                    sitString = "Splashed";
+                thisVessel.checkLanded();
+                if (thisVessel.Landed)
                     sitString = "Landed";
 
                 var habString = "indefinite";
                 if (useHabPenalties)
-                    habString = LifeSupportUtilities.SecondsToKerbinTime(habTime,true);
-                vstat.SummaryLabel = String.Format("<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2:0}</color><color=#3DB1FF> supplies (</color><color=#9EE4FF>{3:0.0}</color><color=#3DB1FF>/day) hab for </color><color=#9EE4FF>{4}</color>"
+                {
+                    habString = LifeSupportUtilities.SecondsToKerbinTime(habTime, true);
+                }
+                vstat.SummaryLabel = String.Format(
+                    "<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2:0}</color><color=#3DB1FF> supplies (</color><color=#9EE4FF>{3:0.0}</color><color=#3DB1FF>/day) hab for </color><color=#9EE4FF>{4}</color>"                               
                     ,thisVessel.mainBody.bodyName
                     ,sitString
                     , supAmount
                     , supPerDay
                     , habString);
                 vstat.crew = new List<LifeSupportCrewDisplayStat>();
+                if (useHabPenalties)
+                {
+                    vstat.SummaryLabel += String.Format(
+                        "<color=#3DB1FF> (</color><color=#9EE4FF>{0}</color><color=#3DB1FF> {1} shared within </color><color=#9EE4FF>{2}</color><color=#3DB1FF>m)</color>",
+                        isOldData ? "?" : numSharedHabVessels.ToString(),
+                        numSharedHabVessels == 1 ? "vessel" : "vessels",
+                        LifeSupportSetup.Instance.LSConfig.HabRange);
+                }
 
                 foreach (var c in thisVessel.GetVesselCrew())
                 {
@@ -311,10 +344,11 @@ namespace LifeSupport
                     cStat.CrewName = String.Format("<color=#FFFFFF>{0} ({1})</color>", c.name,c.experienceTrait.Title.Substring(0,1));
 
                     var snacksLeft = supAmount / supPerDay * 60 * 60 * 6;
-                    if (supAmount <= ResourceUtilities.FLOAT_TOLERANCE && !LifeSupportManager.IsOnKerbin(thisVessel))
+                    if (supAmount <= LifeSupportSetup.Instance.LSConfig.SupplyAmount && !LifeSupportManager.IsOnKerbin(thisVessel))
                     {
                         snacksLeft = cls.LastMeal - Planetarium.GetUniversalTime();
                     }
+                    var lblSupTime = LifeSupportUtilities.SecondsToKerbinTime(snacksLeft);
 
                     var lblSup = "6FFF00";
                     if (snacksLeft < 60 * 60 * 6 * 15) //15 days
@@ -325,30 +359,50 @@ namespace LifeSupport
                     {
                         lblSup = "FFAE00";
                     }
-                    if (snacksLeft < -60 * 60 * 6 * 15)
-                    {
-                        lblSup = "FF5E5E";
-                    }
-                    cStat.SupplyLabel = String.Format("<color=#{0}>{1}</color>",lblSup,LifeSupportUtilities.SecondsToKerbinTime(snacksLeft));
-                    var timeLeft = Math.Min(cls.MaxOffKerbinTime - Planetarium.GetUniversalTime(), habTime - (Planetarium.GetUniversalTime() - cls.TimeEnteredVessel));
+                    cStat.SupplyLabel = String.Format("<color=#{0}>{1}</color>",lblSup,lblSupTime);
+
+
+                    var habTimeLeft = habTime - (Planetarium.GetUniversalTime() - cls.TimeEnteredVessel);
+                    var homeTimeLeft = cls.MaxOffKerbinTime - Planetarium.GetUniversalTime();
 
                     var lblHab = "6FFF00";
-                    if (timeLeft < 60 * 60 * 6 * 15) //15 days
+                    if (habTimeLeft < 60 * 60 * 6 * 15) //15 days
                     {
                         lblHab = "FFE100";
                     }
-                    if (timeLeft < 0)
+                    if (habTimeLeft < 0)
                     {
                         lblHab = "FFAE00";
                     }
-                    if (timeLeft < -60 * 60 * 6 * 15)
+                    if (habTimeLeft < -60 * 60 * 6 * 15)
                     {
                         lblHab = "FF5E5E";
                     }
                     var crewHabString = "indefinite";
                     if (useHabPenalties)
-                        crewHabString = LifeSupportUtilities.SecondsToKerbinTime(timeLeft);
+                        crewHabString = LifeSupportUtilities.SecondsToKerbinTime(habTimeLeft);
                     cStat.HabLabel = String.Format("<color=#{0}>{1}</color>", lblHab, crewHabString);
+
+
+                    var lblHome = "6FFF00";
+                    if (homeTimeLeft < 60 * 60 * 6 * 15) //15 days
+                    {
+                        lblHome = "FFE100";
+                    }
+                    if (homeTimeLeft < 0)
+                    {
+                        lblHome = "FFAE00";
+                    }
+                    if (homeTimeLeft < -60 * 60 * 6 * 15)
+                    {
+                        lblHome = "FF5E5E";
+                    }
+                    var crewHomeString = "indefinite";
+                    if (useHabPenalties)
+                        crewHomeString = LifeSupportUtilities.SecondsToKerbinTime(homeTimeLeft);
+                    cStat.HomeLabel = String.Format("<color=#{0}>{1}</color>", lblHome, crewHomeString);
+                    
+                    
                     vstat.crew.Add(cStat);
                 }
                 statList.Add(vstat);
@@ -366,32 +420,33 @@ namespace LifeSupport
                 _lastGUIUpdate = Planetarium.GetUniversalTime();
                 _guiStats = UpdateGUIStats();
                 CheckEVAKerbals();
-                LifeSupportManager.Instance.UpdateVesselStats();
             }
 
             GUILayout.BeginVertical();
-            scrollPos = GUILayout.BeginScrollView(scrollPos, _scrollStyle, GUILayout.Width(600), GUILayout.Height(350));
+            scrollPos = GUILayout.BeginScrollView(scrollPos, _scrollStyle, GUILayout.Width(800), GUILayout.Height(350));
             GUILayout.BeginVertical();
 
 
             try
             {
-                foreach (var v in _guiStats.OrderByDescending(s => (int)s.LastUpdate + " " + s.VesselName))
+                foreach (var v in _guiStats.OrderByDescending(s => (int)(s.LastUpdate / 10) + " " + s.VesselId))
                 {
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("", _labelStyle, GUILayout.Width(10));
                     GUILayout.Label(v.VesselName, _labelStyle, GUILayout.Width(155));
-                    GUILayout.Label(v.SummaryLabel, _labelStyle, GUILayout.Width(370));
+                    GUILayout.Label(v.SummaryLabel, _labelStyle, GUILayout.Width(570));
                     GUILayout.EndHorizontal();
                     foreach (var c in v.crew)
                     {
                         GUILayout.BeginHorizontal();
                         GUILayout.Label("", _labelStyle, GUILayout.Width(30));
                         GUILayout.Label(c.CrewName, _labelStyle, GUILayout.Width(135));
-                        GUILayout.Label("<color=#EDEDED>sup:</color>", _labelStyle, GUILayout.Width(32));
-                        GUILayout.Label(c.SupplyLabel, _labelStyle, GUILayout.Width(155));
-                        GUILayout.Label("<color=#EDEDED>hab:</color>", _labelStyle, GUILayout.Width(32));
-                        GUILayout.Label(c.HabLabel, _labelStyle, GUILayout.Width(155));
+                        GUILayout.Label("<color=#EDEDED>sup:</color>", _labelStyle, GUILayout.Width(35));
+                        GUILayout.Label(c.SupplyLabel, _labelStyle, GUILayout.Width(145));
+                        GUILayout.Label("<color=#EDEDED>hab:</color>", _labelStyle, GUILayout.Width(35));
+                        GUILayout.Label(c.HabLabel, _labelStyle, GUILayout.Width(145));
+                        GUILayout.Label("<color=#EDEDED>home:</color>", _labelStyle, GUILayout.Width(40));
+                        GUILayout.Label(c.HomeLabel, _labelStyle, GUILayout.Width(145));
                         GUILayout.EndHorizontal();
                     }
                 }
@@ -438,7 +493,7 @@ namespace LifeSupport
         private void InitStyles()
         {
             _windowStyle = new GUIStyle(HighLogic.Skin.window);
-            _windowStyle.fixedWidth = 620f;
+            _windowStyle.fixedWidth = 820f;
             _windowStyle.fixedHeight = 400f;
             _labelStyle = new GUIStyle(HighLogic.Skin.label);
             _buttonStyle = new GUIStyle(HighLogic.Skin.button);
@@ -450,6 +505,7 @@ namespace LifeSupport
     public class LifeSupportVesselDisplayStat
     {
         public string VesselName { get; set; }
+        public string VesselId { get; set; }
         public string SummaryLabel { get; set; }
         public double LastUpdate { get; set; }
 
@@ -461,6 +517,7 @@ namespace LifeSupport
         public string CrewName { get; set; }
         public string SupplyLabel { get; set; }
         public string HabLabel { get; set; }
+        public string HomeLabel { get; set; }
     }
 
 }

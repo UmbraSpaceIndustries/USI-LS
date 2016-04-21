@@ -79,7 +79,8 @@ namespace LifeSupport
                 rNode.AddValue("LastMeal", r.LastMeal);
                 rNode.AddValue("LastOnKerbin", r.LastOnKerbin);
                 rNode.AddValue("MaxOffKerbinTime", r.MaxOffKerbinTime);
-                rNode.AddValue("LastVesselId", r.LastVesselId);
+                rNode.AddValue("CurrentVesselId", r.CurrentVesselId);
+                rNode.AddValue("PreviousVesselId", r.PreviousVesselId);
                 rNode.AddValue("TimeEnteredVessel", r.TimeEnteredVessel);
                 rNode.AddValue("IsGrouchy", r.IsGrouchy);
                 rNode.AddValue("OldTrait", r.OldTrait);
@@ -150,19 +151,19 @@ namespace LifeSupport
             _VesselInfo.Add(vInfo);
         }
 
-        public void DeleteStatusNode(LifeSupportStatus kerbal)
+        public void DeleteStatusNode(string kName)
         {
-            if (_StatusInfo.All(n => n.KerbalName != kerbal.KerbalName))
+            if (_StatusInfo.All(n => n.KerbalName != kName))
                 return;
-            var k = _StatusInfo.First(n => n.KerbalName == kerbal.KerbalName);
+            var k = _StatusInfo.First(n => n.KerbalName == kName);
             _StatusInfo.Remove(k);
         }
 
-        public void DeleteVesselNode(VesselSupplyStatus vInfo)
+        public void DeleteVesselNode(string vId)
         {
-            if (_VesselInfo.All(n => n.VesselId != vInfo.VesselId))
+            if (_VesselInfo.All(n => n.VesselId != vId))
                 return;
-            var v = _VesselInfo.First(n => n.VesselId == vInfo.VesselId);
+            var v = _VesselInfo.First(n => n.VesselId == vId);
             _VesselInfo.Remove(v);
         }
         public static List<LifeSupportStatus> ImportStatusNodeList(ConfigNode[] nodes)
@@ -200,7 +201,8 @@ namespace LifeSupport
             kerbInfo.LastOnKerbin = status.LastOnKerbin;
             kerbInfo.MaxOffKerbinTime = status.MaxOffKerbinTime;
             kerbInfo.TimeEnteredVessel = status.TimeEnteredVessel;
-            kerbInfo.LastVesselId = status.LastVesselId;
+            kerbInfo.CurrentVesselId = status.CurrentVesselId;
+            kerbInfo.PreviousVesselId = status.PreviousVesselId;
             kerbInfo.IsGrouchy = status.IsGrouchy;
             kerbInfo.OldTrait = status.OldTrait;
             kerbInfo.LastUpdate = status.LastUpdate;
