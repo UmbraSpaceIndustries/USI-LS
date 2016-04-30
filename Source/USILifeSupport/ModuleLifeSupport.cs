@@ -240,24 +240,26 @@ namespace LifeSupport
                         }
 
                         k.LastUpdate = Planetarium.GetUniversalTime();
-                        if (!isGrouchyHab && !isGrouchySupplies)
-                            RemoveGrouchiness(c, k);
 
                         if (deltaTime < _checkInterval * 2)
                         {
-                            if (isGrouchyHab)
-                            {
-                                ApplyEffect(k, c,
-                                    LifeSupportManager.isVet(k.KerbalName)
-                                        ? LifeSupportSetup.Instance.LSConfig.NoHomeEffectVets
-                                        : LifeSupportSetup.Instance.LSConfig.NoHomeEffect);
-                            }
                             if (isGrouchySupplies)
                             {
                                 ApplyEffect(k, c,
                                     LifeSupportManager.isVet(k.KerbalName)
                                         ? LifeSupportSetup.Instance.LSConfig.NoSupplyEffectVets
                                         : LifeSupportSetup.Instance.LSConfig.NoSupplyEffect);
+                            }
+                            else if (isGrouchyHab)
+                            {
+                                ApplyEffect(k, c,
+                                    LifeSupportManager.isVet(k.KerbalName)
+                                        ? LifeSupportSetup.Instance.LSConfig.NoHomeEffectVets
+                                        : LifeSupportSetup.Instance.LSConfig.NoHomeEffect);
+                            }
+                            else
+                            {
+                                RemoveGrouchiness(c, k);
                             }
                         }
                         LifeSupportManager.Instance.TrackKerbal(k);
