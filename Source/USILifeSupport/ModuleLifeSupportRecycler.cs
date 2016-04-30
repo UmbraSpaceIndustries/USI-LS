@@ -16,7 +16,7 @@ namespace LifeSupport
 
         protected override void PostProcess(ConverterResults result, double deltaTime)
         {
-            RecyclerIsActive = Math.Abs(result.TimeFactor - deltaTime) < ResourceUtilities.FLOAT_TOLERANCE;
+            RecyclerIsActive = result.TimeFactor > ResourceUtilities.FLOAT_TOLERANCE;
         }
         
         public override string GetInfo()
