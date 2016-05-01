@@ -191,7 +191,7 @@ namespace LifeSupport
                 p.explode();
             }
             //v.DespawnCrew();
-            //v.DestroyVesselComponents();
+            //v.DestroyVesselComponents();	
         }
 
         private void DestroyRandomPart(Vessel thisVessel)
@@ -290,7 +290,7 @@ namespace LifeSupport
                 var vstat = new LifeSupportVesselDisplayStat();
                 Vessel thisVessel = FlightGlobals.Vessels.First(v => v.id.ToString() == vsl.VesselId);
                 double supmult = LifeSupportSetup.Instance.LSConfig.SupplyAmount * Convert.ToDouble(vsl.NumCrew) * vsl.RecyclerMultiplier;
-                var supPerDay = (21600*supmult);
+				var supPerDay = GameSettings.KERBIN_TIME ? (21600*supmult) : (86400*supmult);
                 var estFood = supmult*(Planetarium.GetUniversalTime() - vsl.LastFeeding);
                 int numSharedHabVessels = 0;
                 var habTime = LifeSupportManager.GetTotalHabTime(vsl, out numSharedHabVessels);              
@@ -343,7 +343,7 @@ namespace LifeSupport
                     var cls = LifeSupportManager.Instance.FetchKerbal(c);
                     cStat.CrewName = String.Format("<color=#FFFFFF>{0} ({1})</color>", c.name,c.experienceTrait.Title.Substring(0,1));
 
-                    var snacksLeft = supAmount / supPerDay * 60 * 60 * 6;
+					var snacksLeft = GameSettings.KERBIN_TIME ? supAmount / supPerDay * 60 * 60 * 6 : supAmount / supPerDay * 60 * 60 * 24;
                     if (supAmount <= LifeSupportSetup.Instance.LSConfig.SupplyAmount && !LifeSupportManager.IsOnKerbin(thisVessel))
                     {
                         snacksLeft = cls.LastMeal - Planetarium.GetUniversalTime();
