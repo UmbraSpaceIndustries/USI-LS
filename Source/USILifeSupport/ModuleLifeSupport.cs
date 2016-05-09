@@ -224,25 +224,22 @@ namespace LifeSupport
                                 }
                             }
                             isGrouchyHab = CheckHabSideEffects(k, v);
-                        }
-                        #endregion - Crew
-                        //Second - Supply
 
-                        if (offKerbin && (deltaTime - result.TimeFactor > tolerance))
-                        {
-                            isGrouchySupplies = CheckSupplySideEffects(k);
-                        }
-                        else if (deltaTime >= ResourceUtilities.FLOAT_TOLERANCE)
-                        {
-                            //All is well
-                            k.LastMeal = lastUpdateTime;
-                            v.LastFeeding = lastUpdateTime;
-                        }
+                            //Second - Supply
 
-                        k.LastUpdate = Planetarium.GetUniversalTime();
+                            if (offKerbin && (deltaTime - result.TimeFactor > tolerance))
+                            {
+                                isGrouchySupplies = CheckSupplySideEffects(k);
+                            }
+                            else if (deltaTime >= ResourceUtilities.FLOAT_TOLERANCE)
+                            {
+                                //All is well
+                                k.LastMeal = lastUpdateTime;
+                                v.LastFeeding = lastUpdateTime;
+                            }
 
-                        if (deltaTime < _checkInterval * 2)
-                        {
+                            k.LastUpdate = Planetarium.GetUniversalTime();
+
                             if (isGrouchySupplies)
                             {
                                 ApplyEffect(k, c,
@@ -257,12 +254,13 @@ namespace LifeSupport
                                         ? LifeSupportSetup.Instance.LSConfig.NoHomeEffectVets
                                         : LifeSupportSetup.Instance.LSConfig.NoHomeEffect);
                             }
-                            else
+                            else if (c.experienceTrait.Title != k.OldTrait)
                             {
                                 RemoveGrouchiness(c, k);
                             }
+                            LifeSupportManager.Instance.TrackKerbal(k);
                         }
-                        LifeSupportManager.Instance.TrackKerbal(k);
+                        #endregion - Crew
                         var supAmount = _resBroker.AmountAvailable(part, "Supplies", deltaTime, "ALL_VESSEL");
                         v.SuppliesLeft = supAmount / LifeSupportSetup.Instance.LSConfig.SupplyAmount /
                                          part.vessel.GetCrewCount() /

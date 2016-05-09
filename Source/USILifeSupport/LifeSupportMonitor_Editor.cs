@@ -95,7 +95,8 @@ namespace LifeSupport
                     maxCrew += part.CrewCapacity;
                 }
 
-                CMAssignmentDialog dialog = CMAssignmentDialog.Instance;
+                var dialog = KSP.UI.CrewAssignmentDialog.Instance;
+
                 if (dialog != null)
                 {
                     VesselCrewManifest manifest = dialog.GetManifest();
