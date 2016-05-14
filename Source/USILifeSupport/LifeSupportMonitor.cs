@@ -16,10 +16,6 @@ namespace LifeSupport
     public class LifeSupportMonitor_Flight : LifeSupportMonitor
     { }
 
-    [KSPAddon(KSPAddon.Startup.SpaceCentre, false)]
-    public class LifeSupportMonitor_SpaceCenter : LifeSupportMonitor
-    { }
-
     [KSPAddon(KSPAddon.Startup.TrackingStation, false)]
     public class LifeSupportMonitor_TStation : LifeSupportMonitor
     { }
@@ -99,19 +95,19 @@ namespace LifeSupport
             foreach (var v in vList.Where(v => v.isEVA))
             {
                 if(v.mainBody == FlightGlobals.GetHomeBody())
-                    if (v.altitude < LifeSupportSetup.Instance.LSConfig.HomeWorldAltitude)
+                    if (v.altitude < LifeSupportScenario.Instance.settings.GetSettings().HomeWorldAltitude)
                         continue;
 
                 var c = v.GetVesselCrew().First();
                 //Check their status.
                 var k = LifeSupportManager.Instance.FetchKerbal(c);
-                if (v.missionTime > LifeSupportSetup.Instance.LSConfig.EVATime)
+                if (v.missionTime > LifeSupportScenario.Instance.settings.GetSettings().EVATime)
                 {
                     print("Applying EVA Effect");
                     ApplyEVAEffect(k, c, v,
                         LifeSupportManager.isVet(k.KerbalName)
-                            ? LifeSupportSetup.Instance.LSConfig.EVAEffectVets
-                            : LifeSupportSetup.Instance.LSConfig.EVAEffect);
+                            ? LifeSupportScenario.Instance.settings.GetSettings().EVAEffectVets
+                            : LifeSupportScenario.Instance.settings.GetSettings().EVAEffect);
                 }
             }
         }
@@ -191,7 +187,7 @@ namespace LifeSupport
                 p.explode();
             }
             //v.DespawnCrew();
-            //v.DestroyVesselComponents();
+            //v.DestroyVesselComponents();	
         }
 
         private void DestroyRandomPart(Vessel thisVessel)
@@ -236,8 +232,8 @@ namespace LifeSupport
 
         private List<LifeSupportVesselDisplayStat> UpdateGUIStats()
         {
-            var useHabPenalties = (LifeSupportSetup.Instance.LSConfig.NoHomeEffectVets +
-                                   LifeSupportSetup.Instance.LSConfig.NoHomeEffect > 0);
+            var useHabPenalties = (LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffectVets +
+                                   LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffect > 0);
             LifeSupportManager.Instance.UpdateVesselStats();
 
             var statList = new List<LifeSupportVesselDisplayStat>();
@@ -261,7 +257,7 @@ namespace LifeSupport
                 vstat.LastUpdate = vsl.missionTime;
                 var sitString = "(EVA)";
 
-                var remEVATime = LifeSupportSetup.Instance.LSConfig.EVATime - vsl.missionTime;
+                var remEVATime = LifeSupportScenario.Instance.settings.GetSettings().EVATime - vsl.missionTime;
                 var timeString = LifeSupportUtilities.SecondsToKerbinTime(Math.Max(0,remEVATime));
 
                 if (remEVATime > 0)
@@ -289,8 +285,8 @@ namespace LifeSupport
             {
                 var vstat = new LifeSupportVesselDisplayStat();
                 Vessel thisVessel = FlightGlobals.Vessels.First(v => v.id.ToString() == vsl.VesselId);
-                double supmult = LifeSupportSetup.Instance.LSConfig.SupplyAmount * Convert.ToDouble(vsl.NumCrew) * vsl.RecyclerMultiplier;
-                var supPerDay = (21600*supmult);
+                double supmult = LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount * Convert.ToDouble(vsl.NumCrew) * vsl.RecyclerMultiplier;
+				var supPerDay = GameSettings.KERBIN_TIME ? (21600*supmult) : (86400*supmult);
                 var estFood = supmult*(Planetarium.GetUniversalTime() - vsl.LastFeeding);
                 int numSharedHabVessels = 0;
                 var habTime = LifeSupportManager.GetTotalHabTime(vsl, out numSharedHabVessels);              
@@ -334,7 +330,7 @@ namespace LifeSupport
                         "<color=#3DB1FF> (</color><color=#9EE4FF>{0}</color><color=#3DB1FF> {1} shared within </color><color=#9EE4FF>{2}</color><color=#3DB1FF>m)</color>",
                         isOldData ? "?" : numSharedHabVessels.ToString(),
                         numSharedHabVessels == 1 ? "vessel" : "vessels",
-                        LifeSupportSetup.Instance.LSConfig.HabRange);
+                        LifeSupportScenario.Instance.settings.GetSettings().HabRange);
                 }
 
                 foreach (var c in thisVessel.GetVesselCrew())
@@ -344,7 +340,7 @@ namespace LifeSupport
                     cStat.CrewName = String.Format("<color=#FFFFFF>{0} ({1})</color>", c.name,c.experienceTrait.Title.Substring(0,1));
 
                     var snacksLeft = supAmount / supPerDay * 60 * 60 * 6;
-                    if (supAmount <= LifeSupportSetup.Instance.LSConfig.SupplyAmount && !LifeSupportManager.IsOnKerbin(thisVessel))
+                    if (supAmount <= LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount && !LifeSupportManager.IsOnKerbin(thisVessel))
                     {
                         snacksLeft = cls.LastMeal - Planetarium.GetUniversalTime();
                     }
