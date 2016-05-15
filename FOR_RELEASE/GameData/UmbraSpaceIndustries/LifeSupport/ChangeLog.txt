@@ -1,3 +1,7 @@
+0.4.3.1 - 2016.05.15
+--------------------
+Guard clauses are important.
+
 0.4.3 - 2016.05.14
 ------------------
 Dependency Updates

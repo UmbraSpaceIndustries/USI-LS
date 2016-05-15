@@ -144,6 +144,9 @@ namespace LifeSupport
                 SettingsNode = node.AddNode("LIFE_SUPPORT_SETTINGS");
             }
 
+            if (_Settings == null)
+                _Settings = LoadLifeSupportConfig();
+
             foreach (LifeSupportStatus r in _StatusInfo)
             {
                 var rNode = new ConfigNode("STATUS_DATA");
