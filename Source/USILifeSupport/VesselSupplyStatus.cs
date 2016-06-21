@@ -13,6 +13,8 @@ namespace LifeSupport
         public double ExtraHabSpace { get; set; }
         public double VesselHabMultiplier { get; set; }
         public double SuppliesLeft { get; set; }
+        public double ECLeft { get; set; }
         public double LastFeeding { get; set; }
+        public double LastECCheck { get; set; }
     }
 }

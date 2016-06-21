@@ -89,6 +89,7 @@ namespace LifeSupport
                 var k = new LifeSupportStatus();
                 k.KerbalName = crew.name;
                 k.LastMeal = Planetarium.GetUniversalTime();
+                k.LastEC = Planetarium.GetUniversalTime();
                 k.LastOnKerbin = Planetarium.GetUniversalTime();
                 k.MaxOffKerbinTime = 648000;
                 k.TimeEnteredVessel = Planetarium.GetUniversalTime();
@@ -140,6 +141,7 @@ namespace LifeSupport
             {
                 var v = new VesselSupplyStatus();
                 v.LastFeeding = Planetarium.GetUniversalTime();
+                v.LastECCheck = Planetarium.GetUniversalTime();
                 v.LastUpdate = Planetarium.GetUniversalTime();
                 v.NumCrew = 0;
                 v.RecyclerMultiplier = 1;
@@ -147,6 +149,7 @@ namespace LifeSupport
                 v.VesselHabMultiplier = 0;
                 v.ExtraHabSpace = 0;
                 v.SuppliesLeft = 0f;
+                v.ECLeft = 0f;
                 v.VesselId = vesselId;
                 v.VesselName = "??loading??";
                 TrackVessel(v);
@@ -308,7 +311,7 @@ namespace LifeSupport
                 if (mod == null) 
                     continue;
 
-                if (!mod.RecyclerIsActive)
+                if (!mod.RecyclerIsActive && !HighLogic.LoadedSceneIsEditor)
                     continue;
 
                 if (mod.RecyclePercent > recyclerCap)

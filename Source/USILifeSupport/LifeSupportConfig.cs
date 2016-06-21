@@ -2,6 +2,10 @@
 {
     public class LifeSupportConfig
     {
+        public int NoECEffect { get; set; }
+        public int NoECEffectVets { get; set; }
+        public float ECTime { get; set; }
+
         public float SupplyTime { get; set; }
         public float EVATime { get; set; }
         public float ECAmount { get; set; }

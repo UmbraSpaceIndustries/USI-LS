@@ -11,8 +11,14 @@ namespace LifeSupport
             double secsPerDay = GameSettings.KERBIN_TIME ? secsPerHour * 6d : secsPerHour * 24d;
             double secsPerYear = GameSettings.KERBIN_TIME ? secsPerDay * 425d : secsPerDay * 365d;
             double s = Math.Abs(tSnack);
+
             double y = Math.Floor(s / secsPerYear);
             s = s - (y * secsPerYear);
+            if (y > 100)
+            {
+                y = 100;
+                s = 0;
+            }
             double d = Math.Floor(s / secsPerDay);
             s = s - (d * secsPerDay);
             double h = Math.Floor(s / secsPerHour);
