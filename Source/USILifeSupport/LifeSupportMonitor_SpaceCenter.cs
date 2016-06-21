@@ -11,7 +11,7 @@ namespace LifeSupport
     public class LifeSupportMonitor_SpaceCenter : MonoBehaviour
     {
         private ApplicationLauncherButton orbLogButton;
-        private Rect _windowPosition = new Rect(300, 60, 500, 500);
+        private Rect _windowPosition = new Rect(300, 60, 500, 550);
         private GUIStyle _windowStyle;
         private GUIStyle _labelStyle;
         private GUIStyle _buttonStyle;
@@ -38,7 +38,8 @@ namespace LifeSupport
             renderDisplay = true;
             //Load initial values
             config = LifeSupportScenario.Instance.settings.GetSettings();
-            supplyTime = string.Format("{0:0.########}",config.SupplyTime);
+            supplyTime = string.Format("{0:0.########}", config.SupplyTime);
+            ecTime = string.Format("{0:0.########}", config.ECTime);
             evaTime = string.Format("{0:0.########}", config.EVATime);
             ecAmount = string.Format("{0:0.########}", config.ECAmount);
             supplyAmount = string.Format("{0:0.########}", config.SupplyAmount);
@@ -48,6 +49,8 @@ namespace LifeSupport
             supVet = config.NoSupplyEffectVets;
             habNoVet = config.NoHomeEffect;
             habVet = config.NoHomeEffectVets;
+            ecNoVet = config.NoECEffect;
+            ecVet = config.NoECEffectVets;
             evaNoVet = config.EVAEffect;
             evaVet = config.EVAEffectVets;
             habMulti = string.Format("{0:0.########}", config.HabMultiplier);
@@ -93,6 +96,9 @@ namespace LifeSupport
         }
 
         private string supplyTime;
+        private string ecTime;
+        private int ecNoVet;
+        private int ecVet;
         private string evaTime;
         private string ecAmount;
         private string supplyAmount;
@@ -139,8 +145,8 @@ namespace LifeSupport
                 GUILayout.Label("Supply Time:", _labelStyle, GUILayout.Width(c1));
                 supplyTime = GUILayout.TextField(supplyTime, 10, GUILayout.Width(c2));
                 GUILayout.Label("", _labelStyle, GUILayout.Width(c4));
-                GUILayout.Label("EVA Time:", _labelStyle, GUILayout.Width(c1));
-                evaTime = GUILayout.TextField(evaTime, 10, GUILayout.Width(c2));
+                GUILayout.Label("EC Time:", _labelStyle, GUILayout.Width(c1));
+                ecTime = GUILayout.TextField(ecTime, 10, GUILayout.Width(c2));
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
                 GUILayout.Label("EC Amount:", _labelStyle, GUILayout.Width(c1));
@@ -149,6 +155,13 @@ namespace LifeSupport
                 GUILayout.Label("Supply Amount:", _labelStyle, GUILayout.Width(c1));
                 supplyAmount = GUILayout.TextField(supplyAmount, 10, GUILayout.Width(c2));
             GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+                GUILayout.Label("EVA Time:", _labelStyle, GUILayout.Width(c1));
+                evaTime = GUILayout.TextField(evaTime, 10, GUILayout.Width(c2));
+            GUILayout.EndHorizontal();
+
+
             GUILayout.BeginHorizontal();
                 GUILayout.Label("Waste Amount:", _labelStyle, GUILayout.Width(c1));
                 wasteAmount = GUILayout.TextField(wasteAmount, 10, GUILayout.Width(c2));
@@ -165,6 +178,19 @@ namespace LifeSupport
                 GUILayout.Label("Supply Effect (Vet):", _labelStyle, GUILayout.Width(c5));
                 supVet = GUILayout.SelectionGrid(supVet, effectStrings, 6, _smButtonStyle);
             GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+                GUILayout.Label("EC Effect (Non-Vet):", _labelStyle, GUILayout.Width(c5));
+                ecNoVet = GUILayout.SelectionGrid(ecNoVet, effectStrings, 6, _smButtonStyle);
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+                GUILayout.Label("EC Effect (Vet):", _labelStyle, GUILayout.Width(c5));
+                ecVet = GUILayout.SelectionGrid(ecVet, effectStrings, 6, _smButtonStyle);
+            GUILayout.EndHorizontal();
+
+
+
+
             GUILayout.BeginHorizontal();
                 GUILayout.Label("EVA Effect (Non-Vet):", _labelStyle, GUILayout.Width(c5));
                 evaNoVet = GUILayout.SelectionGrid(evaNoVet, effectStrings, 6, _smButtonStyle);
@@ -214,6 +240,7 @@ namespace LifeSupport
         private void SaveSettings(LifeSupportConfig config)
         {
             config.SupplyTime = SaveFloat(config.SupplyTime, supplyTime);
+            config.ECTime = SaveFloat(config.ECTime, ecTime);
             config.EVATime = SaveFloat(config.EVATime, evaTime);
             config.ECAmount = SaveFloat(config.ECAmount, ecAmount);
             config.SupplyAmount = SaveFloat(config.SupplyAmount, supplyAmount);
@@ -225,6 +252,10 @@ namespace LifeSupport
             config.NoHomeEffectVets = habVet;
             config.NoSupplyEffect = supNoVet;
             config.NoSupplyEffectVets = supVet;
+
+            config.NoECEffect = ecNoVet;
+            config.NoECEffectVets = ecVet;
+
             config.HabMultiplier = SaveInt(config.HabMultiplier,habMulti);
             config.EnableRecyclers = enableRecyclers;
             config.HabRange = SaveDouble(config.HabRange,habRange);
