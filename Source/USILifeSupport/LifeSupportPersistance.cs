@@ -7,7 +7,7 @@ using Random = System.Random;
 
 namespace LifeSupport
 {
-
+    using System;
     using System.Linq;
     using UnityEngine;
 
@@ -22,6 +22,7 @@ namespace LifeSupport
                 SettingsNode = node.GetNode("LIFE_SUPPORT_SETTINGS");
                 _StatusInfo = SetupStatusInfo();
                 _VesselInfo = SetupVesselInfo();
+                _Settings = SetupSettings();
                 //Reset cache
                 LifeSupportManager.Instance.ResetCache();
             }
@@ -29,8 +30,94 @@ namespace LifeSupport
             {
                 _StatusInfo = new List<LifeSupportStatus>();
                 _VesselInfo = new List<VesselSupplyStatus>();
+                _Settings = null;
             }
         }
+
+        private LifeSupportConfig SetupSettings()
+        {
+            print("Loading Config");
+            ConfigNode[] statNodes = SettingsNode.GetNodes("LIFE_SUPPORT_CONFIG");
+            print("StatNodeCount:  " + statNodes.Count());
+
+            LifeSupportConfig tmpSettings = null;
+            var defSettings = LoadLifeSupportConfig();
+            if (statNodes.Any())
+            {
+                tmpSettings = ImportConfig(statNodes[0]);
+                //Guard clauses
+                if (tmpSettings.ECTime < ResourceUtilities.FLOAT_TOLERANCE)
+                    tmpSettings.ECTime = defSettings.ECTime;
+                if (tmpSettings.SupplyAmount < ResourceUtilities.FLOAT_TOLERANCE)
+                    tmpSettings.SupplyAmount = defSettings.SupplyAmount;
+            }
+            else
+                tmpSettings = LoadLifeSupportConfig();
+
+            return tmpSettings;
+        }
+
+        private LifeSupportConfig LoadLifeSupportConfig()
+        {
+            var lsNodes = GameDatabase.Instance.GetConfigNodes("LIFE_SUPPORT_SETTINGS");
+            var finalSettings = new LifeSupportConfig
+            {
+                HabMultiplier = int.MaxValue,
+                BaseHabTime = double.MaxValue,
+                ECAmount = 0f,
+                EVAEffect = 0,
+                EVAEffectVets = 0,
+                EVATime = float.MaxValue,
+                HomeWorldAltitude = int.MaxValue,
+                NoHomeEffect = 0,
+                NoHomeEffectVets = 0,
+                NoSupplyEffect = 0,
+                NoSupplyEffectVets = 0,
+                SupplyTime = float.MaxValue,
+                ECTime = float.MaxValue,
+                NoECEffectVets = 0,
+                NoECEffect = 0,
+                SupplyAmount = 0f,
+                WasteAmount = 0f,
+                ReplacementPartAmount = 0f,
+                EnableRecyclers = false,
+                HabRange = 2000,
+                VetNames = ""
+            };
+            foreach (var lsNode in lsNodes)
+            {
+                var settings = ResourceUtilities.LoadNodeProperties<LifeSupportConfig>(lsNode);
+                finalSettings.HabMultiplier = Math.Min(settings.HabMultiplier, finalSettings.HabMultiplier);
+                finalSettings.BaseHabTime = Math.Min(settings.BaseHabTime, finalSettings.BaseHabTime);
+                finalSettings.HomeWorldAltitude = Math.Min(settings.HomeWorldAltitude, finalSettings.HomeWorldAltitude);
+                finalSettings.NoHomeEffect = Math.Max(settings.NoHomeEffect, finalSettings.NoHomeEffect);
+                finalSettings.NoHomeEffectVets = Math.Max(settings.NoHomeEffectVets, finalSettings.NoHomeEffectVets);
+                finalSettings.NoSupplyEffect = Math.Max(settings.NoSupplyEffect, finalSettings.NoSupplyEffect);
+                finalSettings.NoSupplyEffectVets = Math.Max(settings.NoSupplyEffectVets, finalSettings.NoSupplyEffectVets);
+
+                if(settings.ECTime > ResourceUtilities.FLOAT_TOLERANCE)
+                    finalSettings.ECTime = Math.Min(settings.ECTime, finalSettings.ECTime);
+                if (settings.EVATime > ResourceUtilities.FLOAT_TOLERANCE)
+                    finalSettings.EVATime = Math.Min(settings.EVATime, finalSettings.EVATime);
+                if (settings.SupplyTime > ResourceUtilities.FLOAT_TOLERANCE)
+                    finalSettings.SupplyTime = Math.Min(settings.SupplyTime, finalSettings.SupplyTime);
+
+                finalSettings.SupplyAmount = Math.Max(settings.SupplyAmount, finalSettings.SupplyAmount);
+                finalSettings.ECAmount = Math.Max(settings.ECAmount, finalSettings.ECAmount);
+                finalSettings.NoECEffect = Math.Max(settings.NoECEffect, finalSettings.NoECEffect);
+                finalSettings.NoECEffectVets = Math.Max(settings.NoECEffectVets, finalSettings.NoECEffectVets);
+                finalSettings.WasteAmount = Math.Max(settings.WasteAmount, finalSettings.WasteAmount);
+                finalSettings.ReplacementPartAmount = Math.Max(settings.ReplacementPartAmount, finalSettings.ReplacementPartAmount);
+                finalSettings.EVAEffect = Math.Max(settings.EVAEffect, finalSettings.EVAEffect);
+                finalSettings.EVAEffectVets = Math.Max(settings.EVAEffectVets, finalSettings.EVAEffectVets);
+                finalSettings.VetNames += settings.VetNames + ",";
+                finalSettings.HabRange = Math.Min(settings.HabRange, finalSettings.HabRange);
+                if (settings.EnableRecyclers)
+                    finalSettings.EnableRecyclers = true;
+            }
+            return finalSettings;
+        }
+
 
         private List<LifeSupportStatus> SetupStatusInfo()
         {
@@ -58,8 +145,16 @@ namespace LifeSupport
 
         }
 
+        public LifeSupportConfig GetSettings()
+        {
+            return _Settings ?? (_Settings = SetupSettings());
+
+        }
+
+
         private List<LifeSupportStatus> _StatusInfo;
         private List<VesselSupplyStatus> _VesselInfo;
+        private LifeSupportConfig _Settings;
 
         public void Save(ConfigNode node)
         {
@@ -72,11 +167,15 @@ namespace LifeSupport
                 SettingsNode = node.AddNode("LIFE_SUPPORT_SETTINGS");
             }
 
+            if (_Settings == null)
+                _Settings = LoadLifeSupportConfig();
+
             foreach (LifeSupportStatus r in _StatusInfo)
             {
                 var rNode = new ConfigNode("STATUS_DATA");
                 rNode.AddValue("KerbalName", r.KerbalName);
                 rNode.AddValue("LastMeal", r.LastMeal);
+                rNode.AddValue("LastEC", r.LastEC);
                 rNode.AddValue("LastOnKerbin", r.LastOnKerbin);
                 rNode.AddValue("MaxOffKerbinTime", r.MaxOffKerbinTime);
                 rNode.AddValue("CurrentVesselId", r.CurrentVesselId);
@@ -94,14 +193,41 @@ namespace LifeSupport
                 rNode.AddValue("VesselId", r.VesselId);
                 rNode.AddValue("VesselName", r.VesselName);
                 rNode.AddValue("SuppliesLeft", r.SuppliesLeft);
+                rNode.AddValue("ECLeft", r.ECLeft);
                 rNode.AddValue("NumCrew", r.NumCrew);
                 rNode.AddValue("RecyclerMultiplier", r.RecyclerMultiplier);
                 rNode.AddValue("CrewCap", r.CrewCap);
                 rNode.AddValue("ExtraHabSpace", r.ExtraHabSpace);
                 rNode.AddValue("VesselHabMultiplier", r.VesselHabMultiplier);
                 rNode.AddValue("LastFeeding", r.LastFeeding);
+                rNode.AddValue("LastECCheck", r.LastECCheck);
                 SettingsNode.AddNode(rNode);
             }
+
+            var sNode = new ConfigNode("LIFE_SUPPORT_CONFIG");
+            sNode.AddValue("HabMultiplier",_Settings.HabMultiplier);
+            sNode.AddValue("BaseHabTime", _Settings.BaseHabTime);
+            sNode.AddValue("ECAmount", _Settings.ECAmount);
+            sNode.AddValue("EVAEffect", _Settings.EVAEffect);
+            sNode.AddValue("EVAEffectVets", _Settings.EVAEffectVets);
+            sNode.AddValue("EVATime", _Settings.EVATime);
+            sNode.AddValue("HomeWorldAltitude", _Settings.HomeWorldAltitude);
+            sNode.AddValue("NoHomeEffect", _Settings.NoHomeEffect);
+            sNode.AddValue("NoHomeEffectVets", _Settings.NoHomeEffectVets);
+            sNode.AddValue("NoSupplyEffect", _Settings.NoSupplyEffect);
+            sNode.AddValue("NoSupplyEffectVets", _Settings.NoSupplyEffectVets);
+            sNode.AddValue("SupplyTime", _Settings.SupplyTime);
+            sNode.AddValue("ECTime", _Settings.ECTime);
+            sNode.AddValue("ECEffectVets", _Settings.NoECEffectVets);
+            sNode.AddValue("NoECEffectVets", _Settings.SupplyTime);
+            sNode.AddValue("NoECEffect", _Settings.NoECEffect);
+            sNode.AddValue("WasteAmount", _Settings.WasteAmount);
+            sNode.AddValue("ReplacementPartAmount", _Settings.ReplacementPartAmount);
+            sNode.AddValue("EnableRecyclers", _Settings.EnableRecyclers);
+            sNode.AddValue("HabRange", _Settings.HabRange);
+            sNode.AddValue("VetNames", _Settings.VetNames);
+
+            SettingsNode.AddNode(sNode);
 
             //Reset cache
             LifeSupportManager.Instance.ResetCache();
@@ -187,6 +313,37 @@ namespace LifeSupport
             return nList;
         }
 
+        public LifeSupportConfig ImportConfig(ConfigNode node)
+        {
+            var config = ResourceUtilities.LoadNodeProperties<LifeSupportConfig>(node);
+            return config;
+        }
+
+        public void SaveConfig(LifeSupportConfig config)
+        {
+            _Settings.HabMultiplier = config.HabMultiplier;
+            _Settings.BaseHabTime = config.BaseHabTime;
+            _Settings.ECAmount = config.ECAmount;
+            _Settings.EVAEffect = config.EVAEffect;
+            _Settings.EVAEffectVets = config.EVAEffectVets;
+            _Settings.EVATime = config.EVATime;
+            _Settings.HomeWorldAltitude = config.HomeWorldAltitude;
+            _Settings.NoHomeEffect = config.NoHomeEffect;
+            _Settings.NoHomeEffectVets = config.NoHomeEffectVets;
+            _Settings.NoSupplyEffect = config.NoSupplyEffect;
+            _Settings.NoSupplyEffectVets = config.NoSupplyEffectVets;
+            _Settings.SupplyTime = config.SupplyTime;
+            _Settings.ECTime = config.ECTime;
+            _Settings.NoECEffectVets = config.NoECEffectVets;
+            _Settings.NoECEffect = config.NoECEffect;
+            _Settings.SupplyAmount = config.SupplyAmount;
+            _Settings.WasteAmount = config.WasteAmount;
+            _Settings.ReplacementPartAmount = config.ReplacementPartAmount;
+            _Settings.EnableRecyclers = config.EnableRecyclers;
+            _Settings.HabRange = config.HabRange;
+            _Settings.VetNames = config.VetNames;
+        }
+
         public void SaveStatusNode(LifeSupportStatus status)
         {
             LifeSupportStatus kerbInfo =
@@ -198,6 +355,7 @@ namespace LifeSupport
                 _StatusInfo.Add(kerbInfo);
             }
             kerbInfo.LastMeal = status.LastMeal;
+            kerbInfo.LastEC = status.LastEC;
             kerbInfo.LastOnKerbin = status.LastOnKerbin;
             kerbInfo.MaxOffKerbinTime = status.MaxOffKerbinTime;
             kerbInfo.TimeEnteredVessel = status.TimeEnteredVessel;
@@ -220,6 +378,7 @@ namespace LifeSupport
             }
             vesselInfo.VesselName = status.VesselName;
             vesselInfo.LastFeeding = status.LastFeeding;
+            vesselInfo.LastECCheck = status.LastECCheck;
             vesselInfo.LastUpdate = status.LastUpdate;
             vesselInfo.NumCrew = status.NumCrew;
             vesselInfo.RecyclerMultiplier = status.RecyclerMultiplier;
@@ -227,7 +386,8 @@ namespace LifeSupport
             vesselInfo.ExtraHabSpace = status.ExtraHabSpace;
             vesselInfo.VesselHabMultiplier = status.VesselHabMultiplier;
             vesselInfo.SuppliesLeft = status.SuppliesLeft;
+            vesselInfo.ECLeft = status.ECLeft;
         }
-    
+
     }
 }

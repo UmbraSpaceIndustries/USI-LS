@@ -23,7 +23,7 @@ namespace LifeSupport
                 var v = new VesselSupplyStatus();
                 v.VesselId = part.vessel.id.ToString();
                 LifeSupportManager.Instance.TrackVessel(v);
-                if (LifeSupportSetup.Instance.LSConfig.ReplacementPartAmount < ResourceUtilities.FLOAT_TOLERANCE)
+                if (LifeSupportScenario.Instance.settings.GetSettings().ReplacementPartAmount < ResourceUtilities.FLOAT_TOLERANCE)
                 {
                     Fields["wearPercent"].guiActive = false;
                 }
@@ -38,6 +38,7 @@ namespace LifeSupport
                 var oldV = LifeSupportManager.Instance.FetchVessel(vesselId);
                 var newV = LifeSupportManager.Instance.FetchVessel(vessel.id.ToString());
                 newV.LastFeeding = oldV.LastFeeding;
+                newV.LastECCheck = oldV.LastECCheck;
                 newV.LastUpdate = oldV.LastUpdate;
                 newV.NumCrew = oldV.NumCrew;
                 newV.RecyclerMultiplier = oldV.NumCrew;
@@ -45,19 +46,29 @@ namespace LifeSupport
                 newV.VesselHabMultiplier = oldV.VesselHabMultiplier;
                 newV.ExtraHabSpace = oldV.ExtraHabSpace;
                 newV.SuppliesLeft = oldV.SuppliesLeft;
+                newV.ECLeft = oldV.ECLeft;
                 newV.VesselId = vessel.id.ToString();
                 newV.VesselName = vessel.vesselName;
                 LifeSupportManager.Instance.TrackVessel(newV);
             }
             vesselId = vessel.id.ToString();
         }
-        private ConversionRecipe LifeSupportRecipe
+        private ConversionRecipe SupplyRecipe
         {
             get
             {
-                return GenerateLSRecipe();
+                return GenerateSupplyRecipe();
             }
         }
+
+        private ConversionRecipe ECRecipe
+        {
+            get
+            {
+                return GenerateECRecipe();
+            }
+        }
+
 
         protected IResourceBroker _resBroker;
         protected ResourceConverter _resConverter;
@@ -192,12 +203,14 @@ namespace LifeSupport
                     //we will add a bit of a fudge factor for supplies
                     var tolerance = deltaTime / 2f;
                     //nom nom nom!
-                    ConverterResults result = ResConverter.ProcessRecipe(deltaTime, LifeSupportRecipe, part, this, 1f);
+                    ConverterResults resultSupply = ResConverter.ProcessRecipe(deltaTime, SupplyRecipe, part, this, 1f);
+                    ConverterResults resultEC = ResConverter.ProcessRecipe(deltaTime, ECRecipe, part, this, 1f);
 
                     foreach (var c in part.protoModuleCrew)
                     {
                         bool isGrouchyHab = false;
                         bool isGrouchySupplies = false;
+                        bool isGrouchyEC = false;
                         //Fetch them from the queue
                         var k = LifeSupportManager.Instance.FetchKerbal(c);
                         //Update our stuff
@@ -224,49 +237,70 @@ namespace LifeSupport
                                 }
                             }
                             isGrouchyHab = CheckHabSideEffects(k, v);
-                        }
-                        #endregion - Crew
-                        //Second - Supply
 
-                        if (offKerbin && (deltaTime - result.TimeFactor > tolerance))
-                        {
-                            isGrouchySupplies = CheckSupplySideEffects(k);
-                        }
-                        else if (deltaTime >= ResourceUtilities.FLOAT_TOLERANCE)
-                        {
-                            //All is well
-                            k.LastMeal = lastUpdateTime;
-                            v.LastFeeding = lastUpdateTime;
-                        }
+                            //Second - Supply
+                            if (offKerbin && (deltaTime - resultSupply.TimeFactor > tolerance))
+                            {
+                                isGrouchySupplies = CheckSupplySideEffects(k);
+                            }
+                            else if (deltaTime >= ResourceUtilities.FLOAT_TOLERANCE)
+                            {
+                                //All is well
+                                k.LastMeal = lastUpdateTime;
+                                v.LastFeeding = lastUpdateTime;
+                            }
 
-                        k.LastUpdate = Planetarium.GetUniversalTime();
+                            //Third - EC
+                            //Second - Supply
+                            if (offKerbin && (deltaTime - resultEC.TimeFactor > tolerance))
+                            {
+                                isGrouchyEC = CheckECSideEffects(k);
+                            }
+                            else if (deltaTime >= ResourceUtilities.FLOAT_TOLERANCE)
+                            {
+                                //All is well
+                                k.LastEC = lastUpdateTime;
+                                v.LastECCheck = lastUpdateTime;
+                            }
 
-                        if (deltaTime < _checkInterval * 2)
-                        {
-                            if (isGrouchySupplies)
+
+                            k.LastUpdate = Planetarium.GetUniversalTime();
+
+                            if (isGrouchyEC)
                             {
                                 ApplyEffect(k, c,
                                     LifeSupportManager.isVet(k.KerbalName)
-                                        ? LifeSupportSetup.Instance.LSConfig.NoSupplyEffectVets
-                                        : LifeSupportSetup.Instance.LSConfig.NoSupplyEffect);
+                                        ? LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffectVets
+                                        : LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffect);
+                            }
+                            else if (isGrouchySupplies)
+                            {
+                                ApplyEffect(k, c,
+                                    LifeSupportManager.isVet(k.KerbalName)
+                                        ? LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffectVets
+                                        : LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffect);
                             }
                             else if (isGrouchyHab)
                             {
                                 ApplyEffect(k, c,
                                     LifeSupportManager.isVet(k.KerbalName)
-                                        ? LifeSupportSetup.Instance.LSConfig.NoHomeEffectVets
-                                        : LifeSupportSetup.Instance.LSConfig.NoHomeEffect);
+                                        ? LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffectVets
+                                        : LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffect);
                             }
-                            else
+                            else if (c.experienceTrait.Title != k.OldTrait)
                             {
                                 RemoveGrouchiness(c, k);
                             }
+                            LifeSupportManager.Instance.TrackKerbal(k);
                         }
-                        LifeSupportManager.Instance.TrackKerbal(k);
+                        #endregion - Crew
                         var supAmount = _resBroker.AmountAvailable(part, "Supplies", deltaTime, "ALL_VESSEL");
-                        v.SuppliesLeft = supAmount / LifeSupportSetup.Instance.LSConfig.SupplyAmount /
+                        var ecAmount = _resBroker.AmountAvailable(part, "ElectricCharge", deltaTime, "ALL_VESSEL");
+                        v.SuppliesLeft = supAmount / LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount /
                                          part.vessel.GetCrewCount() /
                                          v.RecyclerMultiplier;
+                        v.ECLeft = ecAmount/LifeSupportScenario.Instance.settings.GetSettings().ECAmount/
+                                   part.vessel.GetCrewCount();
                     }
                 }
                 LifeSupportManager.Instance.TrackVessel(v);
@@ -299,18 +333,16 @@ namespace LifeSupport
             return habMulti;
         }
 
-        private ConversionRecipe GenerateLSRecipe()
+        private ConversionRecipe GenerateSupplyRecipe()
         {
-            //This is where the rubber hits the road.  Let us see if we can
-            //keep our Kerbals cozy and warm.
+            //Two recipes are executed.  One for EC, one for Supplies.
             var v = LifeSupportManager.Instance.FetchVessel(part.vessel.id.ToString());
             var recipe = new ConversionRecipe();
             var numCrew = part.protoModuleCrew.Count;
             var recPercent = v.RecyclerMultiplier;
-            var ecAmount = LifeSupportSetup.Instance.LSConfig.ECAmount;
-            var supAmount = LifeSupportSetup.Instance.LSConfig.SupplyAmount;
-            var scrapAmount = LifeSupportSetup.Instance.LSConfig.WasteAmount;
-            var repAmount = LifeSupportSetup.Instance.LSConfig.ReplacementPartAmount;
+            var supAmount = LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount;
+            var scrapAmount = LifeSupportScenario.Instance.settings.GetSettings().WasteAmount;
+            var repAmount = LifeSupportScenario.Instance.settings.GetSettings().ReplacementPartAmount;
             if (part.Resources.Contains("ReplacementParts"))
             {
                 recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = repAmount * numCrew, ResourceName = "ReplacementParts", DumpExcess = false });
@@ -319,9 +351,19 @@ namespace LifeSupport
             var supRatio = supAmount * numCrew * recPercent;
             var mulchRatio = scrapAmount * numCrew * recPercent;
 
-            recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = ecAmount * numCrew, ResourceName = "ElectricCharge", DumpExcess = true });
             recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = supRatio, ResourceName = "Supplies", DumpExcess = true });
             recipe.Outputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = mulchRatio, ResourceName = "Mulch", DumpExcess = true });
+            return recipe;
+        }
+
+        private ConversionRecipe GenerateECRecipe()
+        {
+            //Two recipes are executed.  One for EC, one for Supplies.
+            var v = LifeSupportManager.Instance.FetchVessel(part.vessel.id.ToString());
+            var recipe = new ConversionRecipe();
+            var numCrew = part.protoModuleCrew.Count;
+            var ecAmount = LifeSupportScenario.Instance.settings.GetSettings().ECAmount;
+            recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = ecAmount * numCrew, ResourceName = "ElectricCharge", DumpExcess = true });
             return recipe;
         }
 
@@ -386,7 +428,7 @@ namespace LifeSupport
         private bool CheckSupplySideEffects(LifeSupportStatus kStat)
         {
             var curTime = Planetarium.GetUniversalTime();
-            var SnackMax = LifeSupportSetup.Instance.LSConfig.SupplyTime;
+            var SnackMax = LifeSupportScenario.Instance.settings.GetSettings().SupplyTime;
 
             var SnackTime = Math.Max(curTime - kStat.LastMeal, ResourceUtilities.FLOAT_TOLERANCE);
 
@@ -396,6 +438,22 @@ namespace LifeSupport
             }
             return false;
         }
+
+        private bool CheckECSideEffects(LifeSupportStatus kStat)
+        {
+            var curTime = Planetarium.GetUniversalTime();
+            var ecMax = LifeSupportScenario.Instance.settings.GetSettings().ECTime;
+
+            var ecTime = Math.Max(curTime - kStat.LastEC, ResourceUtilities.FLOAT_TOLERANCE);
+
+            if (ecTime > ecMax)
+            {
+                return true;
+            }
+            return false;
+        }
+
+
 
         private bool CheckHabSideEffects(LifeSupportStatus kStat, VesselSupplyStatus vsl)
         {

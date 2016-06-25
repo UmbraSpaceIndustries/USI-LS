@@ -77,8 +77,8 @@ namespace LifeSupport
             scrollPos = GUILayout.BeginScrollView(scrollPos, _scrollStyle, GUILayout.Width(645), GUILayout.Height(350));
             GUILayout.BeginVertical();
 
-            var useHabPenalties = (LifeSupportSetup.Instance.LSConfig.NoHomeEffectVets +
-                                   LifeSupportSetup.Instance.LSConfig.NoHomeEffect > 0);
+            var useHabPenalties = (LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffectVets +
+                                   LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffect > 0);
             if (EditorLogic.fetch != null)
             {
                 var curCrew = 0;
@@ -95,7 +95,8 @@ namespace LifeSupport
                     maxCrew += part.CrewCapacity;
                 }
 
-                CMAssignmentDialog dialog = CMAssignmentDialog.Instance;
+                var dialog = KSP.UI.CrewAssignmentDialog.Instance;
+
                 if (dialog != null)
                 {
                     VesselCrewManifest manifest = dialog.GetManifest();
@@ -136,12 +137,12 @@ namespace LifeSupport
                 }
 
 
-                var totalHabSpace = (LifeSupportSetup.Instance.LSConfig.BaseHabTime * maxCrew) + extraHabTime;
+                var totalHabSpace = (LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime * maxCrew) + extraHabTime;
                 //A Kerbal month is 30 six-hour Kerbin days.
-                var totalHabMult = habMult * LifeSupportSetup.Instance.LSConfig.HabMultiplier * 60d * 60d * 6d * 30d;
+                var totalHabMult = habMult * LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier * 60d * 60d * 6d * 30d;
 
-                var totalBatteryTime = batteryAmount / LifeSupportSetup.Instance.LSConfig.ECAmount;
-                var totalSupplyTime = supplies / LifeSupportSetup.Instance.LSConfig.SupplyAmount;
+                var totalBatteryTime = batteryAmount / LifeSupportScenario.Instance.settings.GetSettings().ECAmount;
+                var totalSupplyTime = supplies / LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount;
 
                 if (EditorLogic.fetch.ship.parts.Count > 0)
                 {
@@ -257,22 +258,22 @@ namespace LifeSupport
 
                         GUILayout.BeginHorizontal();
                         GUILayout.Label(CTag(hab_curCrew, textColor), _labelStyle, GUILayout.Width(c1));
-                        GUILayout.Label(CTag(LifeSupportSetup.Instance.LSConfig.BaseHabTime.ToString(), fadeColor), _labelStyle, GUILayout.Width(c2));
+                        GUILayout.Label(CTag(LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime.ToString(), fadeColor), _labelStyle, GUILayout.Width(c2));
                         GUILayout.Label(CTag(maxCrew.ToString(), crewColor), _labelStyle, GUILayout.Width(c3));
                         GUILayout.Label(CTag(extraHabTime.ToString(), textColor), _labelStyle, GUILayout.Width(c4));
                         GUILayout.Label(CTag(habMult.ToString(), textColor), _labelStyle, GUILayout.Width(c5));
                         GUILayout.Label(CTag(Math.Max(1, curCrew).ToString(), crewColor), _labelStyle, GUILayout.Width(c6));
-                        GUILayout.Label(CTag(LifeSupportSetup.Instance.LSConfig.HabMultiplier.ToString(), fadeColor), _labelStyle, GUILayout.Width(c7));
+                        GUILayout.Label(CTag(LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier.ToString(), fadeColor), _labelStyle, GUILayout.Width(c7));
                         GUILayout.EndHorizontal();
 
                         GUILayout.BeginHorizontal();
                         GUILayout.Label(CTag(hab_maxCrew, textColor), _labelStyle, GUILayout.Width(c1));
-                        GUILayout.Label(CTag(LifeSupportSetup.Instance.LSConfig.BaseHabTime.ToString(), fadeColor), _labelStyle, GUILayout.Width(c2));
+                        GUILayout.Label(CTag(LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime.ToString(), fadeColor), _labelStyle, GUILayout.Width(c2));
                         GUILayout.Label(CTag(maxCrew.ToString(), crewColor), _labelStyle, GUILayout.Width(c3));
                         GUILayout.Label(CTag(extraHabTime.ToString(), textColor), _labelStyle, GUILayout.Width(c4));
                         GUILayout.Label(CTag(habMult.ToString(), textColor), _labelStyle, GUILayout.Width(c5));
                         GUILayout.Label(CTag(Math.Max(1, maxCrew).ToString(), crewColor), _labelStyle, GUILayout.Width(c6));
-                        GUILayout.Label(CTag(LifeSupportSetup.Instance.LSConfig.HabMultiplier.ToString(), fadeColor), _labelStyle, GUILayout.Width(c7));
+                        GUILayout.Label(CTag(LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier.ToString(), fadeColor), _labelStyle, GUILayout.Width(c7));
                         GUILayout.EndHorizontal();
                     }
 

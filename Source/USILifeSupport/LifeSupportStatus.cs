@@ -4,6 +4,7 @@ namespace LifeSupport
     {
         public string KerbalName { get; set; }
         public double LastMeal { get; set; }
+        public double LastEC { get; set; }
         public double LastUpdate { get; set; }
         public bool IsGrouchy { get; set; }
         public string OldTrait { get; set; }
