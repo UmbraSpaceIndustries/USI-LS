@@ -218,8 +218,7 @@ namespace LifeSupport
             sNode.AddValue("NoSupplyEffectVets", _Settings.NoSupplyEffectVets);
             sNode.AddValue("SupplyTime", _Settings.SupplyTime);
             sNode.AddValue("ECTime", _Settings.ECTime);
-            sNode.AddValue("ECEffectVets", _Settings.NoECEffectVets);
-            sNode.AddValue("NoECEffectVets", _Settings.SupplyTime);
+            sNode.AddValue("NoECEffectVets", _Settings.NoECEffectVets);
             sNode.AddValue("NoECEffect", _Settings.NoECEffect);
             sNode.AddValue("WasteAmount", _Settings.WasteAmount);
             sNode.AddValue("ReplacementPartAmount", _Settings.ReplacementPartAmount);
