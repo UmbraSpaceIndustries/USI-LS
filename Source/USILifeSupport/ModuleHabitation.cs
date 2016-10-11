@@ -4,7 +4,7 @@ using USITools.Logistics;
 
 namespace LifeSupport
 {
-    public class ModuleHabitation : BaseConverter
+    public class ModuleHabitation : ModuleResourceConverter
     {
         [KSPField] 
         public double BaseKerbalMonths = 1;
@@ -46,11 +46,11 @@ namespace LifeSupport
         {
             var output = new StringBuilder();
             output.Append(Environment.NewLine);
-            output.Append(String.Format("Kerbal-Months: {0}", KerbalMonths + part.CrewCapacity));
+            output.Append(String.Format("Kerbal-Months: {0}", BaseKerbalMonths + part.CrewCapacity));
             output.Append(Environment.NewLine);
             output.Append(String.Format("Crew Affected: {0}", CrewCapacity));
             output.Append(Environment.NewLine);
-            output.Append(String.Format("Hab Multipler: {0}", HabMultiplier));
+            output.Append(String.Format("Hab Multipler: {0}", BaseHabMultiplier));
             output.Append(Environment.NewLine);
             return output.ToString();
         }

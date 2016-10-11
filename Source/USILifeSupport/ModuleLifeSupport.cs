@@ -221,7 +221,7 @@ namespace LifeSupport
                             //First - Hab effects.
                             if (LifeSupportManager.IsOnKerbin(part.vessel))
                             {
-                                k.LastOnKerbin = Planetarium.GetUniversalTime();
+                                k.LastAtHome = Planetarium.GetUniversalTime();
                                 k.MaxOffKerbinTime = 648000;
                                 k.TimeEnteredVessel = Planetarium.GetUniversalTime();
                             }
@@ -294,8 +294,8 @@ namespace LifeSupport
                             LifeSupportManager.Instance.TrackKerbal(k);
                         }
                         #endregion - Crew
-                        var supAmount = _resBroker.AmountAvailable(part, "Supplies", deltaTime, "ALL_VESSEL");
-                        var ecAmount = _resBroker.AmountAvailable(part, "ElectricCharge", deltaTime, "ALL_VESSEL");
+                        var supAmount = _resBroker.AmountAvailable(part, "Supplies", deltaTime, ResourceFlowMode.ALL_VESSEL);
+                        var ecAmount = _resBroker.AmountAvailable(part, "ElectricCharge", deltaTime, ResourceFlowMode.ALL_VESSEL);
                         v.SuppliesLeft = supAmount / LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount /
                                          part.vessel.GetCrewCount() /
                                          v.RecyclerMultiplier;
@@ -345,14 +345,14 @@ namespace LifeSupport
             var repAmount = LifeSupportScenario.Instance.settings.GetSettings().ReplacementPartAmount;
             if (part.Resources.Contains("ReplacementParts"))
             {
-                recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = repAmount * numCrew, ResourceName = "ReplacementParts", DumpExcess = false });
+                recipe.Inputs.Add(new ResourceRatio { FlowMode = ResourceFlowMode.ALL_VESSEL, Ratio = repAmount * numCrew, ResourceName = "ReplacementParts", DumpExcess = false });
             }
 
             var supRatio = supAmount * numCrew * recPercent;
             var mulchRatio = scrapAmount * numCrew * recPercent;
 
-            recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = supRatio, ResourceName = "Supplies", DumpExcess = true });
-            recipe.Outputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = mulchRatio, ResourceName = "Mulch", DumpExcess = true });
+            recipe.Inputs.Add(new ResourceRatio { FlowMode = ResourceFlowMode.ALL_VESSEL, Ratio = supRatio, ResourceName = "Supplies", DumpExcess = true });
+            recipe.Outputs.Add(new ResourceRatio { FlowMode = ResourceFlowMode.ALL_VESSEL, Ratio = mulchRatio, ResourceName = "Mulch", DumpExcess = true });
             return recipe;
         }
 
@@ -363,7 +363,7 @@ namespace LifeSupport
             var recipe = new ConversionRecipe();
             var numCrew = part.protoModuleCrew.Count;
             var ecAmount = LifeSupportScenario.Instance.settings.GetSettings().ECAmount;
-            recipe.Inputs.Add(new ResourceRatio { FlowMode = "ALL_VESSEL", Ratio = ecAmount * numCrew, ResourceName = "ElectricCharge", DumpExcess = true });
+            recipe.Inputs.Add(new ResourceRatio { FlowMode = ResourceFlowMode.ALL_VESSEL, Ratio = ecAmount * numCrew, ResourceName = "ElectricCharge", DumpExcess = true });
             return recipe;
         }
 
@@ -458,10 +458,10 @@ namespace LifeSupport
         private bool CheckHabSideEffects(LifeSupportStatus kStat, VesselSupplyStatus vsl)
         {
             var habTime = LifeSupportManager.GetTotalHabTime(vsl);
-            if (kStat.LastOnKerbin < 1)
-                kStat.LastOnKerbin = Planetarium.GetUniversalTime();
-            if (habTime + kStat.LastOnKerbin > kStat.MaxOffKerbinTime)
-                kStat.MaxOffKerbinTime = habTime + kStat.LastOnKerbin;
+            if (kStat.LastAtHome < 1)
+                kStat.LastAtHome = Planetarium.GetUniversalTime();
+            if (habTime + kStat.LastAtHome > kStat.MaxOffKerbinTime)
+                kStat.MaxOffKerbinTime = habTime + kStat.LastAtHome;
 
             LifeSupportManager.Instance.TrackKerbal(kStat);
 
