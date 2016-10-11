@@ -174,9 +174,12 @@ namespace LifeSupport
             {
                 var rNode = new ConfigNode("STATUS_DATA");
                 rNode.AddValue("KerbalName", r.KerbalName);
+                rNode.AddValue("HomeBodyId", r.HomeBodyId);
                 rNode.AddValue("LastMeal", r.LastMeal);
                 rNode.AddValue("LastEC", r.LastEC);
-                rNode.AddValue("LastOnKerbin", r.LastOnKerbin);
+                rNode.AddValue("LastAtHome", r.LastAtHome);
+                rNode.AddValue("LastSOIChange", r.LastSOIChange);
+                rNode.AddValue("LastPlanet", r.LastPlanet);
                 rNode.AddValue("MaxOffKerbinTime", r.MaxOffKerbinTime);
                 rNode.AddValue("CurrentVesselId", r.CurrentVesselId);
                 rNode.AddValue("PreviousVesselId", r.PreviousVesselId);
@@ -201,13 +204,14 @@ namespace LifeSupport
                 rNode.AddValue("VesselHabMultiplier", r.VesselHabMultiplier);
                 rNode.AddValue("LastFeeding", r.LastFeeding);
                 rNode.AddValue("LastECCheck", r.LastECCheck);
-                SettingsNode.AddNode(rNode);
+                //SettingsNode.AddNode(rNode);
             }
 
             var sNode = new ConfigNode("LIFE_SUPPORT_CONFIG");
             sNode.AddValue("HabMultiplier",_Settings.HabMultiplier);
             sNode.AddValue("BaseHabTime", _Settings.BaseHabTime);
             sNode.AddValue("ECAmount", _Settings.ECAmount);
+            sNode.AddValue("SupplyAmount", _Settings.SupplyAmount);
             sNode.AddValue("EVAEffect", _Settings.EVAEffect);
             sNode.AddValue("EVAEffectVets", _Settings.EVAEffectVets);
             sNode.AddValue("EVATime", _Settings.EVATime);
@@ -218,8 +222,7 @@ namespace LifeSupport
             sNode.AddValue("NoSupplyEffectVets", _Settings.NoSupplyEffectVets);
             sNode.AddValue("SupplyTime", _Settings.SupplyTime);
             sNode.AddValue("ECTime", _Settings.ECTime);
-            sNode.AddValue("ECEffectVets", _Settings.NoECEffectVets);
-            sNode.AddValue("NoECEffectVets", _Settings.SupplyTime);
+            sNode.AddValue("NoECEffectVets", _Settings.NoECEffectVets);
             sNode.AddValue("NoECEffect", _Settings.NoECEffect);
             sNode.AddValue("WasteAmount", _Settings.WasteAmount);
             sNode.AddValue("ReplacementPartAmount", _Settings.ReplacementPartAmount);
@@ -356,7 +359,10 @@ namespace LifeSupport
             }
             kerbInfo.LastMeal = status.LastMeal;
             kerbInfo.LastEC = status.LastEC;
-            kerbInfo.LastOnKerbin = status.LastOnKerbin;
+            kerbInfo.LastAtHome = status.LastAtHome;
+            kerbInfo.LastSOIChange = status.LastSOIChange;
+            kerbInfo.HomeBodyId = status.HomeBodyId;
+            kerbInfo.LastPlanet = status.LastPlanet;
             kerbInfo.MaxOffKerbinTime = status.MaxOffKerbinTime;
             kerbInfo.TimeEnteredVessel = status.TimeEnteredVessel;
             kerbInfo.CurrentVesselId = status.CurrentVesselId;

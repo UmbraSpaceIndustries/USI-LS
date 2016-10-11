@@ -1,3 +1,25 @@
+0.5.0 - (KSP 1.2)
+------------------
+The Nom-O-Matics have been deprecated for improved models.  They have been moved to a LEGACY folder to prevent breaking existing saves, though they may not have textures.  This folder will be deleted with the next KSP release.
+The new Nom-O-Matics can operate in three modes: 
+ - As a Converter (Mulch+Fertilizer=Supplies)
+ - As a Recycler (using a biological filter)
+ - As a Hab Multiplier (By repurposing the hab as an indoor mini-park with pretty plants)
+Switching modes after launch will cost 1,000 EC and 200 supplies, and is an EVA action performed by an engineer.
+The two radial Nom-O-Matics have been replaced by new, more stock-alike models
+In Habitation Multipler mode, EC is still consumed to keep the units operational
+Recycler EC cost has been increased (Be sure to check the tooptips)
+Fixed an issue in persisting configs that may have resulted in corrupted life support settings, so be sure to recheck these in space center view and re-save.
+Fixed a node issue on the inline greenhouse
+All life support items now appear in a new 'Life Support' category.
+Added a mini cupola with a corresponding hab bonus.
+Less hobbit-like Kerbals.  The default supply consumption has been adjusted slightly downward (from 16.2 per day to 10.8 per day) - no more second breakfasts.  To adjust for this, change per second consumption to 0.0005 from 0.00075 in the GUI.
+Crew capacity only results in a 7.5 day hab bonus as opposed to 30 days.  This is being done to keep things balanced with dedicated habitation parts, which will have more space but less mass.
+WIth the inclusion of switchable parts, stock adjustments have been rebalanced.
+- The crewed lab is now a less efficient recycler (50% for 4 Kerbals) to reflect most of its capacity being devoted to being, well, a science lab.
+- The Hitchhiker gets a buff to its hab extension
+- The Cupola gets a buff to its hab multiplier as well as a hab extension bonus
+
 0.4.4 - (KSP 1.1.3)
 ------------------
 Dependency Updates

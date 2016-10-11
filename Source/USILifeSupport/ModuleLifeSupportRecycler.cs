@@ -6,7 +6,7 @@ namespace LifeSupport
     public class ModuleLifeSupportRecycler : ModuleResourceConverter
     {
         [KSPField] 
-        public int CrewCapacity = 1;
+        public float CrewCapacity = 1f;
 
         [KSPField] 
         public float RecyclePercent = 0f;
@@ -16,7 +16,8 @@ namespace LifeSupport
 
         protected override void PostProcess(ConverterResults result, double deltaTime)
         {
-            RecyclerIsActive = result.TimeFactor > ResourceUtilities.FLOAT_TOLERANCE;
+            var diff = Math.Abs(deltaTime - result.TimeFactor);
+            RecyclerIsActive = diff < 0.00001f;
         }
         
         public override string GetInfo()

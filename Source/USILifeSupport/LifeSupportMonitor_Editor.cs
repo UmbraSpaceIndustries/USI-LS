@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Collections.Generic;
 using KSP.UI.Screens;
 using UnityEngine;
+using USITools;
 
 namespace LifeSupport
 {
@@ -102,30 +103,40 @@ namespace LifeSupport
                     VesselCrewManifest manifest = dialog.GetManifest();
                     if (manifest != null)
                     {
-                        foreach (PartCrewManifest pcm in manifest)
-                        {
-                            int partCrewCount = pcm.GetPartCrew().Count(c => c != null);
-                            if (partCrewCount > 0)
-                            {
-                                curCrew += partCrewCount;
-                            }
-                        }
+                        curCrew = manifest.CrewCount;
                     }
                 }
 
+
                 foreach (var part in EditorLogic.fetch.ship.parts)
                 {
-                    var hab = part.Modules.GetModules<ModuleHabitation>().FirstOrDefault();
-                    if(hab != null)
+                    var hab = part.Modules.GetModule<ModuleHabitation>();
+                    if (hab != null)
                     {
-                        habs.Add(hab);
-
-                        //Certain modules, in addition to crew capacity, have living space.
-                        extraHabTime += hab.KerbalMonths;
-                        //Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
-                        habMult += hab.HabMultiplier*Math.Min(1,(hab.CrewCapacity/curCrew));
+                        var conList = part.Modules.GetModules<BaseConverter>();
+                        var bayList = part.Modules.GetModules<ModuleSwappableConverter>();
+                        if (bayList == null || bayList.Count == 0)
+                        {
+                            habs.Add(hab);
+                            //Certain modules, in addition to crew capacity, have living space.
+                            extraHabTime += hab.KerbalMonths;
+                            //Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
+                            habMult += hab.HabMultiplier*Math.Min(1, hab.CrewCapacity/Math.Max(curCrew, 1));
+                        }
+                        else
+                        {
+                            foreach (var bay in bayList)
+                            {
+                                var con = conList[bay.currentLoadout] as ModuleHabitation;
+                                if (con != null)
+                                {
+                                    habs.Add(con);
+                                    extraHabTime += con.KerbalMonths;
+                                    habMult += con.HabMultiplier*Math.Min(1, con.CrewCapacity/Math.Max(curCrew, 1));
+                                }
+                            }
+                        }
                     }
-
                     if (part.Resources.Contains("Supplies"))
                     {
                         supplies += part.Resources["Supplies"].amount;

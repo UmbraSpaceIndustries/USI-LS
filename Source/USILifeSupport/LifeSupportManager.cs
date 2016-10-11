@@ -88,10 +88,13 @@ namespace LifeSupport
             {
                 var k = new LifeSupportStatus();
                 k.KerbalName = crew.name;
+                k.HomeBodyId = FlightGlobals.GetHomeBodyIndex();
+                k.LastPlanet = FlightGlobals.GetHomeBodyIndex();
                 k.LastMeal = Planetarium.GetUniversalTime();
                 k.LastEC = Planetarium.GetUniversalTime();
-                k.LastOnKerbin = Planetarium.GetUniversalTime();
-                k.MaxOffKerbinTime = 648000;
+                k.LastAtHome = Planetarium.GetUniversalTime();
+                k.LastSOIChange = Planetarium.GetUniversalTime();
+                k.MaxOffKerbinTime = 648000;    //TODO - make this configurable
                 k.TimeEnteredVessel = Planetarium.GetUniversalTime();
                 k.CurrentVesselId = "?UNKNOWN?";
                 k.PreviousVesselId = "??UNKNOWN??";
