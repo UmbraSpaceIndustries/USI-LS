@@ -64,6 +64,9 @@ namespace LifeSupport
         {
             if (!renderDisplay)
                 return;
+            if (!HighLogic.LoadedSceneIsFlight)
+                return;
+
 
             if (Event.current.type == EventType.Repaint || Event.current.isMouse)
             {
