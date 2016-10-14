@@ -38,10 +38,16 @@ namespace LifeSupport
             renderDisplay = true;
         }
 
+        private bool useHabPenalties;
+
         public void Start()
         {
             if (!_hasInitStyles)
                 InitStyles();
+            useHabPenalties = (LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffectVets +
+                                   LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffect > 0);
+
+            GameEvents.onEditorShipModified.Add(UpdateGUIInfo);
         }
 
         private void GuiOff()
@@ -72,24 +78,28 @@ namespace LifeSupport
             GenerateWindow();
         }
 
-        private void GenerateWindow()
-        {
-            GUILayout.BeginVertical();
-            scrollPos = GUILayout.BeginScrollView(scrollPos, _scrollStyle, GUILayout.Width(645), GUILayout.Height(350));
-            GUILayout.BeginVertical();
+        private int curCrew = 0;
+        private int maxCrew = 0;
+        private double supplies = 0d;
+        private double extraHabTime = 0d;
+        private double habMult = 1d;
+        private double batteryAmount = 0d;
+        private List<ModuleHabitation> habs;
+        private string hab_curCrew = "";
+        private string hab_maxCrew = "";
+        private string supply_curCrew = "";
+        private string supply_maxCrew = "";
+        private double totalHabSpace = 0d;
+        private double totalHabMult = 0d;
+        private double totalBatteryTime = 0d;
+        private double totalSupplyTime = 0d;
+        private List<ModuleLifeSupportRecycler> recyclers;
 
-            var useHabPenalties = (LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffectVets +
-                                   LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffect > 0);
+        private void UpdateGUIInfo(ShipConstruct ship)
+        {
+            habs = new List<ModuleHabitation>();
             if (EditorLogic.fetch != null)
             {
-                var curCrew = 0;
-                var maxCrew = 0;
-                var supplies = 0d;
-                var extraHabTime = 0d;
-                var habMult = 1d;
-                var batteryAmount = 0d;
-
-                List<ModuleHabitation> habs = new List<ModuleHabitation>();
 
                 foreach (var part in EditorLogic.fetch.ship.parts)
                 {
@@ -121,7 +131,7 @@ namespace LifeSupport
                             //Certain modules, in addition to crew capacity, have living space.
                             extraHabTime += hab.KerbalMonths;
                             //Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
-                            habMult += hab.HabMultiplier*Math.Min(1, hab.CrewCapacity/Math.Max(curCrew, 1));
+                            habMult += hab.HabMultiplier * Math.Min(1, hab.CrewCapacity / Math.Max(curCrew, 1));
                         }
                         else
                         {
@@ -132,7 +142,7 @@ namespace LifeSupport
                                 {
                                     habs.Add(con);
                                     extraHabTime += con.KerbalMonths;
-                                    habMult += con.HabMultiplier*Math.Min(1, con.CrewCapacity/Math.Max(curCrew, 1));
+                                    habMult += con.HabMultiplier * Math.Min(1, con.CrewCapacity / Math.Max(curCrew, 1));
                                 }
                             }
                         }
@@ -148,16 +158,15 @@ namespace LifeSupport
                 }
 
 
-                var totalHabSpace = (LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime * maxCrew) + extraHabTime;
+                totalHabSpace = (LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime * maxCrew) + extraHabTime;
                 //A Kerbal month is 30 six-hour Kerbin days.
-                var totalHabMult = habMult * LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier * 60d * 60d * 6d * 30d;
-
-                var totalBatteryTime = batteryAmount / LifeSupportScenario.Instance.settings.GetSettings().ECAmount;
-                var totalSupplyTime = supplies / LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount;
+                totalHabMult = habMult * LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier * 60d * 60d * 6d * 30d;
+                totalBatteryTime = batteryAmount / LifeSupportScenario.Instance.settings.GetSettings().ECAmount;
+                totalSupplyTime = supplies / LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount;
 
                 if (EditorLogic.fetch.ship.parts.Count > 0)
                 {
-                    List<ModuleLifeSupportRecycler> recyclers = new List<ModuleLifeSupportRecycler>();
+                    recyclers = new List<ModuleLifeSupportRecycler>();
                     foreach (var p in EditorLogic.fetch.ship.parts)
                     {
                         var mod = p.FindModuleImplementing<ModuleLifeSupportRecycler>();
@@ -169,20 +178,34 @@ namespace LifeSupport
                     var recyclerMultiplier_curCrew = LifeSupportManager.GetRecyclerMultiplierForParts(EditorLogic.fetch.ship.parts, curCrew);
                     var recyclerMultiplier_maxCrew = LifeSupportManager.GetRecyclerMultiplierForParts(EditorLogic.fetch.ship.parts, maxCrew);
 
-                    var supply_curCrew = LifeSupportUtilities.SecondsToKerbinTime(
+                    supply_curCrew = LifeSupportUtilities.SecondsToKerbinTime(
                         totalSupplyTime /
                         Math.Max(1, curCrew) /
                         recyclerMultiplier_curCrew
                     );
-                    var supply_maxCrew = LifeSupportUtilities.SecondsToKerbinTime(
+                    supply_maxCrew = LifeSupportUtilities.SecondsToKerbinTime(
                         totalSupplyTime /
                         Math.Max(1, maxCrew) /
                         recyclerMultiplier_maxCrew
                     );
 
-                    var hab_curCrew = LifeSupportUtilities.SecondsToKerbinTime(totalHabSpace / Math.Max(1, curCrew) * totalHabMult);
-                    var hab_maxCrew = LifeSupportUtilities.SecondsToKerbinTime(totalHabSpace / Math.Max(1, maxCrew) * totalHabMult);
+                    hab_curCrew = LifeSupportUtilities.SecondsToKerbinTime(totalHabSpace / Math.Max(1, curCrew) * totalHabMult);
+                    hab_maxCrew = LifeSupportUtilities.SecondsToKerbinTime(totalHabSpace / Math.Max(1, maxCrew) * totalHabMult);
+                }
+            }
+        }
 
+
+        private void GenerateWindow()
+        {
+            GUILayout.BeginVertical();
+            scrollPos = GUILayout.BeginScrollView(scrollPos, _scrollStyle, GUILayout.Width(645), GUILayout.Height(350));
+            GUILayout.BeginVertical();
+
+            if (EditorLogic.fetch != null)
+            {
+                if (EditorLogic.fetch.ship.parts.Count > 0)
+                {
                     // Colors
                     string operColor = "99FF33";
                     string textColor = "FFFFFF";
@@ -238,7 +261,6 @@ namespace LifeSupport
                     }
 
                     GUILayout.Space(20);
-
                     GUILayout.BeginHorizontal();
                     GUILayout.Label("<b>Details</b>", _labelStyle, GUILayout.Width(150));
                     GUILayout.EndHorizontal();
@@ -255,7 +277,6 @@ namespace LifeSupport
                         const int c6 = 50;
                         const int c7 = 50;
 
-                        // hab = ((LSConfig.BaseHabTime * maxCrew) + ExtraHabTime) * Hab-Multiplier / Crew * LSConfig.HabMultiplier[Kerbin-Months]
                         GUILayout.BeginHorizontal();
                         GUILayout.Label("Habitation", _labelStyle, GUILayout.Width(c1 - 30));
                         GUILayout.Label(CTag("= ( (", operColor), _labelStyle, GUILayout.Width(30));
@@ -337,8 +358,6 @@ namespace LifeSupport
                             }
                         }
                     }
-
-
                 }
             }
             GUILayout.EndVertical();
@@ -353,6 +372,7 @@ namespace LifeSupport
                 return;
             ApplicationLauncher.Instance.RemoveModApplication(orbLogButton);
             orbLogButton = null;
+            GameEvents.onEditorShipModified.Remove(UpdateGUIInfo);
         }
 
         private void InitStyles()

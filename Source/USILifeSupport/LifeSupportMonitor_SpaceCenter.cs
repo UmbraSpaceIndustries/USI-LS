@@ -121,7 +121,10 @@ namespace LifeSupport
 
         private void GenerateWindow()
         {
-            if(string.IsNullOrEmpty(supplyTime)) //Guard clause for nulls
+            if (!renderDisplay)
+                return;
+
+            if (string.IsNullOrEmpty(supplyTime)) //Guard clause for nulls
                 GuiOn();
             try
             {
