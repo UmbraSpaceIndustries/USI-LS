@@ -1,16 +1,16 @@
 {
-     "NAME":"USI Tools",
-	 "URL":"https://raw.githubusercontent.com/BobPalmer/UmbraSpaceIndustries/master/FOR_RELEASE/GameData/000_USITools/USITools.version",
-	 "DOWNLOAD":"https://github.com/BobPalmer/UmbraSpaceIndustries/releases",
+     "NAME":"Community Category Kit",
+     "URL":"https://raw.githubusercontent.com/BobPalmer/CommunityCategoryKit/master/FOR_RELEASE/GameData/CommunityCategoryKit/CCK.version",
+     "DOWNLOAD":"https://github.com/BobPalmer/CommunityCategoryKit/releases",
      "GITHUB":{
          "USERNAME":"BobPalmer",
-         "REPOSITORY":"UmbraSpaceIndustries",
+         "REPOSITORY":"CommunityCategoryKit",
          "ALLOW_PRE_RELEASE":false
      },
      "VERSION":{
          "MAJOR":0,
-         "MINOR":8,
-         "PATCH":1,
+         "MINOR":1,
+         "PATCH":0,
          "BUILD":0
      },
      "KSP_VERSION":{

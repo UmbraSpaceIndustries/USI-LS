@@ -1,3 +1,9 @@
+0.5.1 - 2016.10.15
+------------------
+Fixed an issue where there UI was corrupted on space center view
+Corrected mass of the small radial recycler (0.6t down to 0.1t)
+Fixed node issues with small cupolas and the small greenhouse
+
 0.5.0 - (KSP 1.2)
 ------------------
 The Nom-O-Matics have been deprecated for improved models.  They have been moved to a LEGACY folder to prevent breaking existing saves, though they may not have textures.  This folder will be deleted with the next KSP release.
