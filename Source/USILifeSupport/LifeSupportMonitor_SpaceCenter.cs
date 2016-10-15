@@ -76,6 +76,8 @@ namespace LifeSupport
         {
             if (!renderDisplay)
                 return;
+            if (HighLogic.LoadedScene != GameScenes.SPACECENTER)
+                return;
 
             if (Event.current.type == EventType.Repaint || Event.current.isMouse)
             {
@@ -119,122 +121,137 @@ namespace LifeSupport
 
         private void GenerateWindow()
         {
-            var effectStrings = new[] { "none", "grouchy", "mutiny", "return", "M.I.A.", "K.I.A." };
-            GUILayout.BeginVertical();
-            // Colors
-            string operColor = "99FF33";
-            string textColor = "FFFFFF";
-            string crewColor = "ADD8E6";
-            string fadeColor = "909090";
-            string partColor = "FFCC00";
+            if (!renderDisplay)
+                return;
 
-            // column widths
-            const int c1 = 100;
-            const int c2 = 100;
-            const int c3 = 350;
-            const int c4 = 40;
-            const int c5 = 150;
-            const int c6 = 20;
-            const int c7 = 70;
-            // LABELS
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(CTag("See Wiki for config documentation",textColor), _labelStyle, GUILayout.Width(c3));
-            GUILayout.EndHorizontal();
+            if (string.IsNullOrEmpty(supplyTime)) //Guard clause for nulls
+                GuiOn();
+            try
+            {
+                var effectStrings = new[] {"none", "grouchy", "mutiny", "return", "M.I.A.", "K.I.A."};
+                GUILayout.BeginVertical();
+                // Colors
+                string operColor = "99FF33";
+                string textColor = "FFFFFF";
+                string crewColor = "ADD8E6";
+                string fadeColor = "909090";
+                string partColor = "FFCC00";
 
-            GUILayout.BeginHorizontal();
+                // column widths
+                const int c1 = 100;
+                const int c2 = 100;
+                const int c3 = 350;
+                const int c4 = 40;
+                const int c5 = 150;
+                const int c6 = 20;
+                const int c7 = 70;
+                // LABELS
+                GUILayout.BeginHorizontal();
+                GUILayout.Label(CTag("See Wiki for config documentation", textColor), _labelStyle, GUILayout.Width(c3));
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
                 GUILayout.Label("Supply Time:", _labelStyle, GUILayout.Width(c1));
                 supplyTime = GUILayout.TextField(supplyTime, 10, GUILayout.Width(c2));
                 GUILayout.Label("", _labelStyle, GUILayout.Width(c4));
                 GUILayout.Label("EC Time:", _labelStyle, GUILayout.Width(c1));
                 ecTime = GUILayout.TextField(ecTime, 10, GUILayout.Width(c2));
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
+                GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
                 GUILayout.Label("EC Amount:", _labelStyle, GUILayout.Width(c1));
                 ecAmount = GUILayout.TextField(ecAmount, 10, GUILayout.Width(c2));
                 GUILayout.Label("", _labelStyle, GUILayout.Width(c4));
                 GUILayout.Label("Supply Amount:", _labelStyle, GUILayout.Width(c1));
                 supplyAmount = GUILayout.TextField(supplyAmount, 10, GUILayout.Width(c2));
-            GUILayout.EndHorizontal();
+                GUILayout.EndHorizontal();
 
-            GUILayout.BeginHorizontal();
+                GUILayout.BeginHorizontal();
                 GUILayout.Label("EVA Time:", _labelStyle, GUILayout.Width(c1));
                 evaTime = GUILayout.TextField(evaTime, 10, GUILayout.Width(c2));
-            GUILayout.EndHorizontal();
+                GUILayout.EndHorizontal();
 
 
-            GUILayout.BeginHorizontal();
+                GUILayout.BeginHorizontal();
                 GUILayout.Label("Waste Amount:", _labelStyle, GUILayout.Width(c1));
                 wasteAmount = GUILayout.TextField(wasteAmount, 10, GUILayout.Width(c2));
                 GUILayout.Label("", _labelStyle, GUILayout.Width(c4));
                 GUILayout.Label("Wear Amount:", _labelStyle, GUILayout.Width(c1));
                 wearAmount = GUILayout.TextField(wearAmount, 10, GUILayout.Width(c2));
-            GUILayout.EndHorizontal();
+                GUILayout.EndHorizontal();
 
-            GUILayout.BeginHorizontal();
+                GUILayout.BeginHorizontal();
                 GUILayout.Label("Supply Effect (Non-Vet):", _labelStyle, GUILayout.Width(c5));
-                supNoVet = GUILayout.SelectionGrid(supNoVet, effectStrings,6, _smButtonStyle);
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
+                supNoVet = GUILayout.SelectionGrid(supNoVet, effectStrings, 6, _smButtonStyle);
+                GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
                 GUILayout.Label("Supply Effect (Vet):", _labelStyle, GUILayout.Width(c5));
                 supVet = GUILayout.SelectionGrid(supVet, effectStrings, 6, _smButtonStyle);
-            GUILayout.EndHorizontal();
+                GUILayout.EndHorizontal();
 
-            GUILayout.BeginHorizontal();
+                GUILayout.BeginHorizontal();
                 GUILayout.Label("EC Effect (Non-Vet):", _labelStyle, GUILayout.Width(c5));
                 ecNoVet = GUILayout.SelectionGrid(ecNoVet, effectStrings, 6, _smButtonStyle);
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
+                GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
                 GUILayout.Label("EC Effect (Vet):", _labelStyle, GUILayout.Width(c5));
                 ecVet = GUILayout.SelectionGrid(ecVet, effectStrings, 6, _smButtonStyle);
-            GUILayout.EndHorizontal();
+                GUILayout.EndHorizontal();
 
 
 
 
-            GUILayout.BeginHorizontal();
+                GUILayout.BeginHorizontal();
                 GUILayout.Label("EVA Effect (Non-Vet):", _labelStyle, GUILayout.Width(c5));
                 evaNoVet = GUILayout.SelectionGrid(evaNoVet, effectStrings, 6, _smButtonStyle);
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
+                GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
                 GUILayout.Label("EVA Effect (Vet):", _labelStyle, GUILayout.Width(c5));
                 evaVet = GUILayout.SelectionGrid(evaVet, effectStrings, 6, _smButtonStyle);
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
+                GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
                 GUILayout.Label("Hab Effect (Non-Vet):", _labelStyle, GUILayout.Width(c5));
                 habNoVet = GUILayout.SelectionGrid(habNoVet, effectStrings, 6, _smButtonStyle);
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
+                GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
                 GUILayout.Label("Hab Effect (Vet):", _labelStyle, GUILayout.Width(c5));
                 habVet = GUILayout.SelectionGrid(habVet, effectStrings, 6, _smButtonStyle);
-            GUILayout.EndHorizontal();
+                GUILayout.EndHorizontal();
 
-            GUILayout.BeginHorizontal();
+                GUILayout.BeginHorizontal();
                 GUILayout.Label("Hab Multiplier:", _labelStyle, GUILayout.Width(c1));
                 habMulti = GUILayout.TextField(habMulti, 3, GUILayout.Width(c4));
-            GUILayout.Label("", _labelStyle, GUILayout.Width(c6));
-            GUILayout.Label("Hab Months:", _labelStyle, GUILayout.Width(80));
+                GUILayout.Label("", _labelStyle, GUILayout.Width(c6));
+                GUILayout.Label("Hab Months:", _labelStyle, GUILayout.Width(80));
                 baseHabTime = GUILayout.TextField(baseHabTime, 10, GUILayout.Width(c4));
-            GUILayout.Label("", _labelStyle, GUILayout.Width(c6));
-            GUILayout.Label("Hab Range:", _labelStyle, GUILayout.Width(c7));
+                GUILayout.Label("", _labelStyle, GUILayout.Width(c6));
+                GUILayout.Label("Hab Range:", _labelStyle, GUILayout.Width(c7));
                 habRange = GUILayout.TextField(habRange, 4, GUILayout.Width(c4));
-            GUILayout.EndHorizontal();
+                GUILayout.EndHorizontal();
 
-            GUILayout.BeginHorizontal();
+                GUILayout.BeginHorizontal();
                 GUILayout.Label("Homeworld Altitude:", _labelStyle, GUILayout.Width(130));
                 homeAltitude = GUILayout.TextField(homeAltitude, 8, GUILayout.Width(c7));
                 enableRecyclers = GUILayout.Toggle(enableRecyclers, "Enable Recyclers:", _toggleStyle);
-            GUILayout.EndHorizontal();
-            GUILayout.Label("Vet Names (separate with commas, first name only):", _labelStyle, GUILayout.Width(c3));
-            vetNames = GUILayout.TextField(vetNames, 100, GUILayout.Width(c3));
-            GUILayout.Label("", _labelStyle, GUILayout.Width(c4));
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Save"))
-                SaveSettings(config);
-            if (GUILayout.Button("Cancel"))
-                GuiOff();
-            GUILayout.EndHorizontal();
-            GUILayout.EndVertical();
-            GUI.DragWindow();
+                GUILayout.EndHorizontal();
+                GUILayout.Label("Vet Names (separate with commas, first name only):", _labelStyle, GUILayout.Width(c3));
+                vetNames = GUILayout.TextField(vetNames, 100, GUILayout.Width(c3));
+                GUILayout.Label("", _labelStyle, GUILayout.Width(c4));
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Save"))
+                    SaveSettings(config);
+                if (GUILayout.Button("Cancel"))
+                    GuiOff();
+                GUILayout.EndHorizontal();
+            }
+            catch (Exception ex)
+            {
+                Debug.Log("Error rendering USI-LS window");
+            }
+            finally
+            {
+                GUILayout.EndVertical();
+                GUI.DragWindow();
+            }
         }
 
         private void SaveSettings(LifeSupportConfig config)

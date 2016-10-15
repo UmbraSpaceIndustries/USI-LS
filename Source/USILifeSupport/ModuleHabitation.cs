@@ -20,7 +20,7 @@ namespace LifeSupport
         {
             get
             {
-                if (HabIsActive || HighLogic.LoadedSceneIsEditor)
+                if ((HabIsActive && IsActivated) || HighLogic.LoadedSceneIsEditor)
                     return BaseHabMultiplier;
 
                 return 0f;
@@ -31,7 +31,7 @@ namespace LifeSupport
         {
             get
             {
-                if (HabIsActive || HighLogic.LoadedSceneIsEditor)
+                if ((HabIsActive && IsActivated) || HighLogic.LoadedSceneIsEditor)
                     return BaseKerbalMonths;
                 return 0f;
             }
