@@ -1,3 +1,7 @@
+0.5.3 - 2016.10.16
+------------------
+Fixed visual issue in VAB where crew was multiplying...
+
 0.5.2 - 2016.10.15
 ------------------
 Bundled correct CCK
