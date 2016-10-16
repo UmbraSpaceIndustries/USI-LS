@@ -78,6 +78,26 @@ namespace LifeSupport
             GenerateWindow();
         }
 
+        private void ResetValues()
+        {
+          curCrew = 0;
+          maxCrew = 0;
+          supplies = 0d;
+          extraHabTime = 0d;
+          habMult = 1d;
+          batteryAmount = 0d;
+          habs = new List<ModuleHabitation>();
+          hab_curCrew = "";
+          hab_maxCrew = "";
+          supply_curCrew = "";
+          supply_maxCrew = "";
+          totalHabSpace = 0d;
+          totalHabMult = 0d;
+          totalBatteryTime = 0d;
+          totalSupplyTime = 0d;
+          recyclers = new List<ModuleLifeSupportRecycler>();
+        }
+
         private int curCrew = 0;
         private int maxCrew = 0;
         private double supplies = 0d;
@@ -97,7 +117,7 @@ namespace LifeSupport
 
         private void UpdateGUIInfo(ShipConstruct ship)
         {
-            habs = new List<ModuleHabitation>();
+            ResetValues();
             if (EditorLogic.fetch != null)
             {
 
@@ -166,7 +186,6 @@ namespace LifeSupport
 
                 if (EditorLogic.fetch.ship.parts.Count > 0)
                 {
-                    recyclers = new List<ModuleLifeSupportRecycler>();
                     foreach (var p in EditorLogic.fetch.ship.parts)
                     {
                         var mod = p.FindModuleImplementing<ModuleLifeSupportRecycler>();
