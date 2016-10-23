@@ -297,7 +297,7 @@ namespace LifeSupport
             double habTotal = totHabSpace / (double)totCurCrew * (totHabMult + 1) * LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier;
              //print(String.Format("THS: {0} TC:{1} THM: {2} HM: {3}", totHabSpace, totCurCrew, totHabMult, LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier));
 
-            return Math.Max(0,habTotal * (60d * 60d * 6d * 30d));
+            return Math.Max(0,habTotal * LifeSupportUtilities.SecondsPerMonth());
         }
 
         internal static double GetRecyclerMultiplierForParts(List<Part> pList, int crewCount)
