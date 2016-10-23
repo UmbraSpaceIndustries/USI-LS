@@ -1,3 +1,14 @@
+0.5.4 - 2016.10.22
+------------------
+Upped the hab multiplier of the viewing cupola to compensate for it having no crew capacity
+slight decrease in cupola EC usage
+The three Nom O Matics have been returned to purely Agroponics roles due to disparities with mass and volume when switching roles (i.e. they made for really heavy greenhouses when they should not have been).
+A new, smaller 2.5m inline recycler has been added.
+All life support parts only show up in the life support category now, and are no longer duplicated in Utilities.
+CTT fixes (Thanks Apocriva!)
+Corrections to Seconds Per Month code (Thanks SirBriguy!)
+
+
 0.5.3 - 2016.10.16
 ------------------
 Fixed visual issue in VAB where crew was multiplying...

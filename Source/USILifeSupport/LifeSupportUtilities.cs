@@ -9,7 +9,8 @@ namespace LifeSupport
             const double secsPerMinute = 60d;
             const double secsPerHour = secsPerMinute * 60d;
             double secsPerDay = GameSettings.KERBIN_TIME ? secsPerHour * 6d : secsPerHour * 24d;
-            return GameSettings.KERBIN_TIME ? secsPerHour * 38.6d : secsPerDay * 30.4d;
+            // Our standard is 30 day months.
+            return GameSettings.KERBIN_TIME ? secsPerDay * 30d : secsPerDay * 30.4d;
         }
 
         public static string SecondsToKerbinTime(double tSnack, bool shortTime = false)
