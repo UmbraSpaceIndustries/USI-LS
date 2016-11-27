@@ -52,6 +52,9 @@ namespace LifeSupport
 
         public void FixedUpdate()
         {
+            if (!vessel.loaded)
+                return;
+
             if (!HighLogic.LoadedSceneIsFlight || vessel == null)
                 return;
 
