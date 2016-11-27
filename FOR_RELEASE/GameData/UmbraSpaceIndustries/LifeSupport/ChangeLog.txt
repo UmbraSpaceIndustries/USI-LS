@@ -1,3 +1,7 @@
+0.5.7 - 2016.11.27
+------------------
+Moved all functionality to a VesselModule in an attempt to better identify our heisenbug..
+
 0.5.6 - 2016.11.26
 ------------------
 Efficiency fixes
