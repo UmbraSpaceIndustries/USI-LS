@@ -222,9 +222,9 @@ namespace LifeSupport
             {
                 if (r.RecyclerIsActive && r.IsActivated)
                 {
-                    if (r.RecyclePercent > recyclerCap)
-                        recyclerCap = r.RecyclePercent;
-                    var recPercent = r.RecyclePercent;
+                    if (r.AdjustedRecyclePercent > recyclerCap)
+                        recyclerCap = r.AdjustedRecyclePercent;
+                    var recPercent = r.AdjustedRecyclePercent;
                     if (r.CrewCapacity < crewCount)
                         recPercent *= r.CrewCapacity/(float) crewCount;
 
@@ -239,9 +239,9 @@ namespace LifeSupport
                 {
                     if (r.IsActivated && r.RecyclerIsActive)
                     {
-                        if (r.RecyclePercent > recyclerCap)
-                            recyclerCap = r.RecyclePercent;
-                        var recPercent = r.RecyclePercent;
+                        if (r.AdjustedRecyclePercent > recyclerCap)
+                            recyclerCap = r.AdjustedRecyclePercent;
+                        var recPercent = r.AdjustedRecyclePercent;
                         if (r.CrewCapacity < crewCount)
                             recPercent *= r.CrewCapacity / (float)crewCount;
 
@@ -317,9 +317,9 @@ namespace LifeSupport
                 if (!mod.RecyclerIsActive && !HighLogic.LoadedSceneIsEditor)
                     continue;
 
-                if (mod.RecyclePercent > recyclerCap)
-                    recyclerCap = mod.RecyclePercent;
-                var recPercent = mod.RecyclePercent;
+                if (mod.AdjustedRecyclePercent > recyclerCap)
+                    recyclerCap = mod.AdjustedRecyclePercent;
+                var recPercent = mod.AdjustedRecyclePercent;
                 if (mod.CrewCapacity < crewCount)
                     recPercent *= mod.CrewCapacity / (float)crewCount;
 
