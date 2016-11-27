@@ -73,6 +73,7 @@ namespace LifeSupport
         protected IResourceBroker _resBroker;
         protected ResourceConverter _resConverter;
         protected double lastUpdateTime;
+        public bool _firstPass;
 
         public ResourceConverter ResConverter
         {
@@ -266,30 +267,37 @@ namespace LifeSupport
 
                             k.LastUpdate = Planetarium.GetUniversalTime();
 
-                            if (isGrouchyEC)
+                            if (!_firstPass)
                             {
-                                ApplyEffect(k, c,
-                                    LifeSupportManager.isVet(k.KerbalName)
-                                        ? LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffectVets
-                                        : LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffect);
+                                _firstPass = true;
                             }
-                            else if (isGrouchySupplies)
+                            else
                             {
-                                ApplyEffect(k, c,
-                                    LifeSupportManager.isVet(k.KerbalName)
-                                        ? LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffectVets
-                                        : LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffect);
-                            }
-                            else if (isGrouchyHab)
-                            {
-                                ApplyEffect(k, c,
-                                    LifeSupportManager.isVet(k.KerbalName)
-                                        ? LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffectVets
-                                        : LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffect);
-                            }
-                            else if (c.experienceTrait.Title != k.OldTrait)
-                            {
-                                RemoveGrouchiness(c, k);
+                                if (isGrouchyEC)
+                                {
+                                    ApplyEffect(k, c,
+                                        LifeSupportManager.isVet(k.KerbalName)
+                                            ? LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffectVets
+                                            : LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffect);
+                                }
+                                else if (isGrouchySupplies)
+                                {
+                                    ApplyEffect(k, c,
+                                        LifeSupportManager.isVet(k.KerbalName)
+                                            ? LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffectVets
+                                            : LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffect);
+                                }
+                                else if (isGrouchyHab)
+                                {
+                                    ApplyEffect(k, c,
+                                        LifeSupportManager.isVet(k.KerbalName)
+                                            ? LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffectVets
+                                            : LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffect);
+                                }
+                                else if (c.experienceTrait.Title != k.OldTrait)
+                                {
+                                    RemoveGrouchiness(c, k);
+                                }
                             }
                             LifeSupportManager.Instance.TrackKerbal(k);
                         }

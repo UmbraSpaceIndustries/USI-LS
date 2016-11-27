@@ -1,8 +1,9 @@
 using System.Linq;
+using USITools;
 
 namespace LifeSupport
 {
-    public class ModuleLifeSupportExtender : ModuleResourceConverter
+    public class ModuleLifeSupportExtender : ModuleResourceConverter_USI
     {
         [KSPField]
         public float TimeMultiplier= 1f;
@@ -21,6 +22,7 @@ namespace LifeSupport
 
         protected override void PostProcess(ConverterResults result, double deltaTime)
         {
+            base.PostProcess(result, deltaTime);
             var baseTime = TimeMultiplier*result.TimeFactor;
             var kerbals =
                 vessel.GetVesselCrew()
