@@ -64,6 +64,7 @@
     <Compile Include="ModuleLifeSupport.cs" />
     <Compile Include="ModuleLifeSupportExtender.cs" />
     <Compile Include="ModuleLifeSupportRecycler.cs" />
+    <Compile Include="ModuleLifeSupportSystem.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="LifeSupportManager.cs" />
     <Compile Include="LifeSupportMonitor.cs" />
