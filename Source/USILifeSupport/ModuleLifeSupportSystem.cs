@@ -58,6 +58,9 @@ namespace LifeSupport
             if (!HighLogic.LoadedSceneIsFlight || vessel == null)
                 return;
 
+            if (_currentCrew == 0)
+                return;
+
             try
             {
                 bool isLongLoop = false;

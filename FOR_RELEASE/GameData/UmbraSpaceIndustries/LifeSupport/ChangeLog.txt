@@ -1,3 +1,7 @@
+0.5.9 - 2016.11.27
+------------------
+Even more spam fixed...
+
 0.5.8 - 2016.11.27
 ------------------
 Fixed an issue causing log spam
