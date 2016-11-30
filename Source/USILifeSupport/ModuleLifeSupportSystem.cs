@@ -10,12 +10,18 @@ namespace LifeSupport
         [KSPField(isPersistant = true)]
         public double LastUpdateTime;
 
+        private bool isDirty = true;
+
         public void Start()
         {
-            GameEvents.onVesselPartCountChanged.Add(UpdateVessel);
-            GameEvents.onVesselCrewWasModified.Add(UpdateVessel);
-            GameEvents.onVesselCrewWasModified.Add(UpdateVessel);
-            GameEvents.onVesselChange.Add(UpdateVessel);
+            GameEvents.onVesselPartCountChanged.Add(SetVesselDirty);
+            GameEvents.onVesselCrewWasModified.Add(SetVesselDirty);
+            GameEvents.onVesselChange.Add(SetVesselDirty);
+        }
+
+        private void SetVesselDirty(Vessel v)
+        {
+            isDirty = true;
         }
 
         private VesselSupplyStatus _vStat;
@@ -44,19 +50,24 @@ namespace LifeSupport
 
         public void OnDestroy()
         {
-            GameEvents.onVesselPartCountChanged.Remove(UpdateVessel);
-            GameEvents.onVesselCrewWasModified.Remove(UpdateVessel);
-            GameEvents.onVesselCrewWasModified.Remove(UpdateVessel);
-            GameEvents.onVesselChange.Remove(UpdateVessel);
+            GameEvents.onVesselPartCountChanged.Remove(SetVesselDirty);
+            GameEvents.onVesselCrewWasModified.Remove(SetVesselDirty);
+            GameEvents.onVesselChange.Remove(SetVesselDirty);
         }
 
         public void FixedUpdate()
         {
+            if (!HighLogic.LoadedSceneIsFlight || vessel == null)
+                return;
             if (!vessel.loaded)
                 return;
 
-            if (!HighLogic.LoadedSceneIsFlight || vessel == null)
-                return;
+            if (isDirty)
+            {
+                isDirty = false;
+                UpdateVesselInfo();
+                UpdateStatus();
+            }
 
             if (_currentCrew == 0)
                 return;
@@ -91,6 +102,10 @@ namespace LifeSupport
 
                 if (_currentCrew > 0)
                 {
+                    //Guard clause
+                    if(_crewPart == null)
+                        UpdateVesselInfo();
+
                     //we will add a bit of a fudge factor for supplies
                     var tolerance = deltaTime / 2f;
                     //nom nom nom!
@@ -204,15 +219,6 @@ namespace LifeSupport
             }
         }
 
-        private void UpdateVessel(Vessel thisVessel)
-        {
-            if (!HighLogic.LoadedSceneIsFlight || vessel == null)
-                return;
-
-            UpdateVesselInfo();
-            UpdateStatus();
-        }
-
         private void UpdateVesselInfo()
         {
             if (!HighLogic.LoadedSceneIsFlight || vessel == null)
@@ -220,7 +226,8 @@ namespace LifeSupport
 
             CheckForDeadKerbals();
             _currentCrew = vessel.GetCrewCount();
-            _crewPart = vessel.Parts.First(p => p.CrewCapacity > 0);
+            if(vessel.GetCrewCapacity() > 0)
+                _crewPart = vessel.Parts.First(p => p.CrewCapacity > 0);
         }
 
         private void UpdateStatus()
