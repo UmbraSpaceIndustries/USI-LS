@@ -94,7 +94,7 @@ namespace LifeSupport
                 k.LastEC = Planetarium.GetUniversalTime();
                 k.LastAtHome = Planetarium.GetUniversalTime();
                 k.LastSOIChange = Planetarium.GetUniversalTime();
-                k.MaxOffKerbinTime = 648000;    //TODO - make this configurable
+                k.MaxOffKerbinTime = Planetarium.GetUniversalTime() + 648000;    
                 k.TimeEnteredVessel = Planetarium.GetUniversalTime();
                 k.CurrentVesselId = "?UNKNOWN?";
                 k.PreviousVesselId = "??UNKNOWN??";
@@ -272,6 +272,7 @@ namespace LifeSupport
             numSharedVessels = 0;
 
             var vList = LogisticsTools.GetNearbyVessels((float)LifeSupportScenario.Instance.settings.GetSettings().HabRange, false, vsl, false);
+            var hList = new List<Vessel>();
             foreach (var v in vList)
             {
                 //Hab time starts with our baseline of the crew hab plus extra hab.
@@ -284,12 +285,13 @@ namespace LifeSupport
                 if (crewCap > 0)
                 {
                     numSharedVessels++;
+                    hList.Add(v);
                 }
             }
 
-            foreach (var v in vList)
+            foreach (var v in hList)
             {
-               // Calculate HabSpace and HabMult after we know totCurCrew and totMaxCrew
+                // Calculate HabSpace and HabMult after we know totCurCrew and totMaxCrew
                totHabSpace += (LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime * totMaxCrew) + CalculateVesselHabExtraTime(v);
                totHabMult += CalculateVesselHabMultiplier(v, totCurCrew);         
             }

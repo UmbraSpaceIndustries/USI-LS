@@ -1,3 +1,7 @@
+0.5.11 - 2016.11.29
+-------------------
+Some improved handling, fixed a habitation calculation bug
+
 0.5.10 - 2016.11.29
 -------------------
 Fixed decoupler spam

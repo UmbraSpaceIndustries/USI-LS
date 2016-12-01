@@ -50,9 +50,9 @@ namespace LifeSupport
 
         public void OnDestroy()
         {
-            GameEvents.onVesselPartCountChanged.Remove(SetVesselDirty);
-            GameEvents.onVesselCrewWasModified.Remove(SetVesselDirty);
-            GameEvents.onVesselChange.Remove(SetVesselDirty);
+            //GameEvents.onVesselPartCountChanged.Remove(SetVesselDirty);
+            //GameEvents.onVesselCrewWasModified.Remove(SetVesselDirty);
+            //GameEvents.onVesselChange.Remove(SetVesselDirty);
         }
 
         public void FixedUpdate()
@@ -127,10 +127,11 @@ namespace LifeSupport
                             //Ensure status is current
                             UpdateStatus();
                             //First - Hab effects.
-                            if (LifeSupportManager.IsOnKerbin(vessel))
+                            if (!offKerbin)
                             {
+                                var habTime = LifeSupportManager.GetTotalHabTime(VesselStatus);
                                 k.LastAtHome = Planetarium.GetUniversalTime();
-                                k.MaxOffKerbinTime = 648000;
+                                k.MaxOffKerbinTime = habTime + k.LastAtHome;
                                 k.TimeEnteredVessel = Planetarium.GetUniversalTime();
                             }
                             else
@@ -143,8 +144,9 @@ namespace LifeSupport
                                     k.PreviousVesselId = k.CurrentVesselId;
                                     k.CurrentVesselId = vessel.id.ToString();
                                 }
+                                isGrouchyHab = CheckHabSideEffects(k);
                             }
-                            isGrouchyHab = CheckHabSideEffects(k);
+
 
                             //Second - Supply
                             if (offKerbin && (deltaTime - resultSupply.TimeFactor > tolerance))
