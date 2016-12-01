@@ -1,3 +1,11 @@
+0.5.12 - 2016.12.01
+-------------------
+Added reason for Kerbal effects to aid in troubleshooting
+
+0.5.11 - 2016.11.29
+-------------------
+Some improved handling, fixed a habitation calculation bug
+
 0.5.10 - 2016.11.29
 -------------------
 Fixed decoupler spam

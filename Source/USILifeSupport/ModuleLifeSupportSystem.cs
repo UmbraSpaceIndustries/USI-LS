@@ -50,9 +50,9 @@ namespace LifeSupport
 
         public void OnDestroy()
         {
-            GameEvents.onVesselPartCountChanged.Remove(SetVesselDirty);
-            GameEvents.onVesselCrewWasModified.Remove(SetVesselDirty);
-            GameEvents.onVesselChange.Remove(SetVesselDirty);
+            //GameEvents.onVesselPartCountChanged.Remove(SetVesselDirty);
+            //GameEvents.onVesselCrewWasModified.Remove(SetVesselDirty);
+            //GameEvents.onVesselChange.Remove(SetVesselDirty);
         }
 
         public void FixedUpdate()
@@ -127,10 +127,11 @@ namespace LifeSupport
                             //Ensure status is current
                             UpdateStatus();
                             //First - Hab effects.
-                            if (LifeSupportManager.IsOnKerbin(vessel))
+                            if (!offKerbin)
                             {
+                                var habTime = LifeSupportManager.GetTotalHabTime(VesselStatus);
                                 k.LastAtHome = Planetarium.GetUniversalTime();
-                                k.MaxOffKerbinTime = 648000;
+                                k.MaxOffKerbinTime = habTime + k.LastAtHome;
                                 k.TimeEnteredVessel = Planetarium.GetUniversalTime();
                             }
                             else
@@ -143,8 +144,9 @@ namespace LifeSupport
                                     k.PreviousVesselId = k.CurrentVesselId;
                                     k.CurrentVesselId = vessel.id.ToString();
                                 }
+                                isGrouchyHab = CheckHabSideEffects(k);
                             }
-                            isGrouchyHab = CheckHabSideEffects(k);
+
 
                             //Second - Supply
                             if (offKerbin && (deltaTime - resultSupply.TimeFactor > tolerance))
@@ -179,21 +181,21 @@ namespace LifeSupport
                                 ApplyEffect(k, c,
                                     LifeSupportManager.isVet(k.KerbalName)
                                         ? LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffectVets
-                                        : LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffect);
+                                        : LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffect,"power loss");
                             }
                             else if (isGrouchySupplies)
                             {
                                 ApplyEffect(k, c,
                                     LifeSupportManager.isVet(k.KerbalName)
                                         ? LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffectVets
-                                        : LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffect);
+                                        : LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffect,"lack of supplies");
                             }
                             else if (isGrouchyHab)
                             {
                                 ApplyEffect(k, c,
                                     LifeSupportManager.isVet(k.KerbalName)
                                         ? LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffectVets
-                                        : LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffect);
+                                        : LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffect,"homesickness");
                             }
                             else if (c.experienceTrait.Title != k.OldTrait)
                             {
@@ -476,7 +478,7 @@ namespace LifeSupport
             }
         }
 
-        private void ApplyEffect(LifeSupportStatus kStat, ProtoCrewMember crew, int effectId)
+        private void ApplyEffect(LifeSupportStatus kStat, ProtoCrewMember crew, int effectId, string reason)
         {
             /*
              *  SIDE EFFECTS:
@@ -496,7 +498,7 @@ namespace LifeSupport
                 case 1: //Grouchy
                     if (crew.type != ProtoCrewMember.KerbalType.Tourist)
                     {
-                        msg = string.Format("{0} refuses to work", crew.name);
+                        msg = string.Format("{0} refuses to work {1}", crew.name, reason);
                         kStat.OldTrait = crew.experienceTrait.Title;
                         crew.type = ProtoCrewMember.KerbalType.Tourist;
                         KerbalRoster.SetExperienceTrait(crew, "Tourist");
@@ -506,7 +508,7 @@ namespace LifeSupport
                     break;
                 case 2:  //Mutinous
                     {
-                        msg = string.Format("{0} has become mutinous", crew.name);
+                        msg = string.Format("{0} has become mutinous due to {1}", crew.name, reason);
                         kStat.OldTrait = crew.experienceTrait.Title;
                         crew.type = ProtoCrewMember.KerbalType.Tourist;
                         KerbalRoster.SetExperienceTrait(crew, "Tourist");
@@ -516,21 +518,21 @@ namespace LifeSupport
                     }
                     break;
                 case 3: //Return to KSC
-                    msg = string.Format("{0} gets fed up and wanders back to the KSC", crew.name);
+                    msg = string.Format("{0} gets fed up and wanders back to the KSC due to {1}", crew.name, reason);
                     LifeSupportManager.Instance.UntrackKerbal(crew.name);
                     crew.rosterStatus = ProtoCrewMember.RosterStatus.Available;
                     vessel.CrewListSetDirty();
                     RemoveCrewFromPart(crew);
                     break;
                 case 4: //Despawn
-                    msg = string.Format("{0} has gone missing", crew.name);
+                    msg = string.Format("{0} has gone missing due to {1}", crew.name, reason);
                     LifeSupportManager.Instance.UntrackKerbal(crew.name);
                     vessel.CrewListSetDirty();
                     RemoveCrewFromPart(crew);
                     crew.rosterStatus = ProtoCrewMember.RosterStatus.Missing;
                     break;
                 case 5: //Kill
-                    msg = string.Format("{0} has died", crew.name);
+                    msg = string.Format("{0} has died due to {1}", crew.name, reason);
                     LifeSupportManager.Instance.UntrackKerbal(crew.name);
                     vessel.CrewListSetDirty();
                     RemoveCrewFromPart(crew);
