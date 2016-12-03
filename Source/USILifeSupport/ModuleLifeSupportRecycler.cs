@@ -15,7 +15,7 @@ namespace LifeSupport
         [KSPField(isPersistant = true)] 
         public bool RecyclerIsActive = false;
 
-        private float _adjPercent;
+        private float _adjPercent = 1f;
         public float AdjustedRecyclePercent
         {
             get

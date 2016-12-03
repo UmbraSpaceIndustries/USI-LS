@@ -19,10 +19,14 @@ namespace LifeSupport
 
         public double HabAdjustment
         {
-            get { return HighLogic.LoadedSceneIsEditor ? 1d : _habAdjustment; }
+            get
+            {
+                return HighLogic.LoadedSceneIsEditor ? 1d : _habAdjustment;
+            }
             set { _habAdjustment = value;  }
         }
-        private double _habAdjustment;
+
+        private double _habAdjustment = 1d;
 
         public double HabMultiplier
         {
