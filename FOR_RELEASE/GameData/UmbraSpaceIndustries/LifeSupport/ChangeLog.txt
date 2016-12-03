@@ -1,5 +1,9 @@
 0.5.12 - 2016.12.01
 -------------------
+Habitation Bug is finally killed (I think!)  Thanks everyone, and extra kudos to Wyzard256 for the save, and SirBriguy for the troubleshooting!
+
+0.5.12 - 2016.12.01
+-------------------
 Added reason for Kerbal effects to aid in troubleshooting
 
 0.5.11 - 2016.11.29
