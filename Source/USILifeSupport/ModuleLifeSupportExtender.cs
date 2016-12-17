@@ -20,6 +20,12 @@ namespace LifeSupport
         [KSPField]
         public bool habTimer = true;
 
+        protected override void PreProcessing()
+        {
+            base.PreProcessing();
+            EfficiencyBonus = 1f;
+        }
+
         protected override void PostProcess(ConverterResults result, double deltaTime)
         {
             base.PostProcess(result, deltaTime);

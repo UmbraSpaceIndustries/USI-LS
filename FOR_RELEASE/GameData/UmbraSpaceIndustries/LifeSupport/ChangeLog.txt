@@ -1,4 +1,11 @@
-0.5.12 - 2016.12.01
+0.5.14 - (KSP 1.2.2)
+-------------------
+Updates for KSP 1.2.2
+LS screen now properly shows in TC
+Recyclers no longer allow negative values (nor are they affected by efficiency from MKS)
+Removed some old legacy parts
+
+0.5.13 - 2016.12.01
 -------------------
 Habitation Bug is finally killed (I think!)  Thanks everyone, and extra kudos to Wyzard256 for the save, and SirBriguy for the troubleshooting!
 

@@ -103,13 +103,14 @@ namespace LifeSupport
                 if (_currentCrew > 0)
                 {
                     //Guard clause
-                    if(_crewPart == null)
+                    if (_crewPart == null)
                         UpdateVesselInfo();
 
                     //we will add a bit of a fudge factor for supplies
-                    var tolerance = deltaTime / 2f;
+                    var tolerance = deltaTime/2f;
                     //nom nom nom!
-                    ConverterResults resultSupply = ResConverter.ProcessRecipe(deltaTime, SupplyRecipe, _crewPart, null, 1f);
+                    ConverterResults resultSupply = ResConverter.ProcessRecipe(deltaTime, SupplyRecipe, _crewPart, null,
+                        1f);
                     ConverterResults resultEC = ResConverter.ProcessRecipe(deltaTime, ECRecipe, _crewPart, null, 1f);
 
                     foreach (var c in vessel.GetVesselCrew())
@@ -122,6 +123,7 @@ namespace LifeSupport
                         //Update our stuff
 
                         #region Long Loop - Crew
+
                         if (isLongLoop)
                         {
                             //Ensure status is current
@@ -181,21 +183,24 @@ namespace LifeSupport
                                 ApplyEffect(k, c,
                                     LifeSupportManager.isVet(k.KerbalName)
                                         ? LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffectVets
-                                        : LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffect,"power loss");
+                                        : LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffect,
+                                    "power loss");
                             }
                             else if (isGrouchySupplies)
                             {
                                 ApplyEffect(k, c,
                                     LifeSupportManager.isVet(k.KerbalName)
                                         ? LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffectVets
-                                        : LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffect,"lack of supplies");
+                                        : LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffect,
+                                    "lack of supplies");
                             }
                             else if (isGrouchyHab)
                             {
                                 ApplyEffect(k, c,
                                     LifeSupportManager.isVet(k.KerbalName)
                                         ? LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffectVets
-                                        : LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffect,"homesickness");
+                                        : LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffect,
+                                    "homesickness");
                             }
                             else if (c.experienceTrait.Title != k.OldTrait)
                             {
@@ -203,15 +208,26 @@ namespace LifeSupport
                             }
                             LifeSupportManager.Instance.TrackKerbal(k);
                         }
+
                         #endregion - Crew
-                        var supAmount = _resBroker.AmountAvailable(_crewPart, "Supplies", deltaTime, ResourceFlowMode.ALL_VESSEL);
-                        var ecAmount = _resBroker.AmountAvailable(_crewPart, "ElectricCharge", deltaTime, ResourceFlowMode.ALL_VESSEL);
-                        VesselStatus.SuppliesLeft = supAmount / LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount /
-                                         _currentCrew /
-                                         VesselStatus.RecyclerMultiplier;
+
+                        var supAmount = _resBroker.AmountAvailable(_crewPart, "Supplies", deltaTime,
+                            ResourceFlowMode.ALL_VESSEL);
+                        var ecAmount = _resBroker.AmountAvailable(_crewPart, "ElectricCharge", deltaTime,
+                            ResourceFlowMode.ALL_VESSEL);
+                        VesselStatus.SuppliesLeft = supAmount/
+                                                    LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount/
+                                                    _currentCrew/
+                                                    VesselStatus.RecyclerMultiplier;
                         VesselStatus.ECLeft = ecAmount/LifeSupportScenario.Instance.settings.GetSettings().ECAmount/
                                               _currentCrew;
                     }
+                }
+                else
+                {
+                    VesselStatus.LastECCheck = Planetarium.GetUniversalTime();
+                    VesselStatus.LastFeeding = Planetarium.GetUniversalTime();
+                    VesselStatus.LastUpdate = Planetarium.GetUniversalTime();
                 }
                 LifeSupportManager.Instance.TrackVessel(VesselStatus);
             }
