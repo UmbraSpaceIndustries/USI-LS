@@ -14,11 +14,21 @@ namespace LifeSupport
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class LifeSupportMonitor_Flight : LifeSupportMonitor
-    { }
+    {
+        protected override bool IsActive()
+        {
+            return HighLogic.LoadedSceneIsFlight;
+        }
+    }
 
     [KSPAddon(KSPAddon.Startup.TrackingStation, false)]
     public class LifeSupportMonitor_TStation : LifeSupportMonitor
-    { }
+    {
+        protected override bool IsActive()
+        {
+            return HighLogic.LoadedScene == GameScenes.TRACKSTATION;
+        }
+    }
 
 
     public class LifeSupportMonitor : MonoBehaviour
@@ -64,7 +74,7 @@ namespace LifeSupport
         {
             if (!renderDisplay)
                 return;
-            if (!HighLogic.LoadedSceneIsFlight)
+            if (!IsActive())
                 return;
 
 
@@ -73,6 +83,11 @@ namespace LifeSupport
                 //preDrawQueue
             }
             Ondraw();
+        }
+
+        protected virtual bool IsActive()
+        {
+            return false;
         }
 
 
