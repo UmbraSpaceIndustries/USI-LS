@@ -50,6 +50,7 @@ namespace LifeSupport
                     _VesselSupplyInfo = new List<VesselSupplyStatus>();
                     _VesselSupplyInfo.AddRange(LifeSupportScenario.Instance.settings.GetVesselInfo());
                 }
+
                 return _VesselSupplyInfo;
             }
         }
@@ -150,6 +151,7 @@ namespace LifeSupport
                 v.RecyclerMultiplier = 1;
                 v.CrewCap = 0;
                 v.VesselHabMultiplier = 0;
+                v.CachedHabTime = 0;
                 v.ExtraHabSpace = 0;
                 v.SuppliesLeft = 0f;
                 v.ECLeft = 0f;
@@ -255,20 +257,27 @@ namespace LifeSupport
         }
 
 
-         internal static double GetTotalHabTime(VesselSupplyStatus sourceVessel)
+         internal static double GetTotalHabTime(VesselSupplyStatus sourceVessel, Vessel vsl)
          {
              int numSharedVessels = 0;
-             return GetTotalHabTime(sourceVessel, out numSharedVessels);
+             return GetTotalHabTime(sourceVessel, vsl, out numSharedVessels);
          }
  
-         internal static double GetTotalHabTime(VesselSupplyStatus sourceVessel, out int numSharedVessels)
+         internal static double GetTotalHabTime(VesselSupplyStatus sourceVessel, Vessel vsl, out int numSharedVessels)
          {
-            var vsl = FlightGlobals.Vessels.FirstOrDefault(v => v.id.ToString() == sourceVessel.VesselId);
-            double totHabSpace = (LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime * sourceVessel.CrewCap) + sourceVessel.ExtraHabSpace;
+            //In the event that a vessel is not loaded, we just return the cached value.
+             if (!vsl.loaded)
+             {
+                numSharedVessels = 0;
+                return sourceVessel.CachedHabTime;
+            }
+
+            double totHabSpace = sourceVessel.ExtraHabSpace;
             double totHabMult = sourceVessel.VesselHabMultiplier;
 
             int totCurCrew = sourceVessel.NumCrew;
             int totMaxCrew = sourceVessel.CrewCap;
+
             numSharedVessels = 0;
 
             var vList = LogisticsTools.GetNearbyVessels((float)LifeSupportScenario.Instance.settings.GetSettings().HabRange, false, vsl, false);
@@ -288,19 +297,22 @@ namespace LifeSupport
                     hList.Add(v);
                 }
             }
+            totHabSpace += (LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime * totMaxCrew);
 
             foreach (var v in hList)
             {
                 // Calculate HabSpace and HabMult after we know totCurCrew and totMaxCrew
-               totHabSpace += (LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime * totMaxCrew) + CalculateVesselHabExtraTime(v);
-               totHabMult += CalculateVesselHabMultiplier(v, totCurCrew);         
+               totHabSpace += CalculateVesselHabExtraTime(v);
+               totHabMult *= Math.Min(1,CalculateVesselHabMultiplier(v, totCurCrew));         
             }
+
             totHabMult += USI_GlobalBonuses.Instance.GetHabBonus(vsl.mainBody.flightGlobalsIndex);
             double habTotal = totHabSpace / (double)totCurCrew * (totHabMult + 1) * LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier;
              //print(String.Format("THS: {0} TC:{1} THM: {2} HM: {3}", totHabSpace, totCurCrew, totHabMult, LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier));
-
-            return Math.Max(0,habTotal * LifeSupportUtilities.SecondsPerMonth());
-        }
+            sourceVessel.CachedHabTime = Math.Max(0, habTotal * LifeSupportUtilities.SecondsPerMonth());
+            LifeSupportManager.Instance.TrackVessel(sourceVessel);
+            return sourceVessel.CachedHabTime;
+         }
 
         internal static double GetRecyclerMultiplierForParts(List<Part> pList, int crewCount)
         {
@@ -352,7 +364,6 @@ namespace LifeSupport
             var habMulti = 0d;
             foreach (var hab in v.FindPartModulesImplementing<ModuleHabitation>())
             {
-                //Lastly.  Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
                 habMulti += (hab.HabMultiplier * Math.Min(1, hab.CrewCapacity / numCrew));
             }
             return habMulti;

@@ -141,8 +141,9 @@ namespace LifeSupport
 
         public List<VesselSupplyStatus> GetVesselInfo()
         {
-            return _VesselInfo ?? (_VesselInfo = SetupVesselInfo());
-
+            if (_VesselInfo == null)
+                _VesselInfo = SetupVesselInfo();
+            return _VesselInfo;
         }
 
         public LifeSupportConfig GetSettings()
@@ -195,8 +196,10 @@ namespace LifeSupport
 
             if (_VesselInfo != null)
             {
-                foreach (VesselSupplyStatus r in _VesselInfo)
+                var count = _VesselInfo.Count;
+                for(int i = 0; i < count; ++i)
                 {
+                    var r = _VesselInfo[i];
                     if (string.IsNullOrEmpty(r.VesselName))
                         continue;
                     var rNode = new ConfigNode("VESSEL_DATA");
@@ -209,6 +212,7 @@ namespace LifeSupport
                     rNode.AddValue("CrewCap", r.CrewCap);
                     rNode.AddValue("ExtraHabSpace", r.ExtraHabSpace);
                     rNode.AddValue("VesselHabMultiplier", r.VesselHabMultiplier);
+                    rNode.AddValue("CachedHabTime", r.CachedHabTime);
                     rNode.AddValue("LastFeeding", r.LastFeeding);
                     rNode.AddValue("LastECCheck", r.LastECCheck);
                     SettingsNode.AddNode(rNode);
@@ -400,6 +404,7 @@ namespace LifeSupport
             vesselInfo.CrewCap = status.CrewCap;
             vesselInfo.ExtraHabSpace = status.ExtraHabSpace;
             vesselInfo.VesselHabMultiplier = status.VesselHabMultiplier;
+            vesselInfo.CachedHabTime = status.CachedHabTime;
             vesselInfo.SuppliesLeft = status.SuppliesLeft;
             vesselInfo.ECLeft = status.ECLeft;
         }
