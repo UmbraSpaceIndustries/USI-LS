@@ -1,3 +1,17 @@
+0.5.15 - 2017.01.01
+-------------------
+Dependency Updates
+Fixed an issue where the timer for unloaded vessels was not reflecting the 15 day grace period.
+Better caching of hab data to prevent some physics bubble oddities
+When crew go mutinous, a few supplies are shaken out.  This will help prevent catastrophic mutiny cascades.  Which, while entertaining, were a bit more destructive than anticipated.
+Nom tanks got their normal map back
+Habitation EC costs have been reduced.
+The life support window in the VAB correctly shows recyclers only when loaded in the case of configurable bays.
+Fixed Nom-O-Matic 5000 cost
+Several rounds of bug fixes around timers, etc.
+
+
+
 0.5.14 - (KSP 1.2.2)
 -------------------
 Updates for KSP 1.2.2

@@ -188,11 +188,27 @@ namespace LifeSupport
                 {
                     foreach (var p in EditorLogic.fetch.ship.parts)
                     {
-                        var mod = p.FindModuleImplementing<ModuleLifeSupportRecycler>();
-                        if (mod == null)
-                            continue;
-
-                        recyclers.Add(mod);
+                        var rec = p.Modules.GetModule<ModuleLifeSupportRecycler>();
+                        if (rec != null)
+                        {
+                            var conList = p.Modules.GetModules<BaseConverter>();
+                            var bayList = p.Modules.GetModules<ModuleSwappableConverter>();
+                            if (bayList == null || bayList.Count == 0)
+                            {
+                                recyclers.Add(rec);
+                            }
+                            else
+                            {
+                                foreach (var bay in bayList)
+                                {
+                                    var con = conList[bay.currentLoadout] as ModuleLifeSupportRecycler;
+                                    if (con != null)
+                                    {
+                                        recyclers.Add(con);
+                                    }
+                                }
+                            }
+                        }
                     }
                     var recyclerMultiplier_curCrew = LifeSupportManager.GetRecyclerMultiplierForParts(EditorLogic.fetch.ship.parts, curCrew);
                     var recyclerMultiplier_maxCrew = LifeSupportManager.GetRecyclerMultiplierForParts(EditorLogic.fetch.ship.parts, maxCrew);
@@ -312,7 +328,7 @@ namespace LifeSupport
                         GUILayout.Label(CTag(LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime.ToString(), fadeColor), _labelStyle, GUILayout.Width(c2));
                         GUILayout.Label(CTag(maxCrew.ToString(), crewColor), _labelStyle, GUILayout.Width(c3));
                         GUILayout.Label(CTag(extraHabTime.ToString(), textColor), _labelStyle, GUILayout.Width(c4));
-                        GUILayout.Label(CTag(habMult.ToString(), textColor), _labelStyle, GUILayout.Width(c5));
+                        GUILayout.Label(CTag("(1+" + (habMult-1d) +")", textColor), _labelStyle, GUILayout.Width(c5));
                         GUILayout.Label(CTag(Math.Max(1, curCrew).ToString(), crewColor), _labelStyle, GUILayout.Width(c6));
                         GUILayout.Label(CTag(LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier.ToString(), fadeColor), _labelStyle, GUILayout.Width(c7));
                         GUILayout.EndHorizontal();
@@ -322,7 +338,7 @@ namespace LifeSupport
                         GUILayout.Label(CTag(LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime.ToString(), fadeColor), _labelStyle, GUILayout.Width(c2));
                         GUILayout.Label(CTag(maxCrew.ToString(), crewColor), _labelStyle, GUILayout.Width(c3));
                         GUILayout.Label(CTag(extraHabTime.ToString(), textColor), _labelStyle, GUILayout.Width(c4));
-                        GUILayout.Label(CTag(habMult.ToString(), textColor), _labelStyle, GUILayout.Width(c5));
+                        GUILayout.Label(CTag("(1+" + (habMult - 1d) + ")", textColor), _labelStyle, GUILayout.Width(c5));
                         GUILayout.Label(CTag(Math.Max(1, maxCrew).ToString(), crewColor), _labelStyle, GUILayout.Width(c6));
                         GUILayout.Label(CTag(LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier.ToString(), fadeColor), _labelStyle, GUILayout.Width(c7));
                         GUILayout.EndHorizontal();

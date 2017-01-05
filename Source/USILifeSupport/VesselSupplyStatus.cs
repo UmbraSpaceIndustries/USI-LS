@@ -12,6 +12,7 @@ namespace LifeSupport
         public int CrewCap { get; set; }
         public double ExtraHabSpace { get; set; }
         public double VesselHabMultiplier { get; set; }
+        public double CachedHabTime { get; set; }
         public double SuppliesLeft { get; set; }
         public double ECLeft { get; set; }
         public double LastFeeding { get; set; }
