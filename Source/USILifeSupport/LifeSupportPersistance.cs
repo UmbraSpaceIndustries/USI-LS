@@ -141,8 +141,9 @@ namespace LifeSupport
 
         public List<VesselSupplyStatus> GetVesselInfo()
         {
-            return _VesselInfo ?? (_VesselInfo = SetupVesselInfo());
-
+            if (_VesselInfo == null)
+                _VesselInfo = SetupVesselInfo();
+            return _VesselInfo;
         }
 
         public LifeSupportConfig GetSettings()
@@ -170,65 +171,80 @@ namespace LifeSupport
             if (_Settings == null)
                 _Settings = LoadLifeSupportConfig();
 
-            foreach (LifeSupportStatus r in _StatusInfo)
+            if (_StatusInfo != null)
             {
-                var rNode = new ConfigNode("STATUS_DATA");
-                rNode.AddValue("KerbalName", r.KerbalName);
-                rNode.AddValue("LastMeal", r.LastMeal);
-                rNode.AddValue("LastEC", r.LastEC);
-                rNode.AddValue("LastOnKerbin", r.LastOnKerbin);
-                rNode.AddValue("MaxOffKerbinTime", r.MaxOffKerbinTime);
-                rNode.AddValue("CurrentVesselId", r.CurrentVesselId);
-                rNode.AddValue("PreviousVesselId", r.PreviousVesselId);
-                rNode.AddValue("TimeEnteredVessel", r.TimeEnteredVessel);
-                rNode.AddValue("IsGrouchy", r.IsGrouchy);
-                rNode.AddValue("OldTrait", r.OldTrait);
-                rNode.AddValue("LastUpdate", r.LastUpdate);
-                SettingsNode.AddNode(rNode);
+                foreach (LifeSupportStatus r in _StatusInfo)
+                {
+                    var rNode = new ConfigNode("STATUS_DATA");
+                    rNode.AddValue("KerbalName", r.KerbalName);
+                    rNode.AddValue("HomeBodyId", r.HomeBodyId);
+                    rNode.AddValue("LastMeal", r.LastMeal);
+                    rNode.AddValue("LastEC", r.LastEC);
+                    rNode.AddValue("LastAtHome", r.LastAtHome);
+                    rNode.AddValue("LastSOIChange", r.LastSOIChange);
+                    rNode.AddValue("LastPlanet", r.LastPlanet);
+                    rNode.AddValue("MaxOffKerbinTime", r.MaxOffKerbinTime);
+                    rNode.AddValue("CurrentVesselId", r.CurrentVesselId);
+                    rNode.AddValue("PreviousVesselId", r.PreviousVesselId);
+                    rNode.AddValue("TimeEnteredVessel", r.TimeEnteredVessel);
+                    rNode.AddValue("IsGrouchy", r.IsGrouchy);
+                    rNode.AddValue("OldTrait", r.OldTrait);
+                    rNode.AddValue("LastUpdate", r.LastUpdate);
+                    SettingsNode.AddNode(rNode);
+                }
             }
 
-            foreach (VesselSupplyStatus r in _VesselInfo)
+            if (_VesselInfo != null)
             {
-                var rNode = new ConfigNode("VESSEL_DATA");
-                rNode.AddValue("VesselId", r.VesselId);
-                rNode.AddValue("VesselName", r.VesselName);
-                rNode.AddValue("SuppliesLeft", r.SuppliesLeft);
-                rNode.AddValue("ECLeft", r.ECLeft);
-                rNode.AddValue("NumCrew", r.NumCrew);
-                rNode.AddValue("RecyclerMultiplier", r.RecyclerMultiplier);
-                rNode.AddValue("CrewCap", r.CrewCap);
-                rNode.AddValue("ExtraHabSpace", r.ExtraHabSpace);
-                rNode.AddValue("VesselHabMultiplier", r.VesselHabMultiplier);
-                rNode.AddValue("LastFeeding", r.LastFeeding);
-                rNode.AddValue("LastECCheck", r.LastECCheck);
-                SettingsNode.AddNode(rNode);
+                var count = _VesselInfo.Count;
+                for(int i = 0; i < count; ++i)
+                {
+                    var r = _VesselInfo[i];
+                    if (string.IsNullOrEmpty(r.VesselName))
+                        continue;
+                    var rNode = new ConfigNode("VESSEL_DATA");
+                    rNode.AddValue("VesselId", r.VesselId);
+                    rNode.AddValue("VesselName", r.VesselName);
+                    rNode.AddValue("SuppliesLeft", r.SuppliesLeft);
+                    rNode.AddValue("ECLeft", r.ECLeft);
+                    rNode.AddValue("NumCrew", r.NumCrew);
+                    rNode.AddValue("RecyclerMultiplier", r.RecyclerMultiplier);
+                    rNode.AddValue("CrewCap", r.CrewCap);
+                    rNode.AddValue("ExtraHabSpace", r.ExtraHabSpace);
+                    rNode.AddValue("VesselHabMultiplier", r.VesselHabMultiplier);
+                    rNode.AddValue("CachedHabTime", r.CachedHabTime);
+                    rNode.AddValue("LastFeeding", r.LastFeeding);
+                    rNode.AddValue("LastECCheck", r.LastECCheck);
+                    SettingsNode.AddNode(rNode);
+                }
             }
 
-            var sNode = new ConfigNode("LIFE_SUPPORT_CONFIG");
-            sNode.AddValue("HabMultiplier",_Settings.HabMultiplier);
-            sNode.AddValue("BaseHabTime", _Settings.BaseHabTime);
-            sNode.AddValue("ECAmount", _Settings.ECAmount);
-            sNode.AddValue("EVAEffect", _Settings.EVAEffect);
-            sNode.AddValue("EVAEffectVets", _Settings.EVAEffectVets);
-            sNode.AddValue("EVATime", _Settings.EVATime);
-            sNode.AddValue("HomeWorldAltitude", _Settings.HomeWorldAltitude);
-            sNode.AddValue("NoHomeEffect", _Settings.NoHomeEffect);
-            sNode.AddValue("NoHomeEffectVets", _Settings.NoHomeEffectVets);
-            sNode.AddValue("NoSupplyEffect", _Settings.NoSupplyEffect);
-            sNode.AddValue("NoSupplyEffectVets", _Settings.NoSupplyEffectVets);
-            sNode.AddValue("SupplyTime", _Settings.SupplyTime);
-            sNode.AddValue("ECTime", _Settings.ECTime);
-            sNode.AddValue("ECEffectVets", _Settings.NoECEffectVets);
-            sNode.AddValue("NoECEffectVets", _Settings.SupplyTime);
-            sNode.AddValue("NoECEffect", _Settings.NoECEffect);
-            sNode.AddValue("WasteAmount", _Settings.WasteAmount);
-            sNode.AddValue("ReplacementPartAmount", _Settings.ReplacementPartAmount);
-            sNode.AddValue("EnableRecyclers", _Settings.EnableRecyclers);
-            sNode.AddValue("HabRange", _Settings.HabRange);
-            sNode.AddValue("VetNames", _Settings.VetNames);
-
-            SettingsNode.AddNode(sNode);
-
+            if (_Settings != null)
+            {
+                var sNode = new ConfigNode("LIFE_SUPPORT_CONFIG");
+                sNode.AddValue("HabMultiplier", _Settings.HabMultiplier);
+                sNode.AddValue("BaseHabTime", _Settings.BaseHabTime);
+                sNode.AddValue("ECAmount", _Settings.ECAmount);
+                sNode.AddValue("SupplyAmount", _Settings.SupplyAmount);
+                sNode.AddValue("EVAEffect", _Settings.EVAEffect);
+                sNode.AddValue("EVAEffectVets", _Settings.EVAEffectVets);
+                sNode.AddValue("EVATime", _Settings.EVATime);
+                sNode.AddValue("HomeWorldAltitude", _Settings.HomeWorldAltitude);
+                sNode.AddValue("NoHomeEffect", _Settings.NoHomeEffect);
+                sNode.AddValue("NoHomeEffectVets", _Settings.NoHomeEffectVets);
+                sNode.AddValue("NoSupplyEffect", _Settings.NoSupplyEffect);
+                sNode.AddValue("NoSupplyEffectVets", _Settings.NoSupplyEffectVets);
+                sNode.AddValue("SupplyTime", _Settings.SupplyTime);
+                sNode.AddValue("ECTime", _Settings.ECTime);
+                sNode.AddValue("NoECEffectVets", _Settings.NoECEffectVets);
+                sNode.AddValue("NoECEffect", _Settings.NoECEffect);
+                sNode.AddValue("WasteAmount", _Settings.WasteAmount);
+                sNode.AddValue("ReplacementPartAmount", _Settings.ReplacementPartAmount);
+                sNode.AddValue("EnableRecyclers", _Settings.EnableRecyclers);
+                sNode.AddValue("HabRange", _Settings.HabRange);
+                sNode.AddValue("VetNames", _Settings.VetNames);
+                SettingsNode.AddNode(sNode);
+            }
             //Reset cache
             LifeSupportManager.Instance.ResetCache();
         }
@@ -356,7 +372,10 @@ namespace LifeSupport
             }
             kerbInfo.LastMeal = status.LastMeal;
             kerbInfo.LastEC = status.LastEC;
-            kerbInfo.LastOnKerbin = status.LastOnKerbin;
+            kerbInfo.LastAtHome = status.LastAtHome;
+            kerbInfo.LastSOIChange = status.LastSOIChange;
+            kerbInfo.HomeBodyId = status.HomeBodyId;
+            kerbInfo.LastPlanet = status.LastPlanet;
             kerbInfo.MaxOffKerbinTime = status.MaxOffKerbinTime;
             kerbInfo.TimeEnteredVessel = status.TimeEnteredVessel;
             kerbInfo.CurrentVesselId = status.CurrentVesselId;
@@ -385,6 +404,7 @@ namespace LifeSupport
             vesselInfo.CrewCap = status.CrewCap;
             vesselInfo.ExtraHabSpace = status.ExtraHabSpace;
             vesselInfo.VesselHabMultiplier = status.VesselHabMultiplier;
+            vesselInfo.CachedHabTime = status.CachedHabTime;
             vesselInfo.SuppliesLeft = status.SuppliesLeft;
             vesselInfo.ECLeft = status.ECLeft;
         }

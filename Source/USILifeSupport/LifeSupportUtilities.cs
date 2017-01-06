@@ -4,6 +4,15 @@ namespace LifeSupport
 {
     public static class LifeSupportUtilities
     {
+        public static double SecondsPerMonth()
+        {
+            const double secsPerMinute = 60d;
+            const double secsPerHour = secsPerMinute * 60d;
+            double secsPerDay = GameSettings.KERBIN_TIME ? secsPerHour * 6d : secsPerHour * 24d;
+            // Our standard is 30 day months.
+            return GameSettings.KERBIN_TIME ? secsPerDay * 30d : secsPerDay * 30.4d;
+        }
+
         public static string SecondsToKerbinTime(double tSnack, bool shortTime = false)
         {
             const double secsPerMinute = 60d;

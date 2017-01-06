@@ -1,3 +1,110 @@
+0.5.15 - 2017.01.01
+-------------------
+Dependency Updates
+Fixed an issue where the timer for unloaded vessels was not reflecting the 15 day grace period.
+Better caching of hab data to prevent some physics bubble oddities
+When crew go mutinous, a few supplies are shaken out.  This will help prevent catastrophic mutiny cascades.  Which, while entertaining, were a bit more destructive than anticipated.
+Nom tanks got their normal map back
+Habitation EC costs have been reduced.
+The life support window in the VAB correctly shows recyclers only when loaded in the case of configurable bays.
+Fixed Nom-O-Matic 5000 cost
+Several rounds of bug fixes around timers, etc.
+
+
+
+0.5.14 - (KSP 1.2.2)
+-------------------
+Updates for KSP 1.2.2
+LS screen now properly shows in TC
+Recyclers no longer allow negative values (nor are they affected by efficiency from MKS)
+Removed some old legacy parts
+
+0.5.13 - 2016.12.01
+-------------------
+Habitation Bug is finally killed (I think!)  Thanks everyone, and extra kudos to Wyzard256 for the save, and SirBriguy for the troubleshooting!
+
+0.5.12 - 2016.12.01
+-------------------
+Added reason for Kerbal effects to aid in troubleshooting
+
+0.5.11 - 2016.11.29
+-------------------
+Some improved handling, fixed a habitation calculation bug
+
+0.5.10 - 2016.11.29
+-------------------
+Fixed decoupler spam
+
+0.5.9 - 2016.11.27
+------------------
+Even more spam fixed...
+
+0.5.8 - 2016.11.27
+------------------
+Fixed an issue causing log spam
+
+0.5.7 - 2016.11.27
+------------------
+Moved all functionality to a VesselModule in an attempt to better identify our heisenbug..
+
+0.5.6 - 2016.11.26
+------------------
+Efficiency fixes
+Interim fix for crew switching between homesick / not homesick on vessel load
+
+0.5.5 - (KSP 1.2.1)
+-------------------
+Category fixes (Thanks tarheel1999!)
+CTT Fixes (Thanks SirCharizard17!)
+Recyclers, Extenders, and Habitation now properly enable/disable and scale.
+
+0.5.4 - 2016.10.22
+------------------
+Upped the hab multiplier of the viewing cupola to compensate for it having no crew capacity
+slight decrease in cupola EC usage
+The three Nom O Matics have been returned to purely Agroponics roles due to disparities with mass and volume when switching roles (i.e. they made for really heavy greenhouses when they should not have been).
+A new, smaller 2.5m inline recycler has been added.
+All life support parts only show up in the life support category now, and are no longer duplicated in Utilities.
+CTT fixes (Thanks Apocriva!)
+Corrections to Seconds Per Month code (Thanks SirBriguy!)
+
+
+0.5.3 - 2016.10.16
+------------------
+Fixed visual issue in VAB where crew was multiplying...
+
+0.5.2 - 2016.10.15
+------------------
+Bundled correct CCK
+
+0.5.1 - 2016.10.15
+------------------
+Fixed an issue where there UI was corrupted on space center view
+Corrected mass of the small radial recycler (0.6t down to 0.1t)
+Fixed node issues with small cupolas and the small greenhouse
+
+0.5.0 - (KSP 1.2)
+------------------
+The Nom-O-Matics have been deprecated for improved models.  They have been moved to a LEGACY folder to prevent breaking existing saves, though they may not have textures.  This folder will be deleted with the next KSP release.
+The new Nom-O-Matics can operate in three modes: 
+ - As a Converter (Mulch+Fertilizer=Supplies)
+ - As a Recycler (using a biological filter)
+ - As a Hab Multiplier (By repurposing the hab as an indoor mini-park with pretty plants)
+Switching modes after launch will cost 1,000 EC and 200 supplies, and is an EVA action performed by an engineer.
+The two radial Nom-O-Matics have been replaced by new, more stock-alike models
+In Habitation Multipler mode, EC is still consumed to keep the units operational
+Recycler EC cost has been increased (Be sure to check the tooptips)
+Fixed an issue in persisting configs that may have resulted in corrupted life support settings, so be sure to recheck these in space center view and re-save.
+Fixed a node issue on the inline greenhouse
+All life support items now appear in a new 'Life Support' category.
+Added a mini cupola with a corresponding hab bonus.
+Less hobbit-like Kerbals.  The default supply consumption has been adjusted slightly downward (from 16.2 per day to 10.8 per day) - no more second breakfasts.  To adjust for this, change per second consumption to 0.0005 from 0.00075 in the GUI.
+Crew capacity only results in a 7.5 day hab bonus as opposed to 30 days.  This is being done to keep things balanced with dedicated habitation parts, which will have more space but less mass.
+WIth the inclusion of switchable parts, stock adjustments have been rebalanced.
+- The crewed lab is now a less efficient recycler (50% for 4 Kerbals) to reflect most of its capacity being devoted to being, well, a science lab.
+- The Hitchhiker gets a buff to its hab extension
+- The Cupola gets a buff to its hab multiplier as well as a hab extension bonus
+
 0.4.4 - (KSP 1.1.3)
 ------------------
 Dependency Updates

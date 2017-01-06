@@ -14,11 +14,21 @@ namespace LifeSupport
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class LifeSupportMonitor_Flight : LifeSupportMonitor
-    { }
+    {
+        protected override bool IsActive()
+        {
+            return HighLogic.LoadedSceneIsFlight;
+        }
+    }
 
     [KSPAddon(KSPAddon.Startup.TrackingStation, false)]
     public class LifeSupportMonitor_TStation : LifeSupportMonitor
-    { }
+    {
+        protected override bool IsActive()
+        {
+            return HighLogic.LoadedScene == GameScenes.TRACKSTATION;
+        }
+    }
 
 
     public class LifeSupportMonitor : MonoBehaviour
@@ -64,12 +74,20 @@ namespace LifeSupport
         {
             if (!renderDisplay)
                 return;
+            if (!IsActive())
+                return;
+
 
             if (Event.current.type == EventType.Repaint || Event.current.isMouse)
             {
                 //preDrawQueue
             }
             Ondraw();
+        }
+
+        protected virtual bool IsActive()
+        {
+            return false;
         }
 
 
@@ -281,11 +299,22 @@ namespace LifeSupport
             var vesselList = new List<VesselSupplyStatus>();
             vesselList.AddRange(LifeSupportManager.Instance.VesselSupplyInfo);
 
-
-            foreach (var vsl in vesselList)
+            var vlCount = vesselList.Count;
+            for(int i = 0; i < vlCount; ++i)
             {
+                var vsl = vesselList[i];
                 var vstat = new LifeSupportVesselDisplayStat();
-                Vessel thisVessel = FlightGlobals.Vessels.First(v => v.id.ToString() == vsl.VesselId);
+                var vCount = FlightGlobals.Vessels.Count;
+                Vessel thisVessel = null;
+                for (int x = 0; x < vCount; ++x)
+                {
+                    var tmpV = FlightGlobals.Vessels[x];
+                    if (tmpV.id.ToString() == vsl.VesselId)
+                    {
+                        thisVessel = tmpV;
+                        break;
+                    }
+                }
                 double supmult = LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount * Convert.ToDouble(vsl.NumCrew) * vsl.RecyclerMultiplier;
 				var supPerDay = secondsPerDay*supmult;
                 var estFood = supmult*(Planetarium.GetUniversalTime() - vsl.LastFeeding);
@@ -295,11 +324,15 @@ namespace LifeSupport
                 var estEC = ecmult * (Planetarium.GetUniversalTime() - vsl.LastECCheck);
 
                 int numSharedHabVessels = 0;
-                var habTime = LifeSupportManager.GetTotalHabTime(vsl, out numSharedHabVessels);
+                var habTime = LifeSupportManager.GetTotalHabTime(vsl, thisVessel, out numSharedHabVessels);
 
                 var supAmount = GetResourceInVessel(thisVessel,"Supplies");
-                if(supAmount == 0)
+                var calcSup = supAmount;
+                if (supAmount == 0)
+                {
                     supAmount = Math.Max(0, (vsl.SuppliesLeft * supmult) - estFood);
+                    calcSup = (vsl.SuppliesLeft*supmult) - estFood;
+                }
 
                 var ecAmount = GetResourceInVessel(thisVessel,"ElectricCharge");
                 if (ecAmount == 0)
@@ -347,6 +380,16 @@ namespace LifeSupport
                 {
                     var cStat = new LifeSupportCrewDisplayStat();
                     var cls = LifeSupportManager.Instance.FetchKerbal(c);
+                    //Guard clause in case we just changed vessels
+                    if (cls.CurrentVesselId != thisVessel.id.ToString() 
+                        && cls.PreviousVesselId != thisVessel.id.ToString())
+                    {
+                        cls.PreviousVesselId = cls.CurrentVesselId;
+                        cls.CurrentVesselId = thisVessel.id.ToString();
+                        cls.TimeEnteredVessel = Planetarium.GetUniversalTime();
+                        LifeSupportManager.Instance.TrackKerbal(cls);
+                    }
+
                     cStat.CrewName = String.Format("<color=#FFFFFF>{0} ({1})</color>", c.name,c.experienceTrait.Title.Substring(0,1));
 
                     var ecLeft = (ecAmount / ecPerDay * secondsPerDay) + LifeSupportScenario.Instance.settings.GetSettings().ECTime;
@@ -373,12 +416,7 @@ namespace LifeSupport
                     cStat.ECLabel = String.Format("<color=#{0}>{1}</color>",lblEC,lblECTime);
 
 
-                    var snacksLeft = (supAmount / supPerDay * secondsPerDay) + LifeSupportScenario.Instance.settings.GetSettings().SupplyTime;
-                    if (supAmount <= LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount && !LifeSupportManager.IsOnKerbin(thisVessel))
-                    {
-                        snacksLeft = cls.LastMeal - Planetarium.GetUniversalTime() + LifeSupportScenario.Instance.settings.GetSettings().SupplyTime;
-                    }
-
+                    var snacksLeft = (calcSup/supPerDay*secondsPerDay) + LifeSupportScenario.Instance.settings.GetSettings().SupplyTime;
                     var lblSupTime = LifeSupportUtilities.SecondsToKerbinTime(snacksLeft);
 
                     var lblSup = "6FFF00";
@@ -443,8 +481,8 @@ namespace LifeSupport
                         crewHomeString = "expired";
                     }
                     cStat.HomeLabel = String.Format("<color=#{0}>{1}</color>", lblHome, crewHomeString);
-                    
-                    
+
+                    LifeSupportManager.Instance.TrackKerbal(cls);
                     vstat.crew.Add(cStat);
                 }
                 statList.Add(vstat);
