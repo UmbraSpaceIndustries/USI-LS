@@ -57,6 +57,23 @@ namespace LifeSupport
 
         bool refreshVesselTime = false;
 
+        private bool CheckIfHomeWorld()
+        {
+            if (USI_GlobalBonuses.Instance.GetHabBonus(vessel.mainBody.flightGlobalsIndex) < 5)  //TODO - make this a parm
+                return false;
+
+            //Check for hab time.
+            var habTime = LifeSupportManager.Instance.FetchVessel(vessel.id.ToString()).CachedHabTime;
+            //We want one year, either Kerbal or earth.
+            const double secsPerMinute = 60d;
+            const double secsPerHour = secsPerMinute * 60d;
+            double secsPerDay = GameSettings.KERBIN_TIME ? secsPerHour * 6d : secsPerHour * 24d;
+            double secsPerYear = GameSettings.KERBIN_TIME ? secsPerDay * 425d : secsPerDay * 365d;
+            double y = Math.Floor(habTime / secsPerYear);
+
+            return y >= 1;
+        }
+
         public void FixedUpdate()
         {
             if (!HighLogic.LoadedSceneIsFlight || vessel == null)
@@ -88,6 +105,7 @@ namespace LifeSupport
             {
                 bool isLongLoop = false;
                 var offKerbin = !LifeSupportManager.IsOnKerbin(vessel);
+                var isHomeWorld = CheckIfHomeWorld();
                 UnlockTins();
                 CheckVesselId();
 
@@ -136,6 +154,7 @@ namespace LifeSupport
                             bool isGrouchyHab = false;
                             bool isGrouchySupplies = false;
                             bool isGrouchyEC = false;
+                            bool isScout = c.HasEffect("ExplorerSkill");
                             //Fetch them from the queue
                             var k = LifeSupportManager.Instance.FetchKerbal(c);
                             //Update our stuff
@@ -146,7 +165,7 @@ namespace LifeSupport
                                 LifeSupportManager.Instance.TrackKerbal(k);
                             }
                             //First - Hab effects.                        
-                            if (!offKerbin)
+                            if (!offKerbin || isScout || isHomeWorld)
                             {
                                 var habTime = LifeSupportManager.GetTotalHabTime(VesselStatus, vessel);
                                 k.LastAtHome = Planetarium.GetUniversalTime();

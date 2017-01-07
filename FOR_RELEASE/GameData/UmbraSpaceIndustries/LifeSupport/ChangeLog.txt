@@ -1,3 +1,9 @@
+0.5.16 - 2017.01.07
+-------------------
+Updates to support MKS (mostly related to habitation)
+Added CLS module (Thanks Kerbas-ad-astra!)
+Added a secondary attach node on the Nom-O-Matic 25000 (thanks Wyzard256!)
+
 0.5.15 - 2017.01.01
 -------------------
 Dependency Updates
@@ -9,7 +15,6 @@ Habitation EC costs have been reduced.
 The life support window in the VAB correctly shows recyclers only when loaded in the case of configurable bays.
 Fixed Nom-O-Matic 5000 cost
 Several rounds of bug fixes around timers, etc.
-
 
 
 0.5.14 - (KSP 1.2.2)
