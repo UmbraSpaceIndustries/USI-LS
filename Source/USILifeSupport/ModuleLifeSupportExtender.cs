@@ -23,8 +23,15 @@ namespace LifeSupport
         protected override void PreProcessing()
         {
             base.PreProcessing();
-            EfficiencyBonus = 1f;
+            var v = LifeSupportManager.Instance.FetchVessel(vessel.id.ToString());
+            var e = 1d;
+            if (v != null)
+            {
+                e += v.VesselHabMultiplier;
+            }
+            EfficiencyBonus = (float)e;
         }
+
 
         protected override void PostProcess(ConverterResults result, double deltaTime)
         {
