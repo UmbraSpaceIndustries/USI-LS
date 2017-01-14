@@ -99,7 +99,17 @@ namespace LifeSupport
             }
 
             if (_currentCrew == 0)
+            {
+                VesselStatus.VesselName = vessel.vesselName;
+                VesselStatus.NumCrew = vessel.GetCrewCount();
+                VesselStatus.CrewCap = vessel.GetCrewCapacity();
+                VesselStatus.LastECCheck = Planetarium.GetUniversalTime();
+                VesselStatus.LastFeeding = Planetarium.GetUniversalTime();
+                VesselStatus.LastUpdate = Planetarium.GetUniversalTime();
+                LifeSupportManager.Instance.TrackVessel(VesselStatus);
+                LastUpdateTime = Planetarium.GetUniversalTime();
                 return;
+            }
 
             try
             {
