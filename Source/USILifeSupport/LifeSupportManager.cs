@@ -1,8 +1,7 @@
-using KolonyTools;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
+using USITools;
 
 
 namespace LifeSupport
@@ -58,25 +57,42 @@ namespace LifeSupport
         public bool IsKerbalTracked(string kname)
         {
             //Does a node exist?
-            return LifeSupportInfo.Any(n => n.KerbalName == kname);
+            var count = LifeSupportInfo.Count;
+            for (int i = 0; i < count; ++i)
+            {
+                if (LifeSupportInfo[i].KerbalName == kname)
+                    return true;
+            }
+            return false;
         }
 
         public bool IsVesselTracked(string vesselId)
         {
             //Does a node exist?
-            return VesselSupplyInfo.Any(n => n.VesselId == vesselId);
+            var count = VesselSupplyInfo.Count;
+            for (int i = 0; i < count; ++i)
+            {
+                if (VesselSupplyInfo[i].VesselId == vesselId)
+                    return true;
+            }
+            return false;
         }
         
         public void UntrackKerbal(string kname)
         {
             try
             {
-                if (!IsKerbalTracked(kname))
-                    return;
-                var kerbal = LifeSupportInfo.First(k => k.KerbalName == kname);
-                LifeSupportInfo.Remove(kerbal);
-                //For saving to our scenario data
-                LifeSupportScenario.Instance.settings.DeleteStatusNode(kname);
+                var count = LifeSupportInfo.Count;
+                for (int i = 0; i < count; ++i)
+                {
+                    var kerbal = LifeSupportInfo[i];
+                    if (kerbal.KerbalName == kname)
+                    {
+                        LifeSupportInfo.Remove(kerbal);
+                        LifeSupportScenario.Instance.settings.DeleteStatusNode(kname);
+                        return;
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -105,13 +121,32 @@ namespace LifeSupport
                 TrackKerbal(k);
             }
 
-            var kerbal = LifeSupportInfo.FirstOrDefault(k => k.KerbalName == crew.name);
+            LifeSupportStatus kerbal = null;
+            var count = LifeSupportInfo.Count;
+            for (int i = 0; i < count; ++i)
+            {
+                if (LifeSupportInfo[i].KerbalName == crew.name)
+                {
+                    kerbal = LifeSupportInfo[i];
+                    break;
+                }
+            }
             return kerbal;
         }
 
         public void TrackKerbal(LifeSupportStatus status)
         {
-            if (LifeSupportInfo.All(n => n.KerbalName != status.KerbalName))
+            var count = LifeSupportInfo.Count;
+            var isNew = true;
+            for (int i = 0; i < count; ++i)
+            {
+                if (LifeSupportInfo[i].KerbalName == status.KerbalName)
+                {
+                    isNew = false;
+                    break;
+                }
+            }
+            if (isNew)
             {
                 LifeSupportInfo.Add(status);
             }
@@ -120,23 +155,37 @@ namespace LifeSupport
 
         public void TrackVessel(VesselSupplyStatus status)
         {
-            if(VesselSupplyInfo.All(n => n.VesselId != status.VesselId))
-            VesselSupplyInfo.Add(status);
+            var count = VesselSupplyInfo.Count;
+            var isNew = true;
+            for (int i = 0; i < count; ++i)
+            {
+                if (VesselSupplyInfo[i].VesselId == status.VesselId)
+                {
+                    isNew = false;
+                    break;
+                }
+            }
+            if (isNew)
+            {
+                VesselSupplyInfo.Add(status);
+            }
             LifeSupportScenario.Instance.settings.SaveVesselNode(status);
         }
 
         public void UntrackVessel(string vesselId)
         {
-            //print("Untracking " + vesselId);
             if (!IsVesselTracked(vesselId))
                 return;
-
-            //print("Finding " + vesselId);
-            var vInfo = VesselSupplyInfo.First(v => v.VesselId == vesselId);
-            //print("Removing " + vesselId);
-            VesselSupplyInfo.Remove(vInfo);
-            //For saving to our scenario data
-            //print("Deleting " + vesselId);
+            var count = VesselSupplyInfo.Count;
+            for (int i = count; i --> 0;)
+            {
+                var v = VesselSupplyInfo[i];
+                if (v.VesselId == vesselId)
+                {
+                    VesselSupplyInfo.Remove(v);
+                    break;
+                }
+            }
             LifeSupportScenario.Instance.settings.DeleteVesselNode(vesselId);
         }
         public VesselSupplyStatus FetchVessel(string vesselId)
@@ -160,7 +209,17 @@ namespace LifeSupport
                 TrackVessel(v);
             }
 
-            var vInfo = VesselSupplyInfo.FirstOrDefault(k => k.VesselId == vesselId);
+
+            VesselSupplyStatus vInfo = null;
+            var count = VesselSupplyInfo.Count;
+            for (int i = 0; i < count; ++i)
+            {
+                if (VesselSupplyInfo[i].VesselId == vesselId)
+                {
+                    vInfo = VesselSupplyInfo[i];
+                    break;
+                }
+            }
             return vInfo;
         }
 
@@ -176,36 +235,44 @@ namespace LifeSupport
         {
             //Clear stuff that is gone.
             var badIDs = new List<string>();
-            foreach (var vInfo in Instance.VesselSupplyInfo)
+            var vCount = FlightGlobals.Vessels.Count;
+            var vsCount = Instance.VesselSupplyInfo.Count;
+
+            for(int x = 0; x <vsCount; ++x)
             {
-                //print("Checking " + vInfo.VesselId);
-                var vsl = FlightGlobals.Vessels.FirstOrDefault(v => v.id.ToString() == vInfo.VesselId);
-                //print("Finding vessel " + vInfo.VesselId);
+                var vInfo = Instance.VesselSupplyInfo[x];
+                Vessel vsl = null;
+                for (int i = 0; i < vCount; ++i)
+                {
+                    var v = FlightGlobals.Vessels[i];
+                    if(v.id.ToString() == vInfo.VesselId)
+                    {
+                        vsl = v;
+                        break;
+                    }
+                }
+
                 if (vsl == null || vInfo.NumCrew == 0)
                 {
-                    //print("Adding bad ID " + vInfo.VesselId);
                     badIDs.Add(vInfo.VesselId);
                 }
-               // else
-                //{
-                    //print("Found " + vInfo.VesselId);
-                //}
             }
-            //print("START COUNT: " + Instance.VesselSupplyInfo.Count);
-            foreach (var id in badIDs)
+            var bCount = badIDs.Count;
+            for (int q = 0; q < bCount; ++q)
             {
-                //print("Removing " + id);
+                var id = badIDs[q];
                 Instance.UntrackVessel(id);
             }
-            //print("END COUNT: " + Instance.VesselSupplyInfo.Count);
         }
 
         private static int GetColonyCrewCount(Vessel vsl)
         {
             var crewCount = vsl.GetCrewCount();
             var vList = LogisticsTools.GetNearbyVessels((float)LifeSupportScenario.Instance.settings.GetSettings().HabRange, false, vsl, false);
-            foreach (var v in vList)
+            var count = vList.Count;
+            for (int i = 0; i < count; ++i)
             {
+                var v = vList[i];
                 crewCount += v.GetCrewCount();
             }
             return crewCount;
@@ -220,8 +287,11 @@ namespace LifeSupport
             var recyclerTot = 0f;
             var crewCount = GetColonyCrewCount(vessel);
 
-            foreach (var r in vessel.FindPartModulesImplementing<ModuleLifeSupportRecycler>())
+            var recList = vessel.FindPartModulesImplementing<ModuleLifeSupportRecycler>();
+            var rmCount = recList.Count;
+            for (int i = 0; i < rmCount; ++i)
             {
+                var r = recList[i];
                 if (r.RecyclerIsActive && r.IsActivated)
                 {
                     if (r.AdjustedRecyclePercent > recyclerCap)
@@ -235,10 +305,13 @@ namespace LifeSupport
             }
 
             var vList = LogisticsTools.GetNearbyVessels((float)LifeSupportScenario.Instance.settings.GetSettings().HabRange, false, vessel, false);
-            foreach (var v in vList)
+            var vCount = vList.Count;
+            for(int i = 0; i < vCount; ++i)
             {
-                foreach (var r in v.FindPartModulesImplementing<ModuleLifeSupportRecycler>())
+                var v = vList[i];
+                for (int x = 0; x < rmCount; ++x)
                 {
+                    var r = recList[x];
                     if (r.IsActivated && r.RecyclerIsActive)
                     {
                         if (r.AdjustedRecyclePercent > recyclerCap)
@@ -282,8 +355,10 @@ namespace LifeSupport
 
             var vList = LogisticsTools.GetNearbyVessels((float)LifeSupportScenario.Instance.settings.GetSettings().HabRange, false, vsl, false);
             var hList = new List<Vessel>();
-            foreach (var v in vList)
+            var vCount = vList.Count;
+            for(int i = 0; i < vCount; ++i)
             {
+                var v = vList[i];
                 //Hab time starts with our baseline of the crew hab plus extra hab.
                 //We then multiply it out based on the crew ratio, our global multiplier, and the vessel's multipler.
                 //First - crew capacity. 
@@ -299,10 +374,12 @@ namespace LifeSupport
             }
             totHabSpace += (LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime * totMaxCrew);
 
-            foreach (var v in hList)
+            var hCount = hList.Count;
+            for (int i = 0; i < hCount; ++i)
             {
+                var v = hList[i];
                 // Calculate HabSpace and HabMult after we know totCurCrew and totMaxCrew
-               totHabSpace += CalculateVesselHabExtraTime(v);
+                totHabSpace += CalculateVesselHabExtraTime(v);
                totHabMult *= Math.Min(1,CalculateVesselHabMultiplier(v, totCurCrew));         
             }
 
@@ -322,8 +399,10 @@ namespace LifeSupport
             var recyclerCap = 0f;
             var recyclerTot = 0f;
 
-            foreach (var p in pList)
+            var count = pList.Count;
+            for (int i = 0; i < count; ++i)
             {
+                var p = pList[i];
                 var mod = p.FindModuleImplementing<ModuleLifeSupportRecycler>();
                 if (mod == null) 
                     continue;
@@ -351,8 +430,11 @@ namespace LifeSupport
         public static double CalculateVesselHabExtraTime(Vessel v)
         {
             var habTime = 0d;
-            foreach (var hab in v.FindPartModulesImplementing<ModuleHabitation>())
+            var habMods = v.FindPartModulesImplementing<ModuleHabitation>();
+            var count = habMods.Count;
+            for (int i = 0; i < count; ++i)
             {
+                var hab = habMods[i];
                 //Next.  Certain modules, in addition to crew capacity, have living space.
                 habTime += hab.KerbalMonths;
             }
@@ -362,8 +444,12 @@ namespace LifeSupport
         public static double CalculateVesselHabMultiplier(Vessel v, int numCrew)
         {
             var habMulti = 0d;
-            foreach (var hab in v.FindPartModulesImplementing<ModuleHabitation>())
+            var habMods = v.FindPartModulesImplementing<ModuleHabitation>();
+            var count = habMods.Count;
+            for (int i = 0; i < count; ++i)
             {
+                var hab = habMods[i];
+
                 habMulti += (hab.HabMultiplier * Math.Min(1, hab.CrewCapacity / numCrew));
             }
             return habMulti;

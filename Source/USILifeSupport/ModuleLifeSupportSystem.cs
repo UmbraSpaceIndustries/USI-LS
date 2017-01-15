@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace LifeSupport
@@ -159,8 +158,11 @@ namespace LifeSupport
                     {
                         //Ensure status is current
                         UpdateStatus();
-                        foreach (var c in vessel.GetVesselCrew())
+                        var vCrew = vessel.GetVesselCrew();
+                        var count = vCrew.Count;
+                        for (int i = 0; i < count; ++i)
                         {
+                            var c = vCrew[i];
                             bool isGrouchyHab = false;
                             bool isGrouchySupplies = false;
                             bool isGrouchyEC = false;
@@ -290,8 +292,19 @@ namespace LifeSupport
 
             CheckForDeadKerbals();
             _currentCrew = vessel.GetCrewCount();
-            if(vessel.GetCrewCapacity() > 0)
-                _crewPart = vessel.Parts.First(p => p.CrewCapacity > 0);
+            if (vessel.GetCrewCapacity() > 0)
+            {
+                var count = vessel.parts.Count;
+                for (int i = 0; i < count; ++i)
+                {
+                    var p = vessel.parts[i];
+                    if (p.CrewCapacity > 0)
+                    {
+                        _crewPart = p;
+                        return;
+                    }
+                }
+            }
         }
 
         private void UpdateStatus()
@@ -356,8 +369,10 @@ namespace LifeSupport
             if (HighLogic.LoadedSceneIsFlight)
             {
                 //Unlock the biscuit tins...
-                foreach (var p in vessel.parts)
+                var count = vessel.parts.Count;
+                for (int i = 0; i < count; ++i)
                 {
+                    var p = vessel.parts[i];
                     if (p.Resources.Contains("Supplies"))
                     {
                         var r = p.Resources["Supplies"];
@@ -392,19 +407,22 @@ namespace LifeSupport
         {
             try
             {
-                var thisCrew = LifeSupportManager.Instance.LifeSupportInfo.Where(k => k.CurrentVesselId == vessel.id.ToString());
-                var deadKerbals = new List<String>();
-                foreach (var k in thisCrew)
+                var crewNames = new List<string>();
+                var vCrew = vessel.GetVesselCrew();
+                var cCount = vCrew.Count;
+                for (int x = 0; x < cCount; ++x)
                 {
-                    if (vessel.GetVesselCrew().All(c => c.name != k.KerbalName))
-                    {
-                        deadKerbals.Add(k.KerbalName);
-                    }
+                    crewNames.Add(vCrew[x].name);
                 }
-                foreach (var k in deadKerbals)
+                var count = LifeSupportManager.Instance.LifeSupportInfo.Count;
+                for(int i = count; i --> 0;)
                 {
-                    if (KerbalIsMissing(k))
-                        LifeSupportManager.Instance.UntrackKerbal(k);
+                    var thisCrew = LifeSupportManager.Instance.LifeSupportInfo[i];
+                    if (thisCrew.CurrentVesselId != vessel.id.ToString())
+                        continue;
+
+                    if(!crewNames.Contains(thisCrew.KerbalName))
+                        LifeSupportManager.Instance.UntrackKerbal(thisCrew.KerbalName);
                 }
             }
             catch (Exception ex)
@@ -415,10 +433,16 @@ namespace LifeSupport
 
         private bool KerbalIsMissing(string name)
         {
-            foreach (var v in FlightGlobals.Vessels)
+            var vCount = FlightGlobals.Vessels.Count;
+            var cCount = 0;
+            for (int i = 0; i < vCount; ++i)
             {
-                foreach (var c in v.GetVesselCrew())
+                var v = FlightGlobals.Vessels[i];
+                var crew = v.GetVesselCrew();
+                cCount = crew.Count;
+                for (int x = 0; x < cCount; ++x)
                 {
+                    var c = crew[x];
                     if (c.name == name)
                         return false;
                 }
@@ -457,9 +481,11 @@ namespace LifeSupport
         public static double CalculateVesselHabExtraTime(Vessel v)
         {
             var habTime = 0d;
-            foreach (var hab in v.FindPartModulesImplementing<ModuleHabitation>())
+            var habList = v.FindPartModulesImplementing<ModuleHabitation>();
+            var count = habList.Count;
+            for(int i = 0; i < count; ++i)
             {
-                //Next.  Certain modules, in addition to crew capacity, have living space.
+                var hab = habList[i];    
                 habTime += hab.KerbalMonths;
             }
             return habTime;
@@ -468,9 +494,11 @@ namespace LifeSupport
         public static double CalculateVesselHabMultiplier(Vessel v, int numCrew)
         {
             var habMulti = 0d;
-            foreach (var hab in v.FindPartModulesImplementing<ModuleHabitation>())
+            var habList = v.FindPartModulesImplementing<ModuleHabitation>();
+            var count = habList.Count;
+            for (int i = 0; i < count; ++i)
             {
-                //Lastly.  Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
+                var hab = habList[i];
                 habMulti += (hab.HabMultiplier * Math.Min(1, hab.CrewCapacity / numCrew));
             }
             return habMulti;
@@ -647,14 +675,22 @@ namespace LifeSupport
 
         private void RemoveCrewFromPart(ProtoCrewMember crew)
         {
-            foreach (var p in vessel.parts.Where(p => p.CrewCapacity > 0))
+            var parts = vessel.parts;
+            for (int i = 0; i < parts.Count; ++i)
             {
-                foreach (var c in p.protoModuleCrew)
+                var p = parts[i];
+                if (p.CrewCapacity > 0)
                 {
-                    if (c.name == crew.name)
+                    var crewList = p.protoModuleCrew;
+                    var cCount = crewList.Count;
+                    for (int x = 0; x < cCount; x++)
                     {
-                        p.RemoveCrewmember(c);
-                        return;
+                        var c = crewList[x];
+                        if (c.name == crew.name)
+                        {
+                            p.RemoveCrewmember(c);
+                            return;
+                        }
                     }
                 }
             }

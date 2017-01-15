@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
 using KSP.UI.Screens;
@@ -47,7 +46,7 @@ namespace LifeSupport
             useHabPenalties = (LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffectVets +
                                    LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffect > 0);
 
-            GameEvents.onEditorShipModified.Add(UpdateGUIInfo);
+            //GameEvents.onEditorShipModified.Add(UpdateGUIInfo);
         }
 
         private void GuiOff()
@@ -64,6 +63,7 @@ namespace LifeSupport
             {
                 //preDrawQueue
             }
+            UpdateGUIInfo(EditorLogic.fetch.ship);
             Ondraw();
         }
 
@@ -120,9 +120,11 @@ namespace LifeSupport
             ResetValues();
             if (EditorLogic.fetch != null)
             {
-
-                foreach (var part in EditorLogic.fetch.ship.parts)
+                var parts = EditorLogic.fetch.ship.parts;
+                var count = parts.Count;
+                for (int i = 0; i < count; ++i)
                 {
+                    var part = parts[i];
                     maxCrew += part.CrewCapacity;
                 }
 
@@ -137,9 +139,9 @@ namespace LifeSupport
                     }
                 }
 
-
-                foreach (var part in EditorLogic.fetch.ship.parts)
+                for (int i = 0; i < count; ++i)
                 {
+                    var part = parts[i];
                     var hab = part.Modules.GetModule<ModuleHabitation>();
                     if (hab != null)
                     {
@@ -155,8 +157,10 @@ namespace LifeSupport
                         }
                         else
                         {
-                            foreach (var bay in bayList)
+                            var bCount = bayList.Count;
+                            for(int x = 0; x < bCount; ++x)
                             {
+                                var bay = bayList[x];
                                 var con = conList[bay.currentLoadout] as ModuleHabitation;
                                 if (con != null)
                                 {
@@ -186,8 +190,9 @@ namespace LifeSupport
 
                 if (EditorLogic.fetch.ship.parts.Count > 0)
                 {
-                    foreach (var p in EditorLogic.fetch.ship.parts)
+                    for (int i = 0; i < count; ++i)
                     {
+                        var p = parts[i];
                         var rec = p.Modules.GetModule<ModuleLifeSupportRecycler>();
                         if (rec != null)
                         {
@@ -199,8 +204,10 @@ namespace LifeSupport
                             }
                             else
                             {
-                                foreach (var bay in bayList)
+                                var bCount = bayList.Count;
+                                for (int x = 0; x < bCount; ++x)
                                 {
+                                    var bay = bayList[x];
                                     var con = conList[bay.currentLoadout] as ModuleLifeSupportRecycler;
                                     if (con != null)
                                     {
@@ -363,8 +370,10 @@ namespace LifeSupport
                         GUILayout.Label("Crew-Capacity", _labelStyle, GUILayout.Width(c3));
                         GUILayout.EndHorizontal();
 
-                        foreach (var recycler in recyclers)
+                        var rCount = recyclers.Count;
+                        for (int x = 0; x < rCount; ++x)
                         {
+                            var recycler = recyclers[x];
                             GUILayout.BeginHorizontal();
                             GUILayout.Label(CTag(recycler.part.partInfo.title, partColor), _labelStyle, GUILayout.Width(c1));
                             GUILayout.Label(CTag(((int)(recycler.AdjustedRecyclePercent * 100)).ToString(), textColor), _labelStyle, GUILayout.Width(c2));
@@ -383,8 +392,10 @@ namespace LifeSupport
                             GUILayout.Label("Multiplier", _labelStyle, GUILayout.Width(c3));
                             GUILayout.EndHorizontal();
 
-                            foreach (var hab in habs)
+                            var hCount = habs.Count;
+                            for (int x = 0; x < hCount; ++x)
                             {
+                                var hab = habs[x];
                                 GUILayout.BeginHorizontal();
                                 GUILayout.Label(CTag(hab.part.partInfo.title, partColor), _labelStyle, GUILayout.Width(c1));
                                 GUILayout.Label(CTag(hab.KerbalMonths.ToString(), textColor), _labelStyle, GUILayout.Width(c2));

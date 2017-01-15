@@ -1,3 +1,9 @@
+0.5.17 - 2017.01.15
+-------------------
+Performance Updates and dependency updates
+Increased the refresh frequency in the VAB/SPH
+Fixed nullref spam caused by life support extenders
+
 0.5.16 - 2017.01.07
 -------------------
 Updates to support MKS (mostly related to habitation)
