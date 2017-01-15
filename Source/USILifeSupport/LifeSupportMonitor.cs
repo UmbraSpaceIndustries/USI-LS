@@ -110,13 +110,18 @@ namespace LifeSupport
                 return;
 
             var vList = GetNearbyVessels(2000, false, FlightGlobals.ActiveVessel, false);
-            foreach (var v in vList.Where(v => v.isEVA))
+            var count = vList.Count;
+            for (int i = 0; i < count; ++i)
             {
-                if(v.mainBody == FlightGlobals.GetHomeBody())
+                var v = vList[i];
+                if(v.isEVA)
+                    continue;
+
+                if (v.mainBody == FlightGlobals.GetHomeBody())
                     if (v.altitude < LifeSupportScenario.Instance.settings.GetSettings().HomeWorldAltitude)
                         continue;
 
-                var c = v.GetVesselCrew().First();
+                var c = v.GetVesselCrew()[0];
                 //Check their status.
                 var k = LifeSupportManager.Instance.FetchKerbal(c);
                 if (v.missionTime > LifeSupportScenario.Instance.settings.GetSettings().EVATime)
@@ -195,29 +200,32 @@ namespace LifeSupport
         private void DestroyVessel(Vessel v)
         {
             var _demoParts = new List<Part>();
-            foreach (var p in v.parts)
+            var count = v.parts.Count;
+            for (int i = 0; i < count; ++i)
             {
-                _demoParts.Add(p);
+                _demoParts.Add(v.parts[i]);
             }
-            foreach (var p in _demoParts)
+
+            for (int i = 0; i < count; ++i)
             {
+                var p = _demoParts[i];
                 p.decouple();
                 p.explode();
             }
-            //v.DespawnCrew();
-            //v.DestroyVesselComponents();	
         }
 
         private void DestroyRandomPart(Vessel thisVessel)
         {
             Random r = new Random();
             var vlist = GetNearbyVessels(150, false, thisVessel, false);
-            foreach (var v in vlist)
+            var count = vlist.Count;
+            for (int i = 0; i < count; ++i)
             {
+                var v = vlist[i];
                 var idx = r.Next(1, v.parts.Count - 1);
                 var p = v.parts[idx];
                 if (p.parent != null)
-                    p.decouple();                
+                    p.decouple();
             }
         }
 
@@ -226,17 +234,21 @@ namespace LifeSupport
             try
             {
                 var vessels = new List<Vessel>();
-                foreach (var v in FlightGlobals.Vessels.Where(
-                    x => x.mainBody == thisVessel.mainBody
-                    && (x.Landed || !landedOnly || x == thisVessel)))
+                var count = FlightGlobals.Vessels.Count;
+                for(int i = 0; i < count; ++i)
                 {
-                    if (v == thisVessel && !includeSelf) continue;
-                    var posCur = thisVessel.GetWorldPos3D();
-                    var posNext = v.GetWorldPos3D();
-                    var distance = Vector3d.Distance(posCur, posNext);
-                    if (distance < range)
+                    var v = FlightGlobals.Vessels[i];
+                    if (v.mainBody == thisVessel.mainBody
+                        && (v.Landed || !landedOnly || v == thisVessel))
                     {
-                        vessels.Add(v);
+                        if (v == thisVessel && !includeSelf) continue;
+                        var posCur = thisVessel.GetWorldPos3D();
+                        var posNext = v.GetWorldPos3D();
+                        var distance = Vector3d.Distance(posCur, posNext);
+                        if (distance < range)
+                        {
+                            vessels.Add(v);
+                        }
                     }
                 }
                 return vessels;
@@ -257,43 +269,38 @@ namespace LifeSupport
 
             var statList = new List<LifeSupportVesselDisplayStat>();
 
-            var checkVessels = new List<Guid>();
-                foreach (var v in FlightGlobals.Vessels.Where(v => v.isEVA))
-                {
-                    checkVessels.Add(v.id);
-                }
-
-
-            foreach (var vslId in checkVessels)
+            var gvCount = FlightGlobals.Vessels.Count;
+            for (int i = 0; i < gvCount; ++i)
             {
-                var vsl = FlightGlobals.Vessels.FirstOrDefault(v => v.id == vslId);
-                if (vsl == null)
-                    continue;
-
-                var lblColor = "FFD966";
-                var vstat = new LifeSupportVesselDisplayStat();
-                vstat.VesselName = String.Format("<color=#{0}>{1}</color>", lblColor, vsl.vesselName);
-                vstat.LastUpdate = vsl.missionTime;
-                var sitString = "(EVA)";
-
-                var remEVATime = LifeSupportScenario.Instance.settings.GetSettings().EVATime - vsl.missionTime;
-                var timeString = LifeSupportUtilities.SecondsToKerbinTime(Math.Max(0,remEVATime));
-
-                if (remEVATime > 0)
+                var vsl = FlightGlobals.Vessels[i];
+                if (vsl.isEVA)
                 {
-                    vstat.SummaryLabel = String.Format(
-                        "<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2}</color><color=#3DB1FF> time remaining</color>"
-                        , vsl.mainBody.bodyName
-                        , sitString
-                        , timeString.Substring(timeString.IndexOf(':') + 1));
-                }
-                else
-                {
-                    vstat.SummaryLabel = "<color=#FF8585>EVA Time Expired</color>";
-                }
 
-                vstat.crew = new List<LifeSupportCrewDisplayStat>();
-                statList.Add(vstat);
+                    var lblColor = "FFD966";
+                    var vstat = new LifeSupportVesselDisplayStat();
+                    vstat.VesselName = String.Format("<color=#{0}>{1}</color>", lblColor, vsl.vesselName);
+                    vstat.LastUpdate = vsl.missionTime;
+                    var sitString = "(EVA)";
+
+                    var remEVATime = LifeSupportScenario.Instance.settings.GetSettings().EVATime - vsl.missionTime;
+                    var timeString = LifeSupportUtilities.SecondsToKerbinTime(Math.Max(0, remEVATime));
+
+                    if (remEVATime > 0)
+                    {
+                        vstat.SummaryLabel = String.Format(
+                            "<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2}</color><color=#3DB1FF> time remaining</color>"
+                            , vsl.mainBody.bodyName
+                            , sitString
+                            , timeString.Substring(timeString.IndexOf(':') + 1));
+                    }
+                    else
+                    {
+                        vstat.SummaryLabel = "<color=#FF8585>EVA Time Expired</color>";
+                    }
+
+                    vstat.crew = new List<LifeSupportCrewDisplayStat>();
+                    statList.Add(vstat);
+                }
             }
 
             var vesselList = new List<VesselSupplyStatus>();
@@ -376,12 +383,14 @@ namespace LifeSupport
                         LifeSupportScenario.Instance.settings.GetSettings().HabRange);
                 }
 
-                foreach (var c in thisVessel.GetVesselCrew())
+                var cCount = thisVessel.GetVesselCrew().Count;
+                for(int q = 0; q < cCount; ++q)
                 {
+                    var c = thisVessel.GetVesselCrew()[q];
                     var cStat = new LifeSupportCrewDisplayStat();
                     var cls = LifeSupportManager.Instance.FetchKerbal(c);
                     //Guard clause in case we just changed vessels
-                    if (cls.CurrentVesselId != thisVessel.id.ToString() 
+                    if (cls.CurrentVesselId != thisVessel.id.ToString()
                         && cls.PreviousVesselId != thisVessel.id.ToString())
                     {
                         cls.PreviousVesselId = cls.CurrentVesselId;
@@ -516,8 +525,11 @@ namespace LifeSupport
                     GUILayout.Label(v.VesselName, _labelStyle, GUILayout.Width(155));
                     GUILayout.Label(v.SummaryLabel, _labelStyle, GUILayout.Width(570));
                     GUILayout.EndHorizontal();
-                    foreach (var c in v.crew)
+
+                    var cCount = v.crew.Count;
+                    for(int i = 0; i < cCount; ++i)
                     {
+                        var c = v.crew[i];
                         GUILayout.BeginHorizontal();
                         GUILayout.Label("", _labelStyle, GUILayout.Width(30));
                         GUILayout.Label(c.CrewName, _labelStyle, GUILayout.Width(135));
@@ -564,9 +576,10 @@ namespace LifeSupport
                 return 0d;
 
             var supAmount = 0d;
-
-            foreach (var p in thisVessel.parts)
+            var count = thisVessel.parts.Count;
+            for (int i = 0; i < count; ++i)
             {
+                var p = thisVessel.parts[i];
                 if (!p.Resources.Contains("resName")) 
                     continue;
                 var res = p.Resources["resName"];

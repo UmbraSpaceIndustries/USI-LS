@@ -1,4 +1,3 @@
-using System.Linq;
 using UnityEngine;
 
 namespace LifeSupport
@@ -18,15 +17,30 @@ namespace LifeSupport
             }
             else
             {
-                if (psm.targetScenes.All(s => s != GameScenes.SPACECENTER))
+                var addSpace = true;
+                var addFlight = true;
+                var addEditor = true;
+                var count = psm.targetScenes.Count;
+                for (int i = 0; i < count; ++i)
+                {
+                    var s = psm.targetScenes[i];
+                    if (s == GameScenes.FLIGHT)
+                        addFlight = false;
+                    if (s == GameScenes.SPACECENTER)
+                        addSpace = false;
+                    if (s == GameScenes.EDITOR)
+                        addEditor = false;
+                }
+
+                if (addSpace)
                 {
                     psm.targetScenes.Add(GameScenes.SPACECENTER);
                 }
-                if (psm.targetScenes.All(s => s != GameScenes.FLIGHT))
+                if (addFlight)
                 {
                     psm.targetScenes.Add(GameScenes.FLIGHT);
                 }
-                if (psm.targetScenes.All(s => s != GameScenes.EDITOR))
+                if (addEditor)
                 {
                     psm.targetScenes.Add(GameScenes.EDITOR);
                 }

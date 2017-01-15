@@ -1,15 +1,10 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
+using System;
 using UnityEngine;
-using Random = System.Random;
 
 namespace LifeSupport
 {
-    using System;
-    using System.Linq;
-    using UnityEngine;
+
 
     public class LifeSupportPersistance : MonoBehaviour
     {
@@ -38,11 +33,11 @@ namespace LifeSupport
         {
             print("Loading Config");
             ConfigNode[] statNodes = SettingsNode.GetNodes("LIFE_SUPPORT_CONFIG");
-            print("StatNodeCount:  " + statNodes.Count());
+            print("StatNodeCount:  " + statNodes.Length);
 
             LifeSupportConfig tmpSettings = null;
             var defSettings = LoadLifeSupportConfig();
-            if (statNodes.Any())
+            if (statNodes.Length > 0)
             {
                 tmpSettings = ImportConfig(statNodes[0]);
                 //Guard clauses
@@ -84,8 +79,11 @@ namespace LifeSupport
                 HabRange = 2000,
                 VetNames = ""
             };
-            foreach (var lsNode in lsNodes)
+
+            var count = lsNodes.Length;
+            for (int i = 0; i < count; ++i)
             {
+                var lsNode = lsNodes[i];
                 var settings = ResourceUtilities.LoadNodeProperties<LifeSupportConfig>(lsNode);
                 finalSettings.HabMultiplier = Math.Min(settings.HabMultiplier, finalSettings.HabMultiplier);
                 finalSettings.BaseHabTime = Math.Min(settings.BaseHabTime, finalSettings.BaseHabTime);
@@ -123,7 +121,7 @@ namespace LifeSupport
         {
             print("Loading Status Nodes");
             ConfigNode[] statNodes = SettingsNode.GetNodes("STATUS_DATA");
-            print("StatNodeCount:  " + statNodes.Count());
+            print("StatNodeCount:  " + statNodes.Length);
             return ImportStatusNodeList(statNodes);
         }
 
@@ -131,7 +129,7 @@ namespace LifeSupport
         {
             print("Loading Vessel Nodes");
             ConfigNode[] vesselNodes = SettingsNode.GetNodes("VESSEL_DATA");
-            print("StatNodeCount:  " + vesselNodes.Count());
+            print("StatNodeCount:  " + vesselNodes.Length);
             return ImportVesselNodeList(vesselNodes);
         }
         public List<LifeSupportStatus> GetStatusInfo()
@@ -173,8 +171,10 @@ namespace LifeSupport
 
             if (_StatusInfo != null)
             {
-                foreach (LifeSupportStatus r in _StatusInfo)
+                var count = _StatusInfo.Count;
+                for(int i = 0; i < count; ++i)
                 {
+                    var r = _StatusInfo[i];
                     var rNode = new ConfigNode("STATUS_DATA");
                     rNode.AddValue("KerbalName", r.KerbalName);
                     rNode.AddValue("HomeBodyId", r.HomeBodyId);
@@ -281,38 +281,61 @@ namespace LifeSupport
 
         public void AddStatusNode(LifeSupportStatus kerbal)
         {
-            if (_StatusInfo.Any(n => n.KerbalName == kerbal.KerbalName))
-                return;
+            var count = _StatusInfo.Count;
+            for (int i = 0; i < count; ++i)
+            {
+                if (_StatusInfo[i].KerbalName == kerbal.KerbalName)
+                    return;
+            }
             _StatusInfo.Add(kerbal);
         }
 
         public void AddVesselNode(VesselSupplyStatus vInfo)
         {
-            if (_VesselInfo.Any(n => n.VesselId == vInfo.VesselId))
-                return;
+            var count = _VesselInfo.Count;
+            for (int i = 0; i < count; ++i)
+            {
+                if (_VesselInfo[i].VesselId == vInfo.VesselId)
+                    return;
+            }
             _VesselInfo.Add(vInfo);
         }
 
         public void DeleteStatusNode(string kName)
         {
-            if (_StatusInfo.All(n => n.KerbalName != kName))
-                return;
-            var k = _StatusInfo.First(n => n.KerbalName == kName);
-            _StatusInfo.Remove(k);
+            var count = _StatusInfo.Count;
+            for (int i = 0; i < count; ++i)
+            {
+                var k = _StatusInfo[i];
+                if (k.KerbalName == kName)
+                {
+                    _StatusInfo.Remove(k);
+                    return;
+                }
+            }
         }
 
         public void DeleteVesselNode(string vId)
         {
-            if (_VesselInfo.All(n => n.VesselId != vId))
-                return;
-            var v = _VesselInfo.First(n => n.VesselId == vId);
-            _VesselInfo.Remove(v);
+            var count = _VesselInfo.Count;
+            for (int i = 0; i < count; ++i)
+            {
+                var v = _VesselInfo[i];
+                if (v.VesselId == vId)
+                {
+                    _VesselInfo.Remove(v);
+                    return;
+                }
+            }
         }
+
         public static List<LifeSupportStatus> ImportStatusNodeList(ConfigNode[] nodes)
         {
             var nList = new List<LifeSupportStatus>();
-            foreach (ConfigNode node in nodes)
+            var count = nodes.Length;
+            for(int i = 0; i < count; ++i)
             {
+                var node = nodes[i];
                 var res = ResourceUtilities.LoadNodeProperties<LifeSupportStatus>(node);
                 nList.Add(res);
             }
@@ -321,8 +344,10 @@ namespace LifeSupport
         public static List<VesselSupplyStatus> ImportVesselNodeList(ConfigNode[] nodes)
         {
             var nList = new List<VesselSupplyStatus>();
-            foreach (ConfigNode node in nodes)
+            var count = nodes.Length;
+            for (int i = 0; i < count; ++i)
             {
+                var node = nodes[i];
                 var res = ResourceUtilities.LoadNodeProperties<VesselSupplyStatus>(node);
                 nList.Add(res);
             }
@@ -362,8 +387,18 @@ namespace LifeSupport
 
         public void SaveStatusNode(LifeSupportStatus status)
         {
-            LifeSupportStatus kerbInfo =
-                _StatusInfo.FirstOrDefault(n => n.KerbalName == status.KerbalName);
+            LifeSupportStatus kerbInfo = null;
+            var count = _StatusInfo.Count;
+            for (int i = 0; i < count; ++i)
+            {
+                var n = _StatusInfo[i];
+                if (n.KerbalName == status.KerbalName)
+                {
+                    kerbInfo = n;
+                    break;
+                }
+            }
+
             if (kerbInfo == null)
             {
                 kerbInfo = new LifeSupportStatus();
@@ -387,8 +422,18 @@ namespace LifeSupport
 
         public void SaveVesselNode(VesselSupplyStatus status)
         {
-            VesselSupplyStatus vesselInfo =
-                _VesselInfo.FirstOrDefault(n => n.VesselId == status.VesselId);
+            VesselSupplyStatus vesselInfo = null;
+            var count = _VesselInfo.Count;
+            for (int i = 0; i < count; ++i)
+            {
+                var n = _VesselInfo[i];
+                if (n.VesselId == status.VesselId)
+                {
+                    vesselInfo = n;
+                    break;
+                }
+            }
+
             if (vesselInfo == null)
             {
                 vesselInfo = new VesselSupplyStatus();
