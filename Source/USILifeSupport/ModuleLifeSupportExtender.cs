@@ -23,6 +23,9 @@ namespace LifeSupport
 
         protected override void PreProcessing()
         {
+            if (!HighLogic.LoadedSceneIsFlight)
+                return;
+
             base.PreProcessing();
             var v = LifeSupportManager.Instance.FetchVessel(vessel.id.ToString());
             var e = 1d;
