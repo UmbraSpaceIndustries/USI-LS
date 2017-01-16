@@ -1,3 +1,8 @@
+0.5.18 - 2017.01.16
+-------------------
+Removed duplicate USITools
+Dependency Updates
+
 0.5.17 - 2017.01.15
 -------------------
 Performance Updates and dependency updates
