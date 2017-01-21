@@ -309,9 +309,12 @@ namespace LifeSupport
             for(int i = 0; i < vCount; ++i)
             {
                 var v = vList[i];
-                for (int x = 0; x < rmCount; ++x)
+                var subRecList = v.FindPartModulesImplementing<ModuleLifeSupportRecycler>();
+                var subRmCount = subRecList.Count;
+
+                for (int x = 0; x < subRmCount; ++x)
                 {
-                    var r = recList[x];
+                    var r = subRecList[x];
                     if (r.IsActivated && r.RecyclerIsActive)
                     {
                         if (r.AdjustedRecyclePercent > recyclerCap)
