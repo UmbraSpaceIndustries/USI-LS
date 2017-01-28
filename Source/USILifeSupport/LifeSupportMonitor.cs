@@ -457,17 +457,17 @@ namespace LifeSupport
             if (vessel == null)
                 return 0d;
 
-            var supAmount = 0d;
+            var amount = 0d;
             var count = vessel.parts.Count;
             for (int i = 0; i < count; ++i)
             {
                 var p = vessel.parts[i];
-                if (!p.Resources.Contains("resName")) 
+                if (!p.Resources.Contains(resName))
                     continue;
-                var res = p.Resources["resName"];
-                supAmount += res.amount;
+                var res = p.Resources[resName];
+                amount += res.amount;
             }
-            return supAmount;
+            return amount;
         }
 
         private string GetSituationString(Vessel vessel)
