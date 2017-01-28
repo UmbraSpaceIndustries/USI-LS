@@ -499,7 +499,7 @@ namespace LifeSupport
             }
 
             var cStat = new LifeSupportCrewDisplayStat();
-            cStat.CrewName = String.Format("<color=#FFFFFF>{0} ({1})</color>", c.name, c.experienceTrait.Title.Substring(0,1));
+            cStat.CrewName = GetCrewNameLabel(c, cls);
             cStat.ECLabel = GetCrewECLabel(vesselEcTimeLeft, vesselEcAmount, thisVessel, cls.LastEC);
             cStat.SupplyLabel = GetCrewSupplyLabel(vesselSuppliesTimeLeft);
             cStat.HabLabel = GetCrewHabLabel(vesselHabTime, useHabPenalties, cls);
@@ -507,6 +507,13 @@ namespace LifeSupport
 
             LifeSupportManager.Instance.TrackKerbal(cls);
             return cStat;
+        }
+
+        private string GetCrewNameLabel(ProtoCrewMember c, LifeSupportStatus cls)
+        {
+            var traitColor = cls.IsGrouchy ? "#FF0000" : "#FFFFFF";
+            var traitLabel = c.experienceTrait.Title.Substring (0, 1); // Could choose to display OldTrait instead
+            return String.Format("<color=#FFFFFF>{0}</color> <color={1}>({2})</color>", c.name, traitColor, traitLabel);
         }
 
         private string GetCrewECLabel(double vesselEcTimeLeft, double vesselEcAmount, Vessel vessel, double crewLastECCheck)
