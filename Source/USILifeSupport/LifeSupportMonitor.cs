@@ -484,9 +484,6 @@ namespace LifeSupport
 
         private LifeSupportCrewDisplayStat GetCrewStat(ProtoCrewMember c, Vessel thisVessel, double vesselSuppliesTimeLeft, double vesselEcTimeLeft, double vesselEcAmount, double vesselHabTime)
         {
-            var useHabPenalties = (LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffectVets +
-                                   LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffect > 0);
-
             var cls = LifeSupportManager.Instance.FetchKerbal(c);
             //Guard clause in case we just changed vessels
             if (cls.CurrentVesselId != thisVessel.id.ToString()
@@ -502,8 +499,8 @@ namespace LifeSupport
             cStat.CrewName = GetCrewNameLabel(c, cls);
             cStat.ECLabel = GetCrewECLabel(vesselEcTimeLeft, vesselEcAmount, thisVessel, cls.LastEC);
             cStat.SupplyLabel = GetCrewSupplyLabel(vesselSuppliesTimeLeft);
-            cStat.HabLabel = GetCrewHabLabel(vesselHabTime, useHabPenalties, cls);
-            cStat.HomeLabel = GetCrewHomeLabel(useHabPenalties, cls);
+            cStat.HabLabel = GetCrewHabLabel(vesselHabTime, c, cls);
+            cStat.HomeLabel = GetCrewHomeLabel(c, cls);
 
             LifeSupportManager.Instance.TrackKerbal(cls);
             return cStat;
@@ -564,58 +561,61 @@ namespace LifeSupport
             return String.Format("<color=#{0}>{1}</color>", lblSup, lblSupTime);
         }
 
-        private string GetCrewHabLabel(double vesselHabTime, bool useHabPenalties, LifeSupportStatus cls)
+        private string GetCrewHabLabel(double vesselHabTime, ProtoCrewMember c, LifeSupportStatus cls)
         {
-            var habTimeLeft = vesselHabTime - (Planetarium.GetUniversalTime() - cls.TimeEnteredVessel);
             var crewHabString = "indefinite";
-
             var lblHab = "6FFF00";
-
+            var useHabPenalties = LifeSupportManager.GetNoHomeEffect(c.name) > 0;
             if (useHabPenalties)
             {
-                crewHabString = LifeSupportUtilities.SecondsToKerbinTime(habTimeLeft);
-            }
-
-            var secondsPerDay = LifeSupportUtilities.SecondsPerDay();
-            if (habTimeLeft < secondsPerDay * 30) 
-            {
-                lblHab = "FFE100";
-            }
-            if (habTimeLeft < secondsPerDay * 15)
-            {
-                lblHab = "FFAE00";
-            }
-            if (habTimeLeft < 0)
-            {
-                lblHab = "FF5E5E";
-                crewHabString = "expired";
+                var habTimeLeft = vesselHabTime - (Planetarium.GetUniversalTime() - cls.TimeEnteredVessel);
+                if (habTimeLeft < 0) {
+                    lblHab = "FF5E5E";
+                    crewHabString = "expired";
+                }
+                else
+                {
+                    crewHabString = LifeSupportUtilities.SecondsToKerbinTime(habTimeLeft);
+                    var secondsPerDay = LifeSupportUtilities.SecondsPerDay();
+                    if (habTimeLeft < secondsPerDay * 30)
+                    {
+                        lblHab = "FFE100";
+                    }
+                    if (habTimeLeft < secondsPerDay * 15)
+                    {
+                        lblHab = "FFAE00";
+                    }
+                }
             }
             return String.Format("<color=#{0}>{1}</color>", lblHab, crewHabString);
         }
 
-        private string GetCrewHomeLabel(bool useHabPenalties, LifeSupportStatus cls)
+        private string GetCrewHomeLabel(ProtoCrewMember c, LifeSupportStatus cls)
         {
             var crewHomeString = "indefinite";
-            var homeTimeLeft = cls.MaxOffKerbinTime - Planetarium.GetUniversalTime();
-
+            var lblHome = "6FFF00";
+            var useHabPenalties = LifeSupportManager.GetNoHomeEffect(c.name) > 0;
             if (useHabPenalties)
             {
-                crewHomeString = LifeSupportUtilities.SecondsToKerbinTime(homeTimeLeft);
-            }
-            var lblHome = "6FFF00";
-            var secondsPerDay = LifeSupportUtilities.SecondsPerDay();
-            if (homeTimeLeft < secondsPerDay * 30) //15 days
-            {
-                lblHome = "FFE100";
-            }
-            if (homeTimeLeft < secondsPerDay * 15)
-            {
-                lblHome = "FFAE00";
-            }
-            if (homeTimeLeft < 0)
-            {
-                lblHome = "FF5E5E";
-                crewHomeString = "expired";
+                var homeTimeLeft = cls.MaxOffKerbinTime - Planetarium.GetUniversalTime();
+                if (homeTimeLeft < 0)
+                {
+                    lblHome = "FF5E5E";
+                    crewHomeString = "expired";
+                }
+                else
+                {
+                    crewHomeString = LifeSupportUtilities.SecondsToKerbinTime(homeTimeLeft);
+                    var secondsPerDay = LifeSupportUtilities.SecondsPerDay();
+                    if (homeTimeLeft < secondsPerDay * 30) //15 days
+                    {
+                        lblHome = "FFE100";
+                    }
+                    if (homeTimeLeft < secondsPerDay * 15)
+                    {
+                        lblHome = "FFAE00";
+                    }
+                }
             }
             return String.Format("<color=#{0}>{1}</color>", lblHome, crewHomeString);
         }

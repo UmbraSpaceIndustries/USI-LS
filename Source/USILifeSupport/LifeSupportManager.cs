@@ -230,6 +230,26 @@ namespace LifeSupport
             return (LifeSupportScenario.Instance.settings.GetSettings().VetNames.Contains(firstname));
         }
 
+        public static int GetNoSupplyEffect(string kName)
+        {
+            return isVet(kName) ?
+                LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffectVets
+                : LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffect;
+        }
+
+        public static int GetNoHomeEffect(string kName)
+        {
+            return isVet(kName) ?
+                LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffectVets
+                    : LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffect;
+        }
+
+        public static int GetNoECEffect(string kName)
+        {
+            return isVet(kName) ?
+                LifeSupportScenario.Instance.settings.GetSettings().NoECEffectVets
+                    : LifeSupportScenario.Instance.settings.GetSettings().NoECEffect;
+        }
 
         internal void UpdateVesselStats()
         {
