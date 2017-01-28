@@ -230,25 +230,19 @@ namespace LifeSupport
                             if (isGrouchyEC & !isCatchup)
                             {
                                 ApplyEffect(k, c,
-                                    LifeSupportManager.isVet(k.KerbalName)
-                                        ? LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffectVets
-                                        : LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffect,
+                                    LifeSupportManager.GetNoECEffect(k.KerbalName),
                                     "power loss");
                             }
                             else if (isGrouchySupplies & !isCatchup)
                             {
                                 ApplyEffect(k, c,
-                                    LifeSupportManager.isVet(k.KerbalName)
-                                        ? LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffectVets
-                                        : LifeSupportScenario.Instance.settings.GetSettings().NoSupplyEffect,
+                                    LifeSupportManager.GetNoSupplyEffect(k.KerbalName),
                                     "lack of supplies");
                             }
                             else if (isGrouchyHab & !isCatchup)
                             {
                                 ApplyEffect(k, c,
-                                    LifeSupportManager.isVet(k.KerbalName)
-                                        ? LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffectVets
-                                        : LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffect,
+                                    LifeSupportManager.GetNoHomeEffect(k.KerbalName),
                                     "homesickness");
                             }
                             else if (c.experienceTrait.Title != k.OldTrait)
