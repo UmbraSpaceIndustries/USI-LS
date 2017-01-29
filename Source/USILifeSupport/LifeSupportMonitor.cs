@@ -41,6 +41,8 @@ namespace LifeSupport
         private GUIStyle _scrollStyle;
         private Vector2 scrollPos = Vector2.zero;
         private bool _hasInitStyles = false;
+        private string _ecGraceTimeDisplay;
+        private string _suppliesGraceTimeDisplay;
         public static bool renderDisplay = false;
 
         void Awake()
@@ -269,7 +271,7 @@ namespace LifeSupport
             var sitString = "(EVA)";
 
             var remEVATime = LifeSupportScenario.Instance.settings.GetSettings().EVATime - kerbal.missionTime;
-            var timeString = LifeSupportUtilities.SecondsToKerbinTime(Math.Max(0, remEVATime));
+            var timeString = LifeSupportUtilities.SmartDurationDisplay(Math.Max(0, remEVATime));
 
             if (remEVATime > 0)
             {
@@ -330,7 +332,7 @@ namespace LifeSupport
             var habString = "indefinite";
             if (useHabPenalties)
             {
-                habString = LifeSupportUtilities.SecondsToKerbinTime(habTime, true);
+                habString = LifeSupportUtilities.DurationDisplay(habTime, LifeSupportUtilities.TimeFormatLength.Short);
             }
             vstat.SummaryLabel = String.Format(
                 "<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2:0}</color><color=#3DB1FF> supplies (</color><color=#9EE4FF>{3:0.0}</color><color=#3DB1FF>/day) hab for </color><color=#9EE4FF>{4}</color>"                               
@@ -386,6 +388,8 @@ namespace LifeSupport
             if (Planetarium.GetUniversalTime() > _lastGUIUpdate + _guiCheckInterval)
             {
                 _lastGUIUpdate = Planetarium.GetUniversalTime();
+                _ecGraceTimeDisplay = LifeSupportUtilities.CompactDurationDisplay(LifeSupportScenario.Instance.settings.GetSettings().ECTime);
+                _suppliesGraceTimeDisplay = LifeSupportUtilities.CompactDurationDisplay(LifeSupportScenario.Instance.settings.GetSettings().SupplyTime);
                 _guiStats = UpdateGUIStats();
                 CheckEVAKerbals();
             }
@@ -422,7 +426,7 @@ namespace LifeSupport
             GUILayout.EndHorizontal();
             foreach (var c in v.crew)
             {
-                DisplayCrewStats (c);
+                DisplayCrewStats(c);
             }
         }
 
@@ -515,50 +519,65 @@ namespace LifeSupport
 
         private string GetCrewECLabel(double vesselEcTimeLeft, double vesselEcAmount, Vessel vessel, double crewLastECCheck)
         {
-            var ecLeft = vesselEcTimeLeft + LifeSupportScenario.Instance.settings.GetSettings().ECTime;
+            var ecTimeLeft = vesselEcTimeLeft;
+            var graceTime = LifeSupportScenario.Instance.settings.GetSettings().ECTime;
             if (vesselEcAmount <= LifeSupportScenario.Instance.settings.GetSettings().ECAmount && !LifeSupportManager.IsOnKerbin(vessel))
             {
-                ecLeft = crewLastECCheck - Planetarium.GetUniversalTime() + LifeSupportScenario.Instance.settings.GetSettings().ECTime;
+                ecTimeLeft = crewLastECCheck - Planetarium.GetUniversalTime (); // not sure this is correct
             }
-            var lblECTime = LifeSupportUtilities.SecondsToKerbinTime(ecLeft);
-
-            var lblEC = "6FFF00";
-            if (ecLeft < LifeSupportScenario.Instance.settings.GetSettings().ECTime)
+            if (ecTimeLeft > 0)
             {
-                lblEC = "FFE100";
+                return String.Format("<color=#6FFF00>{0} (+{1})</color>",
+                                     LifeSupportUtilities.SmartDurationDisplay(ecTimeLeft),
+                                     _ecGraceTimeDisplay);
             }
-            if (ecLeft < LifeSupportScenario.Instance.settings.GetSettings().ECTime / 2)
+            else
             {
-                lblEC = "FFAE00";
+                var outOfEcTime = - ecTimeLeft;
+                if (outOfEcTime < graceTime / 2)
+                {
+                    return String.Format("<color=#FFE100>{0} (out of EC)</color>",
+                                         LifeSupportUtilities.SmartDurationDisplay(graceTime - outOfEcTime));
+                }
+                else if (outOfEcTime < graceTime)
+                {
+                    return String.Format("<color=#FFAE00>{0} (out of EC)</color>",
+                                         LifeSupportUtilities.SmartDurationDisplay(graceTime - outOfEcTime));
+                }
+                else // outOfEcTime > graceTime
+                {
+                    return "<color=#FF5E5E>expired</color>";
+                }
             }
-            if (ecLeft <= ResourceUtilities.FLOAT_TOLERANCE)
-            {
-                lblEC = "FF5E5E";
-                lblECTime = "expired";
-            }
-            return String.Format("<color=#{0}>{1}</color>", lblEC, lblECTime);
         }
 
         private string GetCrewSupplyLabel(double vesselSuppliesTimeLeft)
         {
-            var snacksLeft = vesselSuppliesTimeLeft + LifeSupportScenario.Instance.settings.GetSettings().SupplyTime;
-            var lblSupTime = LifeSupportUtilities.SecondsToKerbinTime(snacksLeft);
-
-            var lblSup = "6FFF00";
-            if (snacksLeft < LifeSupportScenario.Instance.settings.GetSettings().SupplyTime)
+            var graceTime = LifeSupportScenario.Instance.settings.GetSettings().SupplyTime;
+            if (vesselSuppliesTimeLeft > 0)
             {
-                lblSup = "FFE100";
+                return String.Format("<color=#6FFF00>{0} (+{1})</color>",
+                                     LifeSupportUtilities.SmartDurationDisplay(vesselSuppliesTimeLeft),
+                                     _suppliesGraceTimeDisplay);
             }
-            if (snacksLeft < LifeSupportScenario.Instance.settings.GetSettings().SupplyTime / 2)
+            else
             {
-                lblSup = "FFAE00";
+                var starvingTime = -vesselSuppliesTimeLeft;
+                if (starvingTime < graceTime / 2)
+                {
+                    return String.Format("<color=#FFE100>{0} (starving)</color>",
+                                         LifeSupportUtilities.SmartDurationDisplay(graceTime - starvingTime));
+                }
+                else if (starvingTime < graceTime)
+                {
+                    return String.Format("<color=#FFAE00>{0} (starving)</color>",
+                                         LifeSupportUtilities.SmartDurationDisplay(graceTime - starvingTime));
+                }
+                else // starvingTime > graceTime
+                {
+                    return "<color=#FF5E5E>expired</color>";
+                }
             }
-            if (snacksLeft <= ResourceUtilities.FLOAT_TOLERANCE)
-            {
-                lblSup = "FF5E5E";
-                lblSupTime = "expired";
-            }
-            return String.Format("<color=#{0}>{1}</color>", lblSup, lblSupTime);
         }
 
         private string GetCrewHabLabel(double vesselHabTime, ProtoCrewMember c, LifeSupportStatus cls)
@@ -575,7 +594,7 @@ namespace LifeSupport
                 }
                 else
                 {
-                    crewHabString = LifeSupportUtilities.SecondsToKerbinTime(habTimeLeft);
+                    crewHabString = LifeSupportUtilities.SmartDurationDisplay(habTimeLeft);
                     var secondsPerDay = LifeSupportUtilities.SecondsPerDay();
                     if (habTimeLeft < secondsPerDay * 30)
                     {
@@ -605,7 +624,7 @@ namespace LifeSupport
                 }
                 else
                 {
-                    crewHomeString = LifeSupportUtilities.SecondsToKerbinTime(homeTimeLeft);
+                    crewHomeString = LifeSupportUtilities.SmartDurationDisplay(homeTimeLeft);
                     var secondsPerDay = LifeSupportUtilities.SecondsPerDay();
                     if (homeTimeLeft < secondsPerDay * 30) //15 days
                     {
