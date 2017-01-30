@@ -37,7 +37,6 @@ namespace LifeSupport
         private Rect _windowPosition = new Rect(300, 60, 820, 400);
         private GUIStyle _windowStyle;
         private GUIStyle _labelStyle;
-        private GUIStyle _buttonStyle;
         private GUIStyle _scrollStyle;
         private Vector2 scrollPos = Vector2.zero;
         private bool _hasInitStyles = false;
@@ -653,7 +652,6 @@ namespace LifeSupport
             _windowStyle.fixedWidth = 820f;
             _windowStyle.fixedHeight = 400f;
             _labelStyle = new GUIStyle(HighLogic.Skin.label);
-            _buttonStyle = new GUIStyle(HighLogic.Skin.button);
             _scrollStyle = new GUIStyle(HighLogic.Skin.scrollView);
             _hasInitStyles = true;
         }
