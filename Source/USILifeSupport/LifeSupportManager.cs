@@ -251,6 +251,13 @@ namespace LifeSupport
                     : LifeSupportScenario.Instance.settings.GetSettings().NoECEffect;
         }
 
+        public static int GetEVAExcessEffect(string kName)
+        {
+            return isVet(kName) ?
+                LifeSupportScenario.Instance.settings.GetSettings().EVAEffectVets
+                    : LifeSupportScenario.Instance.settings.GetSettings().EVAEffect;
+        }
+
         internal void UpdateVesselStats()
         {
             //Clear stuff that is gone.

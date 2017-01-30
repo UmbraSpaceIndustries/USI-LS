@@ -79,6 +79,11 @@ namespace LifeSupport
                 return;
             if (!vessel.loaded)
                 return;
+            if (vessel.isEVA)
+            {
+                CheckEVA(vessel);
+                return;
+            }
 
             if (_partCount != vessel.parts.Count)
             {
@@ -613,6 +618,8 @@ namespace LifeSupport
             var msg = "";
             switch (effectId)
             {
+                case 0: // No effect
+                    return; // No need to print
                 case 1: //Grouchy
                     if (crew.type != ProtoCrewMember.KerbalType.Tourist)
                     {
@@ -698,5 +705,156 @@ namespace LifeSupport
             if (p.parent != null)
                 p.decouple();
         }
+
+        private void CheckEVA(Vessel evaKerbal)
+        {
+            if (IsAtHomeForEva(evaKerbal))
+            {
+                return;
+            }
+
+            var kerbal = evaKerbal.GetVesselCrew()[0];
+            //Check their status.
+            var kerbalStatus = LifeSupportManager.Instance.FetchKerbal(kerbal);
+            if (evaKerbal.missionTime > LifeSupportScenario.Instance.settings.GetSettings().EVATime)
+            {
+                var effect = LifeSupportManager.GetEVAExcessEffect(kerbalStatus.KerbalName);
+                ApplyEVAEffect(kerbalStatus, kerbal, evaKerbal, effect);
+            }
+        }
+
+        private bool IsAtHomeForEva(Vessel evaKerbal)
+        {
+            return (evaKerbal.mainBody == FlightGlobals.GetHomeBody()) &&
+                    (evaKerbal.altitude < LifeSupportScenario.Instance.settings.GetSettings().HomeWorldAltitude);
+        }
+
+        private void ApplyEVAEffect(LifeSupportStatus kStat, ProtoCrewMember crew, Vessel v, int effectId)
+        {
+            /*
+             *  SIDE EFFECTS:
+             * 
+             *  0 = No Effect (The feature is effectively turned off
+             *  1 = Grouchy (they become a Tourist until rescued)
+             *  2 = Mutinous (A tourist, but destroys a part of a nearby vessel...)
+             *  3 = Instantly 'wander' back to the KSC - don't ask us how!
+             *  4 = M.I.A. (will eventually respawn)
+             *  5 = K.I.A. 
+             * 
+             */
+
+            var msg = "";
+            switch (effectId)
+            {
+                case 0: // No effect
+                return; // No need to print
+                case 1: //Grouchy
+                if (crew.type != ProtoCrewMember.KerbalType.Tourist)
+                {
+                    msg = string.Format("{0} refuses to work", crew.name);
+                    kStat.OldTrait = crew.experienceTrait.Title;
+                    crew.type = ProtoCrewMember.KerbalType.Tourist;
+                    KerbalRoster.SetExperienceTrait(crew, "Tourist");
+                    kStat.IsGrouchy = true;
+                    LifeSupportManager.Instance.TrackKerbal(kStat);
+                }
+                break;
+                case 2:  //Mutinous
+            {
+                msg = string.Format("{0} has become mutinous", crew.name);
+                kStat.OldTrait = crew.experienceTrait.Title;
+                crew.type = ProtoCrewMember.KerbalType.Tourist;
+                KerbalRoster.SetExperienceTrait(crew, "Tourist");
+                kStat.IsGrouchy = true;
+                LifeSupportManager.Instance.TrackKerbal(kStat);
+                DestroyRandomPart(v);
+            }
+                break;
+                case 3: //Return to KSC
+                msg = string.Format("{0} gets fed up and wanders back to the KSC", crew.name);
+                LifeSupportManager.Instance.UntrackKerbal(crew.name);
+                crew.rosterStatus = ProtoCrewMember.RosterStatus.Available;
+                DestroyVessel(v);
+                break;
+                case 4: //Despawn
+                msg = string.Format("{0} has gone missing", crew.name);
+                LifeSupportManager.Instance.UntrackKerbal(crew.name);
+                crew.rosterStatus = ProtoCrewMember.RosterStatus.Missing;
+                DestroyVessel(v);
+                break;
+                case 5: //Kill
+                msg = string.Format("{0} has died", crew.name);
+                LifeSupportManager.Instance.UntrackKerbal(crew.name);
+                crew.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
+                DestroyVessel(v);
+                break;
+            }
+
+            ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
+        }
+
+        private void DestroyRandomPart(Vessel thisVessel)
+        {
+            System.Random r = new System.Random();
+            var vlist = GetNearbyVessels(150, false, thisVessel, false);
+            var count = vlist.Count;
+            for (int i = 0; i < count; ++i)
+            {
+                var v = vlist[i];
+                var idx = r.Next(1, v.parts.Count - 1);
+                var p = v.parts[idx];
+                if (p.parent != null)
+                    p.decouple();
+            }
+        }
+
+        private void DestroyVessel(Vessel v)
+        {
+            var _demoParts = new List<Part>();
+            var count = v.parts.Count;
+            for (int i = 0; i < count; ++i)
+            {
+                _demoParts.Add(v.parts[i]);
+            }
+
+            for (int i = 0; i < count; ++i)
+            {
+                var p = _demoParts[i];
+                p.decouple();
+                p.explode();
+            }
+        }
+
+        public static List<Vessel> GetNearbyVessels(int range, bool includeSelf, Vessel thisVessel, bool landedOnly = true)
+        {
+            try
+            {
+                var vessels = new List<Vessel>();
+                var count = FlightGlobals.Vessels.Count;
+                for(int i = 0; i < count; ++i)
+                {
+                    var v = FlightGlobals.Vessels[i];
+                    if (v.mainBody == thisVessel.mainBody
+                        && (v.Landed || !landedOnly || v == thisVessel))
+                    {
+                        if (v == thisVessel && !includeSelf) continue;
+                        var posCur = thisVessel.GetWorldPos3D();
+                        var posNext = v.GetWorldPos3D();
+                        var distance = Vector3d.Distance(posCur, posNext);
+                        if (distance < range)
+                        {
+                            vessels.Add(v);
+                        }
+                    }
+                }
+                return vessels;
+            }
+            catch (Exception ex)
+            {
+                Debug.Log(String.Format("[LS] - ERROR in GetNearbyVessels - {0}", ex.Message));
+                return new List<Vessel>();
+            }
+        }
+
     }
 }
