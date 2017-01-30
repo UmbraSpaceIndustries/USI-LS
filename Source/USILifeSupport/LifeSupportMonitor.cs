@@ -349,8 +349,8 @@ namespace LifeSupport
 
             var cStat = new LifeSupportCrewDisplayStat();
             cStat.CrewName = GetCrewNameLabel(c, cls);
-            cStat.ECLabel = GetCrewECLabel(ecTimeLeft);
-            cStat.SupplyLabel = GetCrewSupplyLabel(vesselSuppliesTimeLeft);
+            cStat.ECLabel = GetCrewECLabel(ecTimeLeft, c);
+            cStat.SupplyLabel = GetCrewSupplyLabel(vesselSuppliesTimeLeft, c);
             cStat.HabLabel = GetCrewHabLabel(vesselHabTime, c, cls);
             cStat.HomeLabel = GetCrewHomeLabel(c, cls);
 
@@ -365,8 +365,12 @@ namespace LifeSupport
             return String.Format("<color=#FFFFFF>{0}</color> <color={1}>({2})</color>", c.name, traitColor, traitLabel);
         }
 
-        private string GetRemainingTimeWithGraceLabel(double timeLeft, double graceTime, string graceTimeDisplay, string inGraceTimeMessage)
+        private string GetRemainingTimeWithGraceLabel(double timeLeft, double graceTime, string graceTimeDisplay, string inGraceTimeMessage, int effectWhenExpires)
         {
+            if (effectWhenExpires == 0)
+            {
+                return "<color=#6FFF00>indefinite</color>";
+            }
             if (timeLeft > 0)
             {
                 return String.Format("<color=#6FFF00>{0} (+{1})</color>",
@@ -395,22 +399,24 @@ namespace LifeSupport
             }
         }
 
-        private string GetCrewECLabel(double ecTimeLeft)
+        private string GetCrewECLabel(double ecTimeLeft, ProtoCrewMember c)
         {
             return GetRemainingTimeWithGraceLabel(
                 ecTimeLeft,
                 LifeSupportScenario.Instance.settings.GetSettings().ECTime,
                 _ecGraceTimeDisplay,
-                "out of EC");
+                "out of EC",
+                LifeSupportManager.GetNoECEffect(c.name));
         }
 
-        private string GetCrewSupplyLabel(double vesselSuppliesTimeLeft)
+        private string GetCrewSupplyLabel(double vesselSuppliesTimeLeft, ProtoCrewMember c)
         {
             return GetRemainingTimeWithGraceLabel(
                 vesselSuppliesTimeLeft,
                 LifeSupportScenario.Instance.settings.GetSettings().SupplyTime,
                 _suppliesGraceTimeDisplay,
-                "starving");
+                "starving",
+                LifeSupportManager.GetNoSupplyEffect(c.name));
         }
 
         private string GetCrewHabLabel(double vesselHabTime, ProtoCrewMember c, LifeSupportStatus cls)
@@ -497,7 +503,7 @@ namespace LifeSupport
         public string VesselId { get; set; }
         public string SummaryLabel { get; set; }
         public double LastUpdate { get; set; }
-        public double EarlierExpiration { get; set; }
+        public double EarliestExpiration { get; set; }
 
         public List<LifeSupportCrewDisplayStat> crew { get; set; } 
     }
@@ -509,7 +515,7 @@ namespace LifeSupport
         public string ECLabel { get; set; }
         public string HabLabel { get; set; }
         public string HomeLabel { get; set; }
-        public double EarlierExpiration { get; set; }
+        public double EarliestExpiration { get; set; }
     }
 
 }
