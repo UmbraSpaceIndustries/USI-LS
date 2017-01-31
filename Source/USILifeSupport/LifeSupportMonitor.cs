@@ -39,8 +39,8 @@ namespace LifeSupport
         private GUIStyle _scrollStyle;
         private Vector2 scrollPos = Vector2.zero;
         private bool _hasInitStyles = false;
-        private string _ecGraceTimeDisplay;
-        private string _suppliesGraceTimeDisplay;
+        internal static string EcGraceTimeDisplay;
+        internal static string SuppliesGraceTimeDisplay;
         public static bool renderDisplay = false;
 
         void Awake()
@@ -69,14 +69,12 @@ namespace LifeSupport
             renderDisplay = false;
         }
 
-
         private void OnGUI()
         {
             if (!renderDisplay)
                 return;
             if (!IsActive())
                 return;
-
 
             if (Event.current.type == EventType.Repaint || Event.current.isMouse)
             {
@@ -89,7 +87,6 @@ namespace LifeSupport
         {
             return false;
         }
-
 
         private void Ondraw()
         {
@@ -198,6 +195,11 @@ namespace LifeSupport
                 var crewStat = GetCrewStat(c, thisVessel, suppliesTimeLeft, ecTimeLeft, ecAmount, habTime);
                 vstat.crew.Add(crewStat);
             }
+            vstat.crew = vstat.crew.OrderBy(crewStat => crewStat.EarliestExpiration).ToList();
+            if (vstat.crew.Any())
+            {
+                vstat.EarliestExpiration = vstat.crew.First().EarliestExpiration;
+            }
             return vstat;
         }
 
@@ -219,8 +221,7 @@ namespace LifeSupport
             {
                 statList.Add(GetVesselStats(trackedVessel));
             }
-
-            return statList.OrderByDescending (s => (int)(s.LastUpdate / 10) + " " + s.VesselId);
+            return statList.OrderByDescending(s => s.VesselId == FlightGlobals.ActiveVessel.id.ToString()).ThenBy(s => (int)(s.EarliestExpiration));
         }
 
         private IEnumerable<LifeSupportVesselDisplayStat> _guiStats; 
@@ -230,8 +231,8 @@ namespace LifeSupport
             if (Planetarium.GetUniversalTime() > _lastGUIUpdate + _guiCheckInterval)
             {
                 _lastGUIUpdate = Planetarium.GetUniversalTime();
-                _ecGraceTimeDisplay = LifeSupportUtilities.CompactDurationDisplay(LifeSupportScenario.Instance.settings.GetSettings().ECTime);
-                _suppliesGraceTimeDisplay = LifeSupportUtilities.CompactDurationDisplay(LifeSupportScenario.Instance.settings.GetSettings().SupplyTime);
+                EcGraceTimeDisplay = LifeSupportUtilities.CompactDurationDisplay(LifeSupportScenario.Instance.settings.GetSettings().ECTime);
+                SuppliesGraceTimeDisplay = LifeSupportUtilities.CompactDurationDisplay(LifeSupportScenario.Instance.settings.GetSettings().SupplyTime);
                 _guiStats = UpdateGUIStats();
             }
 
@@ -349,10 +350,10 @@ namespace LifeSupport
 
             var cStat = new LifeSupportCrewDisplayStat();
             cStat.CrewName = GetCrewNameLabel(c, cls);
-            cStat.ECLabel = GetCrewECLabel(ecTimeLeft, c);
-            cStat.SupplyLabel = GetCrewSupplyLabel(vesselSuppliesTimeLeft, c);
-            cStat.HabLabel = GetCrewHabLabel(vesselHabTime, c, cls);
-            cStat.HomeLabel = GetCrewHomeLabel(c, cls);
+            cStat.ComputeEc(ecTimeLeft, c);
+            cStat.ComputeSupply(vesselSuppliesTimeLeft, c);
+            cStat.ComputeHab(vesselHabTime, c, cls);
+            cStat.ComputeHome(c, cls);
 
             LifeSupportManager.Instance.TrackKerbal(cls);
             return cStat;
@@ -363,6 +364,126 @@ namespace LifeSupport
             var traitColor = cls.IsGrouchy ? "#FF0000" : "#FFFFFF";
             var traitLabel = c.experienceTrait.Title.Substring (0, 1); // Could choose to display OldTrait instead
             return String.Format("<color=#FFFFFF>{0}</color> <color={1}>({2})</color>", c.name, traitColor, traitLabel);
+        }
+
+        internal void OnDestroy()
+        {
+            if (orbLogButton == null)
+                return;
+            ApplicationLauncher.Instance.RemoveModApplication(orbLogButton);
+            orbLogButton = null;
+        }
+
+        private void InitStyles()
+        {
+            _windowStyle = new GUIStyle(HighLogic.Skin.window);
+            _windowStyle.fixedWidth = 820f;
+            _windowStyle.fixedHeight = 400f;
+            _labelStyle = new GUIStyle(HighLogic.Skin.label);
+            _scrollStyle = new GUIStyle(HighLogic.Skin.scrollView);
+            _hasInitStyles = true;
+        }
+    }
+
+    public class LifeSupportVesselDisplayStat
+    {
+        public string VesselName { get; set; }
+        public string VesselId { get; set; }
+        public string SummaryLabel { get; set; }
+        public double LastUpdate { get; set; }
+        public double EarliestExpiration { get; set; }
+
+        public List<LifeSupportCrewDisplayStat> crew { get; set; }
+
+        public LifeSupportVesselDisplayStat()
+        {
+            EarliestExpiration = double.PositiveInfinity;
+        }
+    }
+
+    public class LifeSupportCrewDisplayStat
+    {
+        public string CrewName { get; set; }
+        public string SupplyLabel { get; set; }
+        public string ECLabel { get; set; }
+        public string HabLabel { get; set; }
+        public string HomeLabel { get; set; }
+        public double EarliestExpiration { get; set; }
+
+        public LifeSupportCrewDisplayStat()
+        {
+            EarliestExpiration = double.PositiveInfinity;
+        }
+
+        private void UpdateEarliestExpiration(double expirationIn)
+        {
+            var expiration = Planetarium.GetUniversalTime() + expirationIn;
+            if (expiration < EarliestExpiration)
+            {
+                EarliestExpiration = expiration;
+            }
+        }
+
+        internal void ComputeHab(double vesselHabTime, ProtoCrewMember c, LifeSupportStatus cls)
+        {
+            var crewHabString = "indefinite";
+            var lblHab = "6FFF00";
+            var useHabPenalties = LifeSupportManager.GetNoHomeEffect(c.name) > 0;
+            if (useHabPenalties)
+            {
+                UpdateEarliestExpiration(vesselHabTime);
+                var habTimeLeft = vesselHabTime - (Planetarium.GetUniversalTime() - cls.TimeEnteredVessel);
+                if (habTimeLeft < 0)
+                {
+                    lblHab = "FF5E5E";
+                    crewHabString = "expired";
+                }
+                else
+                {
+                    crewHabString = LifeSupportUtilities.SmartDurationDisplay(habTimeLeft);
+                    var secondsPerDay = LifeSupportUtilities.SecondsPerDay();
+                    if (habTimeLeft < secondsPerDay * 30)
+                    {
+                        lblHab = "FFE100";
+                    }
+                    if (habTimeLeft < secondsPerDay * 15)
+                    {
+                        lblHab = "FFAE00";
+                    }
+                }
+            }
+            HabLabel = String.Format("<color=#{0}>{1}</color>", lblHab, crewHabString);
+        }
+
+        internal void ComputeHome(ProtoCrewMember c, LifeSupportStatus cls)
+        {
+            var crewHomeString = "indefinite";
+            var lblHome = "6FFF00";
+            var useHabPenalties = LifeSupportManager.GetNoHomeEffect(c.name) > 0;
+            if (useHabPenalties)
+            {
+                var homeTimeLeft = cls.MaxOffKerbinTime - Planetarium.GetUniversalTime();
+                UpdateEarliestExpiration(homeTimeLeft);
+                if (homeTimeLeft < 0)
+                {
+                    lblHome = "FF5E5E";
+                    crewHomeString = "expired";
+                }
+                else
+                {
+                    crewHomeString = LifeSupportUtilities.SmartDurationDisplay(homeTimeLeft);
+                    var secondsPerDay = LifeSupportUtilities.SecondsPerDay();
+                    if (homeTimeLeft < secondsPerDay * 30) //15 days
+                    {
+                        lblHome = "FFE100";
+                    }
+                    if (homeTimeLeft < secondsPerDay * 15)
+                    {
+                        lblHome = "FFAE00";
+                    }
+                }
+            }
+            HomeLabel = String.Format("<color=#{0}>{1}</color>", lblHome, crewHomeString);
         }
 
         private string GetRemainingTimeWithGraceLabel(double timeLeft, double graceTime, string graceTimeDisplay, string inGraceTimeMessage, int effectWhenExpires)
@@ -399,123 +520,31 @@ namespace LifeSupport
             }
         }
 
-        private string GetCrewECLabel(double ecTimeLeft, ProtoCrewMember c)
+        internal void ComputeEc(double ecTimeLeft, ProtoCrewMember c)
         {
-            return GetRemainingTimeWithGraceLabel(
+            var noEcEffect = LifeSupportManager.GetNoECEffect(c.name);
+            ECLabel = GetRemainingTimeWithGraceLabel(
                 ecTimeLeft,
                 LifeSupportScenario.Instance.settings.GetSettings().ECTime,
-                _ecGraceTimeDisplay,
+                LifeSupportMonitor.EcGraceTimeDisplay,
                 "out of EC",
-                LifeSupportManager.GetNoECEffect(c.name));
+                noEcEffect);
         }
 
-        private string GetCrewSupplyLabel(double vesselSuppliesTimeLeft, ProtoCrewMember c)
+        internal void ComputeSupply(double vesselSuppliesTimeLeft, ProtoCrewMember c)
         {
-            return GetRemainingTimeWithGraceLabel(
+            var noSupplyEffect = LifeSupportManager.GetNoSupplyEffect(c.name);
+            if (noSupplyEffect > 0)
+            {
+                UpdateEarliestExpiration(vesselSuppliesTimeLeft);
+            }
+            SupplyLabel = GetRemainingTimeWithGraceLabel(
                 vesselSuppliesTimeLeft,
                 LifeSupportScenario.Instance.settings.GetSettings().SupplyTime,
-                _suppliesGraceTimeDisplay,
+                LifeSupportMonitor.SuppliesGraceTimeDisplay,
                 "starving",
-                LifeSupportManager.GetNoSupplyEffect(c.name));
+                noSupplyEffect);
         }
 
-        private string GetCrewHabLabel(double vesselHabTime, ProtoCrewMember c, LifeSupportStatus cls)
-        {
-            var crewHabString = "indefinite";
-            var lblHab = "6FFF00";
-            var useHabPenalties = LifeSupportManager.GetNoHomeEffect(c.name) > 0;
-            if (useHabPenalties)
-            {
-                var habTimeLeft = vesselHabTime - (Planetarium.GetUniversalTime() - cls.TimeEnteredVessel);
-                if (habTimeLeft < 0) {
-                    lblHab = "FF5E5E";
-                    crewHabString = "expired";
-                }
-                else
-                {
-                    crewHabString = LifeSupportUtilities.SmartDurationDisplay(habTimeLeft);
-                    var secondsPerDay = LifeSupportUtilities.SecondsPerDay();
-                    if (habTimeLeft < secondsPerDay * 30)
-                    {
-                        lblHab = "FFE100";
-                    }
-                    if (habTimeLeft < secondsPerDay * 15)
-                    {
-                        lblHab = "FFAE00";
-                    }
-                }
-            }
-            return String.Format("<color=#{0}>{1}</color>", lblHab, crewHabString);
-        }
-
-        private string GetCrewHomeLabel(ProtoCrewMember c, LifeSupportStatus cls)
-        {
-            var crewHomeString = "indefinite";
-            var lblHome = "6FFF00";
-            var useHabPenalties = LifeSupportManager.GetNoHomeEffect(c.name) > 0;
-            if (useHabPenalties)
-            {
-                var homeTimeLeft = cls.MaxOffKerbinTime - Planetarium.GetUniversalTime();
-                if (homeTimeLeft < 0)
-                {
-                    lblHome = "FF5E5E";
-                    crewHomeString = "expired";
-                }
-                else
-                {
-                    crewHomeString = LifeSupportUtilities.SmartDurationDisplay(homeTimeLeft);
-                    var secondsPerDay = LifeSupportUtilities.SecondsPerDay();
-                    if (homeTimeLeft < secondsPerDay * 30) //15 days
-                    {
-                        lblHome = "FFE100";
-                    }
-                    if (homeTimeLeft < secondsPerDay * 15)
-                    {
-                        lblHome = "FFAE00";
-                    }
-                }
-            }
-            return String.Format("<color=#{0}>{1}</color>", lblHome, crewHomeString);
-        }
-
-        internal void OnDestroy()
-        {
-            if (orbLogButton == null)
-                return;
-            ApplicationLauncher.Instance.RemoveModApplication(orbLogButton);
-            orbLogButton = null;
-        }
-
-        private void InitStyles()
-        {
-            _windowStyle = new GUIStyle(HighLogic.Skin.window);
-            _windowStyle.fixedWidth = 820f;
-            _windowStyle.fixedHeight = 400f;
-            _labelStyle = new GUIStyle(HighLogic.Skin.label);
-            _scrollStyle = new GUIStyle(HighLogic.Skin.scrollView);
-            _hasInitStyles = true;
-        }
     }
-
-    public class LifeSupportVesselDisplayStat
-    {
-        public string VesselName { get; set; }
-        public string VesselId { get; set; }
-        public string SummaryLabel { get; set; }
-        public double LastUpdate { get; set; }
-        public double EarliestExpiration { get; set; }
-
-        public List<LifeSupportCrewDisplayStat> crew { get; set; } 
-    }
-
-    public class LifeSupportCrewDisplayStat
-    {
-        public string CrewName { get; set; }
-        public string SupplyLabel { get; set; }
-        public string ECLabel { get; set; }
-        public string HabLabel { get; set; }
-        public string HomeLabel { get; set; }
-        public double EarliestExpiration { get; set; }
-    }
-
 }
