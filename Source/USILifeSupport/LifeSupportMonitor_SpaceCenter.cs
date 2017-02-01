@@ -14,7 +14,6 @@ namespace LifeSupport
         private Rect _windowPosition = new Rect(300, 60, 500, 550);
         private GUIStyle _windowStyle;
         private GUIStyle _labelStyle;
-        private GUIStyle _buttonStyle;
         private GUIStyle _smButtonStyle;
         private GUIStyle _toggleStyle;
         private bool _hasInitStyles = false;
@@ -131,11 +130,7 @@ namespace LifeSupport
                 var effectStrings = new[] {"none", "grouchy", "mutiny", "return", "M.I.A.", "K.I.A."};
                 GUILayout.BeginVertical();
                 // Colors
-                string operColor = "99FF33";
                 string textColor = "FFFFFF";
-                string crewColor = "ADD8E6";
-                string fadeColor = "909090";
-                string partColor = "FFCC00";
 
                 // column widths
                 const int c1 = 100;
@@ -245,7 +240,7 @@ namespace LifeSupport
             }
             catch (Exception ex)
             {
-                Debug.Log("Error rendering USI-LS window");
+                Debug.Log("Error rendering USI-LS window: " + ex.ToString());
             }
             finally
             {
@@ -319,7 +314,6 @@ namespace LifeSupport
             _windowStyle.fixedWidth = _windowPosition.width;
             _windowStyle.fixedHeight = _windowPosition.height;
             _labelStyle = new GUIStyle(HighLogic.Skin.label);
-            _buttonStyle = new GUIStyle(HighLogic.Skin.button);
             _toggleStyle = new GUIStyle(HighLogic.Skin.toggle);
             _smButtonStyle = new GUIStyle(HighLogic.Skin.button);
             _smButtonStyle.fontSize = 10;

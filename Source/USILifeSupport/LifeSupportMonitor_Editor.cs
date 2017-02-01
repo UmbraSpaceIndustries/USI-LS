@@ -15,7 +15,6 @@ namespace LifeSupport
         private Rect _windowPosition = new Rect(300, 60, 665, 400);
         private GUIStyle _windowStyle;
         private GUIStyle _labelStyle;
-        private GUIStyle _buttonStyle;
         private GUIStyle _scrollStyle;
         private Vector2 scrollPos = Vector2.zero;
         private bool _hasInitStyles = false;
@@ -220,19 +219,19 @@ namespace LifeSupport
                     var recyclerMultiplier_curCrew = LifeSupportManager.GetRecyclerMultiplierForParts(EditorLogic.fetch.ship.parts, curCrew);
                     var recyclerMultiplier_maxCrew = LifeSupportManager.GetRecyclerMultiplierForParts(EditorLogic.fetch.ship.parts, maxCrew);
 
-                    supply_curCrew = LifeSupportUtilities.SecondsToKerbinTime(
+                    supply_curCrew = LifeSupportUtilities.DurationDisplay(
                         totalSupplyTime /
                         Math.Max(1, curCrew) /
                         recyclerMultiplier_curCrew
                     );
-                    supply_maxCrew = LifeSupportUtilities.SecondsToKerbinTime(
+                    supply_maxCrew = LifeSupportUtilities.DurationDisplay(
                         totalSupplyTime /
                         Math.Max(1, maxCrew) /
                         recyclerMultiplier_maxCrew
                     );
 
-                    hab_curCrew = LifeSupportUtilities.SecondsToKerbinTime(totalHabSpace / Math.Max(1, curCrew) * totalHabMult);
-                    hab_maxCrew = LifeSupportUtilities.SecondsToKerbinTime(totalHabSpace / Math.Max(1, maxCrew) * totalHabMult);
+                    hab_curCrew = LifeSupportUtilities.DurationDisplay(totalHabSpace / Math.Max(1, curCrew) * totalHabMult);
+                    hab_maxCrew = LifeSupportUtilities.DurationDisplay(totalHabSpace / Math.Max(1, maxCrew) * totalHabMult);
                 }
             }
         }
@@ -276,7 +275,7 @@ namespace LifeSupport
                         GUILayout.Label(CTag("Current (", textColor) + CTag(Math.Max(1, curCrew).ToString(), crewColor) + CTag(")", textColor), _labelStyle, GUILayout.Width(c1));
                         GUILayout.Label(CTag(supply_curCrew, textColor), _labelStyle, GUILayout.Width(c2));
                         GUILayout.Label(
-                            CTag(LifeSupportUtilities.SecondsToKerbinTime(totalBatteryTime / Math.Max(1, curCrew)), textColor),
+                            CTag(LifeSupportUtilities.DurationDisplay(totalBatteryTime / Math.Max(1, curCrew)), textColor),
                             _labelStyle,
                             GUILayout.Width(c3)
                         );
@@ -291,7 +290,7 @@ namespace LifeSupport
                         GUILayout.Label(CTag("Max (", textColor) + CTag(Math.Max(1, maxCrew).ToString(), crewColor) + CTag(")", textColor), _labelStyle, GUILayout.Width(c1));
                         GUILayout.Label(CTag(supply_maxCrew, textColor), _labelStyle, GUILayout.Width(c2));
                         GUILayout.Label(
-                            CTag(LifeSupportUtilities.SecondsToKerbinTime(totalBatteryTime / Math.Max(1, maxCrew)), textColor),
+                            CTag(LifeSupportUtilities.DurationDisplay(totalBatteryTime / Math.Max(1, maxCrew)), textColor),
                             _labelStyle,
                             GUILayout.Width(c3)
                         );
@@ -427,7 +426,6 @@ namespace LifeSupport
             _windowStyle.fixedWidth = _windowPosition.width;
             _windowStyle.fixedHeight = _windowPosition.height;
             _labelStyle = new GUIStyle(HighLogic.Skin.label);
-            _buttonStyle = new GUIStyle(HighLogic.Skin.button);
             _scrollStyle = new GUIStyle(HighLogic.Skin.scrollView);
             _hasInitStyles = true;
         }
