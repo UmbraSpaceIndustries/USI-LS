@@ -375,7 +375,7 @@ namespace LifeSupport
                             var recycler = recyclers[x];
                             GUILayout.BeginHorizontal();
                             GUILayout.Label(CTag(recycler.part.partInfo.title, partColor), _labelStyle, GUILayout.Width(c1));
-                            GUILayout.Label(CTag(((int)(recycler.AdjustedRecyclePercent * 100)).ToString(), textColor), _labelStyle, GUILayout.Width(c2));
+                            GUILayout.Label(CTag(((int)(recycler.RecyclePercent * 100)).ToString(), textColor), _labelStyle, GUILayout.Width(c2));
                             GUILayout.Label(CTag(recycler.CrewCapacity.ToString(), textColor), _labelStyle, GUILayout.Width(c3));
                             GUILayout.EndHorizontal();
                         }
