@@ -524,11 +524,11 @@ namespace LifeSupport
             //Two recipes are executed.  One for EC, one for Supplies.
             var recipe = new ConversionRecipe();
             var numCrew = _currentCrew;
-            var recPercent = VesselStatus.RecyclerMultiplier;          
+            var recMult = VesselStatus.RecyclerMultiplier;   
             var supAmount = LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount;
             var scrapAmount = LifeSupportScenario.Instance.settings.GetSettings().WasteAmount;
-            var supRatio = supAmount * numCrew * recPercent;
-            var mulchRatio = scrapAmount * numCrew * recPercent;
+            var supRatio = supAmount * numCrew * recMult;
+            var mulchRatio = scrapAmount * numCrew * recMult;
             recipe.Inputs.Add(new ResourceRatio { FlowMode = ResourceFlowMode.ALL_VESSEL, Ratio = supRatio, ResourceName = "Supplies", DumpExcess = true });
             recipe.Outputs.Add(new ResourceRatio { FlowMode = ResourceFlowMode.ALL_VESSEL, Ratio = mulchRatio, ResourceName = "Mulch", DumpExcess = true });
             return recipe;
