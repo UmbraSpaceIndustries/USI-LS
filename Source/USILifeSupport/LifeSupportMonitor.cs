@@ -221,7 +221,8 @@ namespace LifeSupport
             {
                 statList.Add(GetVesselStats(trackedVessel));
             }
-            return statList.OrderByDescending(s => s.VesselId == FlightGlobals.ActiveVessel.id.ToString()).ThenBy(s => (int)(s.EarliestExpiration));
+            var activeVesselId = FlightGlobals.ActiveVessel ? FlightGlobals.ActiveVessel.id.ToString() : "";
+            return statList.OrderByDescending(s => s.VesselId == activeVesselId).ThenBy(s => (int)(s.EarliestExpiration));
         }
 
         private IEnumerable<LifeSupportVesselDisplayStat> _guiStats; 
