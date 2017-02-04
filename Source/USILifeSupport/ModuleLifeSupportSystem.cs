@@ -119,7 +119,6 @@ namespace LifeSupport
             {
                 bool isLongLoop = false;
                 var offKerbin = !LifeSupportManager.IsOnKerbin(vessel);
-                var isHomeWorld = CheckIfHomeWorld();
                 UnlockTins();
                 CheckVesselId();
 
@@ -165,13 +164,16 @@ namespace LifeSupport
                         UpdateStatus();
                         var vCrew = vessel.GetVesselCrew();
                         var count = vCrew.Count;
+                        var habTime = LifeSupportManager.GetTotalHabTime(VesselStatus, vessel);
                         for (int i = 0; i < count; ++i)
                         {
                             var c = vCrew[i];
                             bool isGrouchyHab = false;
                             bool isGrouchySupplies = false;
                             bool isGrouchyEC = false;
-                            bool isScout = c.HasEffect("ExplorerSkill");
+                            bool isScout = c.HasEffect("ExplorerSkill") && habTime >= LifeSupportScenario.Instance.settings.GetSettings().ScoutHabTime;
+                            bool isPermaHab = habTime >= LifeSupportScenario.Instance.settings.GetSettings().PermaHabTime;
+                            bool isHomeWorld = CheckIfHomeWorld() && habTime >= LifeSupportScenario.Instance.settings.GetSettings().ScoutHabTime && vessel.LandedOrSplashed; 
                             //Fetch them from the queue
                             var k = LifeSupportManager.Instance.FetchKerbal(c);
                             //Update our stuff
@@ -182,9 +184,8 @@ namespace LifeSupport
                                 LifeSupportManager.Instance.TrackKerbal(k);
                             }
                             //First - Hab effects.                        
-                            if (!offKerbin || isScout || isHomeWorld)
+                            if (!offKerbin || isScout || isHomeWorld || isPermaHab)
                             {
-                                var habTime = LifeSupportManager.GetTotalHabTime(VesselStatus, vessel);
                                 k.LastAtHome = Planetarium.GetUniversalTime();
                                 k.MaxOffKerbinTime = habTime + k.LastAtHome;
                                 k.TimeEnteredVessel = Planetarium.GetUniversalTime();
@@ -420,7 +421,7 @@ namespace LifeSupport
                     if (thisCrew.CurrentVesselId != vessel.id.ToString())
                         continue;
 
-                    if(!crewNames.Contains(thisCrew.KerbalName))
+                    if(!crewNames.Contains(thisCrew.KerbalName) && KerbalIsMissing(thisCrew.KerbalName))
                         LifeSupportManager.Instance.UntrackKerbal(thisCrew.KerbalName);
                 }
             }
@@ -603,17 +604,21 @@ namespace LifeSupport
 
         private void ApplyEffect(LifeSupportStatus kStat, ProtoCrewMember crew, int effectId, string reason)
         {
+            //Tourists are immune to effects
+            if (crew.type == ProtoCrewMember.KerbalType.Tourist || crew.experienceTrait.Title == "Tourist")
+                return;
+
             /*
-             *  SIDE EFFECTS:
-             * 
-             *  0 = No Effect (The feature is effectively turned off
-             *  1 = Grouchy (they become a Tourist until rescued)
-             *  2 = Mutinous (A tourist, but a random part of the ship is decoupled as they search for snacks
-             *  3 = Instantly 'wander' back to the KSC - don't ask us how!
-             *  4 = M.I.A. (will eventually respawn)
-             *  5 = K.I.A. 
-             * 
-             */
+                *  SIDE EFFECTS:
+                * 
+                *  0 = No Effect (The feature is effectively turned off
+                *  1 = Grouchy (they become a Tourist until rescued)
+                *  2 = Mutinous (A tourist, but a random part of the ship is decoupled as they search for snacks
+                *  3 = Instantly 'wander' back to the KSC - don't ask us how!
+                *  4 = M.I.A. (will eventually respawn)
+                *  5 = K.I.A. 
+                * 
+                */
 
             var msg = "";
             switch (effectId)
@@ -621,15 +626,12 @@ namespace LifeSupport
                 case 0: // No effect
                     return; // No need to print
                 case 1: //Grouchy
-                    if (crew.type != ProtoCrewMember.KerbalType.Tourist)
-                    {
-                        msg = string.Format("{0} refuses to work {1}", crew.name, reason);
-                        kStat.OldTrait = crew.experienceTrait.Title;
-                        crew.type = ProtoCrewMember.KerbalType.Tourist;
-                        KerbalRoster.SetExperienceTrait(crew, "Tourist");
-                        kStat.IsGrouchy = true;
-                        LifeSupportManager.Instance.TrackKerbal(kStat);
-                    }
+                    msg = string.Format("{0} refuses to work {1}", crew.name, reason);
+                    kStat.OldTrait = crew.experienceTrait.Title;
+                    crew.type = ProtoCrewMember.KerbalType.Tourist;
+                    KerbalRoster.SetExperienceTrait(crew, "Tourist");
+                    kStat.IsGrouchy = true;
+                    LifeSupportManager.Instance.TrackKerbal(kStat);
                     break;
                 case 2:  //Mutinous
                     {
@@ -731,17 +733,20 @@ namespace LifeSupport
 
         private void ApplyEVAEffect(LifeSupportStatus kStat, ProtoCrewMember crew, Vessel v, int effectId)
         {
+            if (crew.type == ProtoCrewMember.KerbalType.Tourist || crew.experienceTrait.Title == "Tourist")
+                return;
+
             /*
-             *  SIDE EFFECTS:
-             * 
-             *  0 = No Effect (The feature is effectively turned off
-             *  1 = Grouchy (they become a Tourist until rescued)
-             *  2 = Mutinous (A tourist, but destroys a part of a nearby vessel...)
-             *  3 = Instantly 'wander' back to the KSC - don't ask us how!
-             *  4 = M.I.A. (will eventually respawn)
-             *  5 = K.I.A. 
-             * 
-             */
+            *  SIDE EFFECTS:
+            * 
+            *  0 = No Effect (The feature is effectively turned off
+            *  1 = Grouchy (they become a Tourist until rescued)
+            *  2 = Mutinous (A tourist, but destroys a part of a nearby vessel...)
+            *  3 = Instantly 'wander' back to the KSC - don't ask us how!
+            *  4 = M.I.A. (will eventually respawn)
+            *  5 = K.I.A. 
+            * 
+            */
 
             var msg = "";
             switch (effectId)

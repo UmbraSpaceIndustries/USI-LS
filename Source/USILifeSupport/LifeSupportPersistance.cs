@@ -45,6 +45,10 @@ namespace LifeSupport
                     tmpSettings.ECTime = defSettings.ECTime;
                 if (tmpSettings.SupplyAmount < ResourceUtilities.FLOAT_TOLERANCE)
                     tmpSettings.SupplyAmount = defSettings.SupplyAmount;
+                if (tmpSettings.ScoutHabTime < ResourceUtilities.FLOAT_TOLERANCE)
+                    tmpSettings.ScoutHabTime = defSettings.ScoutHabTime;
+                if (tmpSettings.PermaHabTime < ResourceUtilities.FLOAT_TOLERANCE)
+                    tmpSettings.PermaHabTime = defSettings.PermaHabTime;
             }
             else
                 tmpSettings = LoadLifeSupportConfig();
@@ -76,6 +80,8 @@ namespace LifeSupport
                 WasteAmount = 0f,
                 ReplacementPartAmount = 0f,
                 EnableRecyclers = false,
+                ScoutHabTime = 9180000,
+                PermaHabTime = 459000000,
                 HabRange = 2000,
                 VetNames = ""
             };
@@ -99,6 +105,10 @@ namespace LifeSupport
                     finalSettings.EVATime = Math.Min(settings.EVATime, finalSettings.EVATime);
                 if (settings.SupplyTime > ResourceUtilities.FLOAT_TOLERANCE)
                     finalSettings.SupplyTime = Math.Min(settings.SupplyTime, finalSettings.SupplyTime);
+                if (settings.ScoutHabTime > 1000d)
+                    finalSettings.ScoutHabTime = Math.Min(settings.ScoutHabTime, finalSettings.ScoutHabTime);
+                if (settings.PermaHabTime > 1000d)
+                    finalSettings.PermaHabTime = Math.Min(settings.PermaHabTime, finalSettings.PermaHabTime);
 
                 finalSettings.SupplyAmount = Math.Max(settings.SupplyAmount, finalSettings.SupplyAmount);
                 finalSettings.ECAmount = Math.Max(settings.ECAmount, finalSettings.ECAmount);
@@ -115,7 +125,6 @@ namespace LifeSupport
             }
             return finalSettings;
         }
-
 
         private List<LifeSupportStatus> SetupStatusInfo()
         {
@@ -225,6 +234,8 @@ namespace LifeSupport
                 sNode.AddValue("HabMultiplier", _Settings.HabMultiplier);
                 sNode.AddValue("BaseHabTime", _Settings.BaseHabTime);
                 sNode.AddValue("ECAmount", _Settings.ECAmount);
+                sNode.AddValue("ScoutHabTime", _Settings.ScoutHabTime);
+                sNode.AddValue("PermaHabTime", _Settings.PermaHabTime);
                 sNode.AddValue("SupplyAmount", _Settings.SupplyAmount);
                 sNode.AddValue("EVAEffect", _Settings.EVAEffect);
                 sNode.AddValue("EVAEffectVets", _Settings.EVAEffectVets);
@@ -365,6 +376,8 @@ namespace LifeSupport
             _Settings.HabMultiplier = config.HabMultiplier;
             _Settings.BaseHabTime = config.BaseHabTime;
             _Settings.ECAmount = config.ECAmount;
+            _Settings.PermaHabTime = config.PermaHabTime;
+            _Settings.ScoutHabTime = config.ScoutHabTime;
             _Settings.EVAEffect = config.EVAEffect;
             _Settings.EVAEffectVets = config.EVAEffectVets;
             _Settings.EVATime = config.EVATime;

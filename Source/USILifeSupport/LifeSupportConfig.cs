@@ -5,7 +5,6 @@
         public int NoECEffect { get; set; }
         public int NoECEffectVets { get; set; }
         public float ECTime { get; set; }
-
         public float SupplyTime { get; set; }
         public float EVATime { get; set; }
         public float ECAmount { get; set; }
@@ -24,5 +23,7 @@
         public double BaseHabTime { get; set; }
         public bool EnableRecyclers { get; set; }
         public double HabRange { get; set; }
+        public double ScoutHabTime { get; set; }
+        public double PermaHabTime { get; set; }
     }
 }
