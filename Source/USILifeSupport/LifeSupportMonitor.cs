@@ -221,7 +221,8 @@ namespace LifeSupport
             {
                 statList.Add(GetVesselStats(trackedVessel));
             }
-            return statList.OrderByDescending(s => s.VesselId == FlightGlobals.ActiveVessel.id.ToString()).ThenBy(s => (int)(s.EarliestExpiration));
+            var activeVesselId = FlightGlobals.ActiveVessel ? FlightGlobals.ActiveVessel.id.ToString() : "";
+            return statList.OrderByDescending(s => s.VesselId == activeVesselId).ThenBy(s => (int)(s.EarliestExpiration));
         }
 
         private IEnumerable<LifeSupportVesselDisplayStat> _guiStats; 
@@ -433,7 +434,14 @@ namespace LifeSupport
             {
                 UpdateEarliestExpiration(vesselHabTime);
                 var habTimeLeft = vesselHabTime - (Planetarium.GetUniversalTime() - cls.TimeEnteredVessel);
-                if (habTimeLeft < 0)
+                var isScout = c.HasEffect("ExplorerSkill") && habTimeLeft >= LifeSupportScenario.Instance.settings.GetSettings().ScoutHabTime;
+                var isPermaHab = habTimeLeft >= LifeSupportScenario.Instance.settings.GetSettings().PermaHabTime;
+
+                if(isScout || isPermaHab)
+                {
+                    crewHabString = "indefinite";
+                }
+                else if (habTimeLeft < 0)
                 {
                     lblHab = "FF5E5E";
                     crewHabString = "expired";
@@ -464,7 +472,15 @@ namespace LifeSupport
             {
                 var homeTimeLeft = cls.MaxOffKerbinTime - Planetarium.GetUniversalTime();
                 UpdateEarliestExpiration(homeTimeLeft);
-                if (homeTimeLeft < 0)
+
+                var isScout = c.HasEffect("ExplorerSkill") && homeTimeLeft >= LifeSupportScenario.Instance.settings.GetSettings().ScoutHabTime;
+                var isPermaHab = homeTimeLeft >= LifeSupportScenario.Instance.settings.GetSettings().PermaHabTime;
+
+                if (isScout || isPermaHab)
+                {
+                    crewHomeString = "indefinite";
+                }
+                else if (homeTimeLeft < 0)
                 {
                     lblHome = "FF5E5E";
                     crewHomeString = "expired";
