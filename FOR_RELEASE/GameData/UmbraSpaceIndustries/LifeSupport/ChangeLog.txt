@@ -1,3 +1,14 @@
+0.5.21 - 2017.02.04
+------------------
+Some UI updates and a fix to the recycler catchup bug (thanks Gnurfos!)
+Fixed a bug causing some Kerbals to be permanently stuck as tourists
+Fixed the issue where an EVA would reset your home timer (boo!)
+Some changes regarding habitation overrides:
+- Any vessel with a habitation value of over 50 years will disregard Hab/Home penalties regardless of the voyage length.
+- For better balance, Scouts/Pilots must be in a vessel with at least one year of habitation to enable their bonus.
+- With an MKS Colonization bonus of 500%, crew in LANDED vessels with a habitation time of one year will be exempt from habitation penalties.
+- Both of these values may be customized (the above are defaults) via the GUI available at the space center.
+
 0.5.20 - 2017.01.21
 -------------------
 Fixed issue with recyclers not calculating correctly
