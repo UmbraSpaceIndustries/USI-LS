@@ -1,3 +1,7 @@
+0.5.22 - 2017.02.05
+-------------------
+Dependency Updates
+
 0.5.21 - 2017.02.04
 ------------------
 Some UI updates and a fix to the recycler catchup bug (thanks Gnurfos!)
