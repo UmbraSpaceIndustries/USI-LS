@@ -375,9 +375,6 @@ namespace LifeSupport
                 return sourceVessel.CachedHabTime;
             }
 
-            double totHabSpace = sourceVessel.ExtraHabSpace;
-            double totHabMult = sourceVessel.VesselHabMultiplier;
-
             int totCurCrew = sourceVessel.NumCrew;
             int totMaxCrew = sourceVessel.CrewCap;
 
@@ -402,6 +399,8 @@ namespace LifeSupport
                     hList.Add(v);
                 }
             }
+            double totHabSpace = sourceVessel.ExtraHabSpace;
+            double totHabMult = CalculateVesselHabMultiplier(vsl,totCurCrew);
             totHabSpace += (LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime * totMaxCrew);
 
             var hCount = hList.Count;
@@ -410,7 +409,7 @@ namespace LifeSupport
                 var v = hList[i];
                 // Calculate HabSpace and HabMult after we know totCurCrew and totMaxCrew
                 totHabSpace += CalculateVesselHabExtraTime(v);
-               totHabMult *= Math.Min(1,CalculateVesselHabMultiplier(v, totCurCrew));         
+                totHabMult += CalculateVesselHabMultiplier(v, totCurCrew);
             }
 
             totHabMult += USI_GlobalBonuses.Instance.GetHabBonus(vsl.mainBody.flightGlobalsIndex);

@@ -1,3 +1,7 @@
+0.5.23 - 2017.02.24
+-------------------
+Fixed an issue where habitation was not being shared correctly
+
 0.5.22 - 2017.02.05
 -------------------
 Dependency Updates

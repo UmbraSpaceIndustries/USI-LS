@@ -21,6 +21,14 @@ namespace LifeSupport
         [KSPField]
         public bool habTimer = true;
 
+        [KSPField(guiName = "Kolony Growth", guiActive = true, guiActiveEditor = true, isPersistant = true), UI_Toggle(disabledText = "disabled", enabledText = "enabled")]
+        public bool KolonyGrowthEnabled = false;
+
+        [KSPField(isPersistant = true)]
+        public double GrowthTime = 0d;
+
+        public const double GestationTime = 9720000d;
+
         protected override void PreProcessing()
         {
             if (!HighLogic.LoadedSceneIsFlight)
@@ -49,11 +57,19 @@ namespace LifeSupport
             if (PartOnly)
                 crew = part.protoModuleCrew;
 
+            var hasMale = false;
+            var hasFemale = false;
+
             var count = crew.Count;
             for (int i = 0; i < count; ++i)
             {
                 var c = crew[i];
-                if(string.IsNullOrEmpty(restrictedClass) || c.experienceTrait.Title == restrictedClass)
+                if (c.gender == ProtoCrewMember.Gender.Male)
+                    hasMale = true;
+                if (c.gender == ProtoCrewMember.Gender.Female)
+                    hasFemale = true;
+
+                if (string.IsNullOrEmpty(restrictedClass) || c.experienceTrait.Title == restrictedClass)
                     kerbals.Add(c);
             }
 
@@ -71,6 +87,26 @@ namespace LifeSupport
 
                 LifeSupportManager.Instance.TrackKerbal(lsKerbal);
             }
+
+            //Kolony Growth
+            if (KolonyGrowthEnabled && part.CrewCapacity > part.protoModuleCrew.Count)
+            {
+                GrowthTime += result.TimeFactor;
+                if (GrowthTime >= GestationTime)
+                {
+                    GrowthTime = 0d;
+                    SpawnKerbal();
+                }
+            }
+        }
+
+        private void SpawnKerbal()
+        {
+            ProtoCrewMember newKerb = HighLogic.CurrentGame.CrewRoster.GetNewKerbal();
+            newKerb.rosterStatus = ProtoCrewMember.RosterStatus.Assigned;
+            part.AddCrewmember(newKerb);
+            var msg = String.Format("{0}, a new {1}, has joined your crew!", newKerb.name, newKerb.experienceTrait.TypeName);
+            ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
         }
     }
 }
