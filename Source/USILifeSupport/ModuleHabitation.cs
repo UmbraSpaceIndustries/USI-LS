@@ -1,10 +1,11 @@
 using System;
 using System.Text;
+using USITools;
 using USITools.Logistics;
 
 namespace LifeSupport
 {
-    public class ModuleHabitation : ModuleResourceConverter
+    public class ModuleHabitation : ModuleResourceConverter_USI
     {
         [KSPField] 
         public double BaseKerbalMonths = 1;
@@ -16,13 +17,24 @@ namespace LifeSupport
         [KSPField(isPersistant = true)]
         public bool HabIsActive = false;
 
-        public double HabMultiplier
+        public double HabAdjustment
         {
             get
             {
-                if ((HabIsActive && IsActivated) || HighLogic.LoadedSceneIsEditor)
-                    return BaseHabMultiplier;
+                return HighLogic.LoadedSceneIsEditor ? 1d : _habAdjustment;
+            }
+            set { _habAdjustment = value;  }
+        }
 
+        private double _habAdjustment = 1d;
+
+        public double HabMultiplier
+        {
+
+            get
+            {
+                if ((HabIsActive && IsActivated) || HighLogic.LoadedSceneIsEditor)
+                    return BaseHabMultiplier * HabAdjustment;
                 return 0f;
             }
         }
@@ -31,15 +43,26 @@ namespace LifeSupport
         {
             get
             {
-                if ((HabIsActive && IsActivated) || HighLogic.LoadedSceneIsEditor)
+                if (HighLogic.LoadedSceneIsEditor)
                     return BaseKerbalMonths;
-                return 0f;
+                if (!HabIsActive || !IsActivated)
+                    HabAdjustment = 0d;
+                return BaseKerbalMonths* HabAdjustment;
             }
         }
 
+        protected override void PreProcessing()
+        {
+            base.PreProcessing();
+            EfficiencyBonus = 1f;
+        }
+
+
         protected override void PostProcess(ConverterResults result, double deltaTime)
         {
+            base.PostProcess(result,deltaTime);
             HabIsActive = result.TimeFactor > ResourceUtilities.FLOAT_TOLERANCE;
+            HabAdjustment = result.TimeFactor/deltaTime;
         }
 
         public override string GetInfo()

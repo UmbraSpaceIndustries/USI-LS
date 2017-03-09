@@ -1,9 +1,10 @@
 using System;
 using System.Text;
+using USITools;
 
 namespace LifeSupport
 {
-    public class ModuleLifeSupportRecycler : ModuleResourceConverter
+    public class ModuleLifeSupportRecycler : ModuleResourceConverter_USI
     {
         [KSPField] 
         public float CrewCapacity = 1f;
@@ -14,10 +15,16 @@ namespace LifeSupport
         [KSPField(isPersistant = true)] 
         public bool RecyclerIsActive = false;
 
+        protected override void PreProcessing()
+        {
+            base.PreProcessing();
+            EfficiencyBonus = 1f;
+        }
+
         protected override void PostProcess(ConverterResults result, double deltaTime)
         {
-            var diff = Math.Abs(deltaTime - result.TimeFactor);
-            RecyclerIsActive = diff < 0.00001f;
+            base.PostProcess(result, deltaTime);
+            RecyclerIsActive = result.TimeFactor > ResourceUtilities.FLOAT_TOLERANCE;
         }
         
         public override string GetInfo()

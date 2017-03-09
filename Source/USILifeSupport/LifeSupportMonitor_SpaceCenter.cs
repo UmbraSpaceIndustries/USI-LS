@@ -14,7 +14,6 @@ namespace LifeSupport
         private Rect _windowPosition = new Rect(300, 60, 500, 550);
         private GUIStyle _windowStyle;
         private GUIStyle _labelStyle;
-        private GUIStyle _buttonStyle;
         private GUIStyle _smButtonStyle;
         private GUIStyle _toggleStyle;
         private bool _hasInitStyles = false;
@@ -55,6 +54,8 @@ namespace LifeSupport
             evaVet = config.EVAEffectVets;
             habMulti = string.Format("{0:0.########}", config.HabMultiplier);
             enableRecyclers = config.EnableRecyclers;
+            scoutHabTime = config.ScoutHabTime.ToString();
+            permaHabTime = config.PermaHabTime.ToString();
             habRange = config.HabRange.ToString();
             homeAltitude = config.HomeWorldAltitude.ToString();
             baseHabTime = config.BaseHabTime.ToString();
@@ -114,6 +115,8 @@ namespace LifeSupport
         private int evaVet;
         private string habMulti;
         private bool enableRecyclers;
+        private string permaHabTime;
+        private string scoutHabTime;
         private string habRange;
         private string homeAltitude;
         private string baseHabTime;
@@ -131,11 +134,7 @@ namespace LifeSupport
                 var effectStrings = new[] {"none", "grouchy", "mutiny", "return", "M.I.A.", "K.I.A."};
                 GUILayout.BeginVertical();
                 // Colors
-                string operColor = "99FF33";
                 string textColor = "FFFFFF";
-                string crewColor = "ADD8E6";
-                string fadeColor = "909090";
-                string partColor = "FFCC00";
 
                 // column widths
                 const int c1 = 100;
@@ -197,9 +196,6 @@ namespace LifeSupport
                 ecVet = GUILayout.SelectionGrid(ecVet, effectStrings, 6, _smButtonStyle);
                 GUILayout.EndHorizontal();
 
-
-
-
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("EVA Effect (Non-Vet):", _labelStyle, GUILayout.Width(c5));
                 evaNoVet = GUILayout.SelectionGrid(evaNoVet, effectStrings, 6, _smButtonStyle);
@@ -231,11 +227,18 @@ namespace LifeSupport
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("Homeworld Altitude:", _labelStyle, GUILayout.Width(130));
                 homeAltitude = GUILayout.TextField(homeAltitude, 8, GUILayout.Width(c7));
-                enableRecyclers = GUILayout.Toggle(enableRecyclers, "Enable Recyclers:", _toggleStyle);
+                enableRecyclers = GUILayout.Toggle(enableRecyclers, "Enable Recyclers", _toggleStyle);
                 GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Scout Hab Time:", _labelStyle, GUILayout.Width(110));
+                scoutHabTime = GUILayout.TextField(scoutHabTime, 12, GUILayout.Width(100));
+                GUILayout.Label("Perma-Hab Time:", _labelStyle, GUILayout.Width(110));
+                permaHabTime = GUILayout.TextField(permaHabTime, 12, GUILayout.Width(100));
+                GUILayout.EndHorizontal();
+
                 GUILayout.Label("Vet Names (separate with commas, first name only):", _labelStyle, GUILayout.Width(c3));
                 vetNames = GUILayout.TextField(vetNames, 100, GUILayout.Width(c3));
-                GUILayout.Label("", _labelStyle, GUILayout.Width(c4));
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Save"))
                     SaveSettings(config);
@@ -245,7 +248,7 @@ namespace LifeSupport
             }
             catch (Exception ex)
             {
-                Debug.Log("Error rendering USI-LS window");
+                Debug.Log("Error rendering USI-LS window: " + ex.ToString());
             }
             finally
             {
@@ -272,6 +275,8 @@ namespace LifeSupport
 
             config.NoECEffect = ecNoVet;
             config.NoECEffectVets = ecVet;
+            config.ScoutHabTime = SaveDouble(config.ScoutHabTime, scoutHabTime);
+            config.PermaHabTime = SaveDouble(config.PermaHabTime, permaHabTime);
 
             config.HabMultiplier = SaveInt(config.HabMultiplier,habMulti);
             config.EnableRecyclers = enableRecyclers;
@@ -319,7 +324,6 @@ namespace LifeSupport
             _windowStyle.fixedWidth = _windowPosition.width;
             _windowStyle.fixedHeight = _windowPosition.height;
             _labelStyle = new GUIStyle(HighLogic.Skin.label);
-            _buttonStyle = new GUIStyle(HighLogic.Skin.button);
             _toggleStyle = new GUIStyle(HighLogic.Skin.toggle);
             _smButtonStyle = new GUIStyle(HighLogic.Skin.button);
             _smButtonStyle.fontSize = 10;
