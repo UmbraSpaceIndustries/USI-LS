@@ -1,4 +1,7 @@
-0.8.16 - 2017.02.11
+0.8.17 - 2017.03.10
+-------------------
+
+0.8.16 - 2017.02.24
 -------------------
 Mechanics can now perform EVA maintenance
 Fixed an issue where resources were being double-consumed when converters were swapped

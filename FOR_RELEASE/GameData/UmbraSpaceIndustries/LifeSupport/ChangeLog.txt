@@ -1,3 +1,8 @@
+0.5.24 - 2017.03.10
+-------------------
+Large recycler is now CLS Passable (Thanks mjdillon!)
+Removed all references to ReplacementParts as those are not being currently used
+
 0.5.23 - 2017.02.24
 -------------------
 Fixed an issue where habitation was not being shared correctly
