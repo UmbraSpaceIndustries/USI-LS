@@ -37,14 +37,12 @@ namespace LifeSupport
         }
 
         private bool useHabPenalties;
+        private bool configLoaded;
 
         public void Start()
         {
             if (!_hasInitStyles)
                 InitStyles();
-            useHabPenalties = (LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffectVets +
-                                   LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffect > 0);
-
             //GameEvents.onEditorShipModified.Add(UpdateGUIInfo);
         }
 
@@ -57,6 +55,14 @@ namespace LifeSupport
         {
             if (!renderDisplay)
                 return;
+
+            if (!configLoaded && LifeSupportScenario.Instance.settings.isLoaded())
+            {
+                configLoaded = true;
+                useHabPenalties = (LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffectVets +
+                                   LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffect > 0);
+            }
+
 
             if (Event.current.type == EventType.Repaint || Event.current.isMouse)
             {

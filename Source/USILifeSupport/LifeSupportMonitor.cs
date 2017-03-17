@@ -312,7 +312,8 @@ namespace LifeSupport
                 if (!p.Resources.Contains(resName))
                     continue;
                 var res = p.Resources[resName];
-                amount += res.amount;
+                if(res.flowState)
+                    amount += res.amount;
             }
             return amount;
         }
