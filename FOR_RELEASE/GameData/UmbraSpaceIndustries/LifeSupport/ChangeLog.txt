@@ -1,7 +1,12 @@
-0.5.24 - 2017.03.10
+0.5.24 - 2017.03.17
 -------------------
 Large recycler is now CLS Passable (Thanks mjdillon!)
 Removed all references to ReplacementParts as those are not being currently used
+Fixed an initialization issue that was causing some timer weirdness
+Fixed an issue on colony growth - having both a male and a female kerbal present is now required (no more instant kerbals!)
+Fixed an issue with refused to work / return to work spam
+Fixed an issue causing the starvation timer to be set to zero on load
+Supplies can be locked again!  Note that if the Kerbals are looking for a snack (even during the 15 day grace period) they WILL unlock all containers on your vessel.  Use with care.
 
 0.5.23 - 2017.02.24
 -------------------
