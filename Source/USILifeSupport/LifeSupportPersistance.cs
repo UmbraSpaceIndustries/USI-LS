@@ -29,6 +29,11 @@ namespace LifeSupport
             }
         }
 
+        public bool isLoaded()
+        {
+            return SettingsNode != null;
+        }
+
         private LifeSupportConfig SetupSettings()
         {
             print("Loading Config");
@@ -435,6 +440,9 @@ namespace LifeSupport
 
         public void SaveVesselNode(VesselSupplyStatus status)
         {
+            if (status.VesselName == null)
+                return;
+
             VesselSupplyStatus vesselInfo = null;
             var count = _VesselInfo.Count;
             for (int i = 0; i < count; ++i)

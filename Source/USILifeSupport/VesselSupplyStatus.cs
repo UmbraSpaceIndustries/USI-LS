@@ -4,6 +4,7 @@ namespace LifeSupport
 {
     public class VesselSupplyStatus
     {
+        private double _lastFeeding;
         public string VesselId { get; set; }
         public string VesselName { get; set; }
         public double LastUpdate { get; set; }
@@ -15,7 +16,13 @@ namespace LifeSupport
         public double CachedHabTime { get; set; }
         public double SuppliesLeft { get; set; }
         public double ECLeft { get; set; }
-        public double LastFeeding { get; set; }
+
+        public double LastFeeding
+        {
+            get { return _lastFeeding; }
+            set { _lastFeeding = value; }
+        }
+
         public double LastECCheck { get; set; }
     }
 }

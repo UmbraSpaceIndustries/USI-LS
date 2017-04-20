@@ -10,7 +10,8 @@ namespace LifeSupport
         public double LastUpdateTime;
 
         private bool isDirty = true;
-        public void Start()
+
+        public override void OnLoadVessel()
         {
             GameEvents.onVesselPartCountChanged.Add(SetVesselDirty);
             GameEvents.onVesselCrewWasModified.Add(SetVesselDirty);
@@ -119,12 +120,11 @@ namespace LifeSupport
             {
                 bool isLongLoop = false;
                 var offKerbin = !LifeSupportManager.IsOnKerbin(vessel);
-                UnlockTins();
                 CheckVesselId();
 
                 //Check our time
                 double deltaTime = GetDeltaTime();
-                bool isCatchup = deltaTime -1 > TimeWarp.fixedDeltaTime;
+                bool isCatchup = deltaTime / 2 > TimeWarp.fixedDeltaTime;
 
                 if (deltaTime < ResourceUtilities.FLOAT_TOLERANCE * 10)
                     return;
@@ -218,7 +218,6 @@ namespace LifeSupport
                             }
 
                             //Third - EC
-                            //Second - Supply
                             if (offKerbin && (deltaTime - resultEC.TimeFactor > tolerance))
                             {
                                 isGrouchyEC = CheckECSideEffects(k);
@@ -232,26 +231,27 @@ namespace LifeSupport
 
 
                             k.LastUpdate = Planetarium.GetUniversalTime();
+                            var isAnyGrouch = isGrouchyEC || isGrouchyHab || isGrouchySupplies;
 
-                            if (isGrouchyEC & !isCatchup)
+                            if (isGrouchyEC && !isCatchup)
                             {
                                 ApplyEffect(k, c,
                                     LifeSupportManager.GetNoECEffect(k.KerbalName),
                                     "power loss");
                             }
-                            else if (isGrouchySupplies & !isCatchup)
+                            else if (isGrouchySupplies && !isCatchup)
                             {
                                 ApplyEffect(k, c,
                                     LifeSupportManager.GetNoSupplyEffect(k.KerbalName),
                                     "lack of supplies");
                             }
-                            else if (isGrouchyHab & !isCatchup)
+                            else if (isGrouchyHab && !isCatchup)
                             {
                                 ApplyEffect(k, c,
                                     LifeSupportManager.GetNoHomeEffect(k.KerbalName),
                                     "homesickness");
                             }
-                            else if (c.experienceTrait.Title != k.OldTrait)
+                            else if (c.experienceTrait.Title != k.OldTrait && !isAnyGrouch)
                             {
                                 RemoveGrouchiness(c, k);
                             }
@@ -356,11 +356,10 @@ namespace LifeSupport
 
         private VesselSupplyStatus SetupVesselStatus()
         {
-            VesselSupplyStatus v = new VesselSupplyStatus();
-            v.VesselId = vessel.id.ToString();
+            var id = vessel.id.ToString();
+            var v = LifeSupportManager.Instance.FetchVessel(id);
             UpdateVesselInfo();
             LifeSupportManager.Instance.TrackVessel(v);
-            UpdateStatus(v);
             return v;
         }
 
@@ -369,6 +368,7 @@ namespace LifeSupport
             if (HighLogic.LoadedSceneIsFlight)
             {
                 //Unlock the biscuit tins...
+                bool foundSupplies = false;
                 var count = vessel.parts.Count;
                 for (int i = 0; i < count; ++i)
                 {
@@ -376,9 +376,15 @@ namespace LifeSupport
                     if (p.Resources.Contains("Supplies"))
                     {
                         var r = p.Resources["Supplies"];
-                        r.flowState = true;
+                        if (r.flowState == false)
+                        {
+                            r.flowState = true;
+                            foundSupplies = true;
+                        }
                     }
                 }
+                if(foundSupplies)
+                    ScreenMessages.PostScreenMessage("Supply containers unlocked...", 5f, ScreenMessageStyle.UPPER_CENTER);
             }
         }
 
@@ -551,6 +557,9 @@ namespace LifeSupport
             var SnackMax = LifeSupportScenario.Instance.settings.GetSettings().SupplyTime;
 
             var SnackTime = Math.Max(curTime - kStat.LastMeal, ResourceUtilities.FLOAT_TOLERANCE);
+            
+            if(SnackTime > ResourceUtilities.FLOAT_TOLERANCE)
+                UnlockTins();
 
             if (SnackTime > SnackMax)
             {

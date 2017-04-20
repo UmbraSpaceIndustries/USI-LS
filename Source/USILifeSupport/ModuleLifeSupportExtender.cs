@@ -89,7 +89,7 @@ namespace LifeSupport
             }
 
             //Kolony Growth
-            if (KolonyGrowthEnabled && part.CrewCapacity > part.protoModuleCrew.Count)
+            if (KolonyGrowthEnabled && part.CrewCapacity > part.protoModuleCrew.Count && hasMale && hasFemale)
             {
                 GrowthTime += result.TimeFactor;
                 if (GrowthTime >= GestationTime)
