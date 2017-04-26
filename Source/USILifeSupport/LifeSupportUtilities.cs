@@ -5,7 +5,7 @@ namespace LifeSupport
 {
     public static class LifeSupportUtilities
     {
-        
+
         public static double SecondsPerDay()
         {
             return GameSettings.KERBIN_TIME ? 21600d : 86400d;
@@ -13,7 +13,7 @@ namespace LifeSupport
 
         public static double SecondsPerYear()
         {
-            return GameSettings.KERBIN_TIME ? SecondsPerDay() * 425d : SecondsPerDay() * 365d;
+            return GameSettings.KERBIN_TIME ? SecondsPerDay() * 426d : SecondsPerDay() * 365d;
         }
 
         public static double SecondsPerMonth()
