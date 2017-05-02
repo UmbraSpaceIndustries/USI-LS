@@ -73,6 +73,9 @@ namespace LifeSupport
                     kerbals.Add(c);
             }
 
+            if (kerbals.Count == 0)
+                return;
+
             var timePerKerbal = baseTime/kerbals.Count;
 
             count = kerbals.Count;
