@@ -600,7 +600,7 @@ namespace LifeSupport
 
         private void RemoveGrouchiness(ProtoCrewMember c, LifeSupportStatus k)
         {
-            if (c.type == ProtoCrewMember.KerbalType.Tourist && k.IsGrouchy)
+            if (k.IsGrouchy)
             {
                 string msg = string.Format("{0} has returned to duty", c.name);
                 ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
