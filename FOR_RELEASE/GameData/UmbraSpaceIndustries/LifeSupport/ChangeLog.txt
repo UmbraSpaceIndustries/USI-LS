@@ -1,3 +1,7 @@
+0.5.25 - 2017.05.06
+-------------------
+Fixed issue with rescue tourists remaining tourists
+
 0.5.24 - 2017.03.17
 -------------------
 Large recycler is now CLS Passable (Thanks mjdillon!)
