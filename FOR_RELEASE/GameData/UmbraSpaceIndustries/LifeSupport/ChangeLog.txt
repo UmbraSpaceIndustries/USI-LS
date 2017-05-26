@@ -1,5 +1,6 @@
-0.5.25 - 2017.05.06
+0.6.0 - KSP 1.3
 -------------------
+KSP 1.3 Compatibility
 Fixed issue with rescue tourists remaining tourists
 
 0.5.24 - 2017.03.17
