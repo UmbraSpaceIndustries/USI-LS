@@ -32,6 +32,8 @@ namespace LifeSupport
             var output = new StringBuilder();
             output.Append(base.GetInfo());
             output.Append(Environment.NewLine);
+            output.Append("Reduces supplies consumption across Kolony");
+            output.Append(Environment.NewLine);
             output.Append(String.Format("Recycler Percent: {0}%", RecyclePercent * 100));
             output.Append(Environment.NewLine);
             output.Append(String.Format("Crew Affected: {0}", CrewCapacity));

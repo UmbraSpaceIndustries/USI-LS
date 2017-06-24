@@ -69,6 +69,8 @@ namespace LifeSupport
         {
             var output = new StringBuilder();
             output.Append(Environment.NewLine);
+            output.Append(base.GetInfo());
+            output.Append(Environment.NewLine);
             output.Append(String.Format("Kerbal-Months: {0}", BaseKerbalMonths + part.CrewCapacity));
             output.Append(Environment.NewLine);
             output.Append(String.Format("Crew Affected: {0}", CrewCapacity));
