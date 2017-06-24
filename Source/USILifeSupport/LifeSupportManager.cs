@@ -472,13 +472,14 @@ namespace LifeSupport
 
         public static double CalculateVesselHabMultiplier(Vessel v, int numCrew)
         {
+            if (numCrew == 0)
+                return 0d;
             var habMulti = 0d;
             var habMods = v.FindPartModulesImplementing<ModuleHabitation>();
             var count = habMods.Count;
             for (int i = 0; i < count; ++i)
             {
                 var hab = habMods[i];
-
                 habMulti += (hab.HabMultiplier * Math.Min(1, hab.CrewCapacity / numCrew));
             }
             return habMulti;
