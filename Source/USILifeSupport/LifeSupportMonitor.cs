@@ -131,7 +131,7 @@ namespace LifeSupport
 
         private LifeSupportVesselDisplayStat GetVesselStats(VesselSupplyStatus vsl)
         {
-            var secondsPerDay = GameSettings.KERBIN_TIME ? (21600) : (86400);
+            var secondsPerDay = LifeSupportUtilities.SecondsPerDay();
             var useHabPenalties = (LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffectVets +
                                    LifeSupportScenario.Instance.settings.GetSettings().NoHomeEffect > 0);
 
