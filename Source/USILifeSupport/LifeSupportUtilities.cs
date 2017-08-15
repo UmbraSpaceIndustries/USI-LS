@@ -8,12 +8,12 @@ namespace LifeSupport
 
         public static double SecondsPerDay()
         {
-            return GameSettings.KERBIN_TIME ? 21600d : 86400d;
+            return KSPUtil.dateTimeFormatter.Day;
         }
 
         public static double SecondsPerYear()
         {
-            return GameSettings.KERBIN_TIME ? SecondsPerDay() * 426d : SecondsPerDay() * 365d;
+            return KSPUtil.dateTimeFormatter.Year;
         }
 
         public static double SecondsPerMonth()
