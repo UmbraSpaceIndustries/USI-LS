@@ -1,3 +1,11 @@
+0.6.2 - 2017.08.15
+---------------
+Dependency Updates
+Fixed CalculateVesselHabMultiplier when unmanned
+More detailed description for Hab, LS extender, and recycler
+'Back of the envelope' extended hab and life support numbers based on Colony Supplies / Fertilizer.  These stats assume the use of the standard USI balance figures and adequate converter capacity.
+Removed hard-coded time values
+
 0.6.1 - KSP 1.3
 -------------------
 KSP 1.3 Compatibility

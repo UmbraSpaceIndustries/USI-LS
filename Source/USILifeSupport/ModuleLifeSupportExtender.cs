@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Collections.Generic;
 using USITools;
 
@@ -111,5 +112,29 @@ namespace LifeSupport
             var msg = String.Format("{0}, a new {1}, has joined your crew!", newKerb.name, newKerb.experienceTrait.TypeName);
             ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
         }
+
+        public override string GetInfo()
+        {
+            var output = new StringBuilder("");
+            output.Append(base.GetInfo());
+            output.Append(Environment.NewLine);
+            output.Append("Pushes back onboard kerbals hab/home timers");
+            output.Append(Environment.NewLine);
+            output.AppendFormat("Rated for: {0} kerbals", TimeMultiplier);
+            output.Append(Environment.NewLine);
+            if (PartOnly)
+            {
+                output.Append("Effects only kerbals in this part");
+                output.Append(Environment.NewLine);
+            }
+            if (!String.IsNullOrEmpty(restrictedClass))
+            {
+                output.AppendFormat("Effects only {0}s", restrictedClass);
+                output.Append(Environment.NewLine);
+            }
+            return output.ToString();
+        }
+
+
     }
 }
