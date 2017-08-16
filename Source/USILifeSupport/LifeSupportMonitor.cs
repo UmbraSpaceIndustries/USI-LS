@@ -33,7 +33,7 @@ namespace LifeSupport
     public class LifeSupportMonitor : MonoBehaviour
     {
         private ApplicationLauncherButton orbLogButton;
-        private Rect _windowPosition = new Rect(300, 60, 820, 400);
+        private Rect _windowPosition = new Rect(300, 60, 970, 400);
         private GUIStyle _windowStyle;
         private GUIStyle _labelStyle;
         private GUIStyle _scrollStyle;
@@ -238,7 +238,7 @@ namespace LifeSupport
             }
 
             GUILayout.BeginVertical();
-            scrollPos = GUILayout.BeginScrollView(scrollPos, _scrollStyle, GUILayout.Width(800), GUILayout.Height(350));
+            scrollPos = GUILayout.BeginScrollView(scrollPos, _scrollStyle, GUILayout.Width(950), GUILayout.Height(350));
             GUILayout.BeginVertical();
             try
             {
@@ -284,16 +284,6 @@ namespace LifeSupport
             GUILayout.Label(c.ECLabel, _labelStyle, GUILayout.Width(145));
             GUILayout.Label("<color=#EDEDED>hab:</color>", _labelStyle, GUILayout.Width(40));
             GUILayout.Label(c.HabLabel, _labelStyle, GUILayout.Width(145));
-            GUILayout.EndHorizontal();
-
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("", _labelStyle, GUILayout.Width(30));
-            GUILayout.Label("", GUILayout.Width(135));
-            GUILayout.Label("", _labelStyle, GUILayout.Width(35));
-            GUILayout.Label("", _labelStyle, GUILayout.Width(145));
-            GUILayout.Label("", _labelStyle, GUILayout.Width(35));
-            GUILayout.Label("", _labelStyle, GUILayout.Width(145));
-
             GUILayout.Label("<color=#EDEDED>home:</color>", _labelStyle, GUILayout.Width(40));
             GUILayout.Label(c.HomeLabel, _labelStyle, GUILayout.Width(145));
             GUILayout.EndHorizontal();
@@ -379,7 +369,7 @@ namespace LifeSupport
         private void InitStyles()
         {
             _windowStyle = new GUIStyle(HighLogic.Skin.window);
-            _windowStyle.fixedWidth = 820f;
+            _windowStyle.fixedWidth = 970f;
             _windowStyle.fixedHeight = 400f;
             _labelStyle = new GUIStyle(HighLogic.Skin.label);
             _scrollStyle = new GUIStyle(HighLogic.Skin.scrollView);
@@ -406,8 +396,8 @@ namespace LifeSupport
     public class LifeSupportCrewDisplayStat
     {
         public string CrewName { get; set; }
-        public string SupplyLabel { get; set; }
         public string ECLabel { get; set; }
+        public string SupplyLabel { get; set; }
         public string HabLabel { get; set; }
         public string HomeLabel { get; set; }
         public double EarliestExpiration { get; set; }

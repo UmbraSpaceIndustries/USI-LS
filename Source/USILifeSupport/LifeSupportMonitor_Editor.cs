@@ -88,12 +88,18 @@ namespace LifeSupport
           curCrew = 0;
           maxCrew = 0;
           supplies = 0d;
+          colonySupplies = 0d;
           extraHabTime = 0d;
+          fertilizer = 0d;
           habMult = 1d;
           batteryAmount = 0d;
           habs = new List<ModuleHabitation>();
           hab_curCrew = "";
           hab_maxCrew = "";
+          supplyExt_curCrew = "";
+          supplyExt_maxCrew = "";
+          habExt_curCrew = "";
+          habExt_maxCrew = "";
           supply_curCrew = "";
           supply_maxCrew = "";
           totalHabSpace = 0d;
@@ -106,18 +112,28 @@ namespace LifeSupport
         private int curCrew = 0;
         private int maxCrew = 0;
         private double supplies = 0d;
+        private double colonySupplies = 0d;
+        private double fertilizer = 0d;
         private double extraHabTime = 0d;
         private double habMult = 1d;
         private double batteryAmount = 0d;
         private List<ModuleHabitation> habs;
+
         private string hab_curCrew = "";
         private string hab_maxCrew = "";
         private string supply_curCrew = "";
         private string supply_maxCrew = "";
+
+        private string habExt_curCrew = "";
+        private string habExt_maxCrew = "";
+        private string supplyExt_curCrew = "";
+        private string supplyExt_maxCrew = "";
+
         private double totalHabSpace = 0d;
         private double totalHabMult = 0d;
         private double totalBatteryTime = 0d;
         private double totalSupplyTime = 0d;
+        private double totalFertilizerTime = 0d;
         private List<ModuleLifeSupportRecycler> recyclers;
 
         private void UpdateGUIInfo(ShipConstruct ship)
@@ -176,6 +192,14 @@ namespace LifeSupport
                             }
                         }
                     }
+                    if (part.Resources.Contains("ColonySupplies"))
+                    {
+                        colonySupplies += part.Resources["ColonySupplies"].amount;
+                    }
+                    if (part.Resources.Contains("Fertilizer"))
+                    {
+                        fertilizer += part.Resources["Fertilizer"].amount;
+                    }
                     if (part.Resources.Contains("Supplies"))
                     {
                         supplies += part.Resources["Supplies"].amount;
@@ -192,6 +216,7 @@ namespace LifeSupport
                 totalHabMult = habMult * LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier * LifeSupportUtilities.SecondsPerMonth();
                 totalBatteryTime = batteryAmount / LifeSupportScenario.Instance.settings.GetSettings().ECAmount;
                 totalSupplyTime = supplies / LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount;
+                totalFertilizerTime = fertilizer * 10 / LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount;
 
                 if (EditorLogic.fetch.ship.parts.Count > 0)
                 {
@@ -238,6 +263,21 @@ namespace LifeSupport
 
                     hab_curCrew = LifeSupportUtilities.DurationDisplay(totalHabSpace / Math.Max(1, curCrew) * totalHabMult);
                     hab_maxCrew = LifeSupportUtilities.DurationDisplay(totalHabSpace / Math.Max(1, maxCrew) * totalHabMult);
+
+                    supplyExt_curCrew = LifeSupportUtilities.DurationDisplay(
+                        (totalSupplyTime + totalFertilizerTime) /
+                        Math.Max(1, curCrew) /
+                        recyclerMultiplier_curCrew
+                    );
+                    supplyExt_maxCrew = LifeSupportUtilities.DurationDisplay(
+                        (totalSupplyTime + totalFertilizerTime) /
+                        Math.Max(1, maxCrew) /
+                        recyclerMultiplier_maxCrew
+                    );
+                    //Standard is half a colony supply per hour, or 0.000139 per second.
+                    var csupPerSecond = 0.000139d;
+                    habExt_curCrew = LifeSupportUtilities.DurationDisplay((totalHabSpace / Math.Max(1, curCrew) * totalHabMult)+(colonySupplies/csupPerSecond/curCrew));
+                    habExt_maxCrew = LifeSupportUtilities.DurationDisplay((totalHabSpace / Math.Max(1, maxCrew) * totalHabMult)+(colonySupplies/csupPerSecond/maxCrew));
                 }
             }
         }
@@ -259,6 +299,8 @@ namespace LifeSupport
                     string crewColor = "ADD8E6";
                     string fadeColor = "909090";
                     string partColor = "FFCC00";
+                    string bonCapColor = "F9C004";
+                    string bonusColor = "F9D904";
 
                     // SUMMARY
                     {
@@ -291,6 +333,17 @@ namespace LifeSupport
                             GUILayout.Label(CTag("indefinite", textColor), _labelStyle, GUILayout.Width(c4));
                         GUILayout.EndHorizontal();
 
+                        // CURRENT CREW WITH EXTENSIONS
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Label(CTag("+Fertilizer:", bonCapColor), _labelStyle, GUILayout.Width(c1));
+                        GUILayout.Label(CTag(supplyExt_curCrew, bonusColor), _labelStyle, GUILayout.Width(c2));
+                        GUILayout.Label(CTag("+Colony Supplies:", bonCapColor), _labelStyle, GUILayout.Width(c3));
+                        if (useHabPenalties)
+                            GUILayout.Label(CTag(habExt_curCrew, bonusColor), _labelStyle, GUILayout.Width(160));
+                        else
+                            GUILayout.Label(CTag("indefinite", bonusColor), _labelStyle, GUILayout.Width(c4));
+                        GUILayout.EndHorizontal();
+
                         // MAX CREW
                         GUILayout.BeginHorizontal();
                         GUILayout.Label(CTag("Max (", textColor) + CTag(Math.Max(1, maxCrew).ToString(), crewColor) + CTag(")", textColor), _labelStyle, GUILayout.Width(c1));
@@ -305,6 +358,18 @@ namespace LifeSupport
                         else
                             GUILayout.Label(CTag("indefinite", textColor), _labelStyle, GUILayout.Width(160));
                         GUILayout.EndHorizontal();
+
+                        // MAX WITH EXTENSIONS
+                        GUILayout.BeginHorizontal();
+                        GUILayout.Label(CTag("+Fertilizer:", bonCapColor), _labelStyle, GUILayout.Width(c1));
+                        GUILayout.Label(CTag(supplyExt_maxCrew, bonusColor), _labelStyle, GUILayout.Width(c2));
+                        GUILayout.Label(CTag("+Colony Supplies:", bonCapColor),_labelStyle,GUILayout.Width(c3));
+                        if (useHabPenalties)
+                            GUILayout.Label(CTag(habExt_maxCrew, bonusColor), _labelStyle, GUILayout.Width(160));
+                        else
+                            GUILayout.Label(CTag("indefinite", bonusColor), _labelStyle, GUILayout.Width(c4));
+                        GUILayout.EndHorizontal();
+
                     }
 
                     GUILayout.Space(20);
