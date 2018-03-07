@@ -10,6 +10,7 @@ namespace LifeSupport
         public double LastUpdateTime;
 
         private bool isDirty = true;
+        private double oldHabChecksum;
 
         public override void OnLoadVessel()
         {
@@ -165,6 +166,18 @@ namespace LifeSupport
                         var vCrew = vessel.GetVesselCrew();
                         var count = vCrew.Count;
                         var habTime = LifeSupportManager.GetTotalHabTime(VesselStatus, vessel);
+
+                        if (oldHabChecksum < ResourceUtilities.FLOAT_TOLERANCE)
+                            oldHabChecksum = LifeSupportManager.GetHabChecksum(VesselStatus,vessel);
+
+                        var newHabChecksum = LifeSupportManager.GetHabChecksum(VesselStatus, vessel);
+                        if (Math.Abs(oldHabChecksum - newHabChecksum) > ResourceUtilities.FLOAT_TOLERANCE)
+                        {
+                            Debug.Log("Vessel situation changed, refreshing life support");
+                            refreshVesselTime = true;
+                            oldHabChecksum = newHabChecksum;
+                        }
+
                         for (int i = 0; i < count; ++i)
                         {
                             var c = vCrew[i];

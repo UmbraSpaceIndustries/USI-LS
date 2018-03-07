@@ -95,10 +95,10 @@ namespace LifeSupport
             //Kolony Growth
             if (KolonyGrowthEnabled && part.CrewCapacity > part.protoModuleCrew.Count && hasMale && hasFemale)
             {
-                GrowthTime += result.TimeFactor;
+                GrowthTime += (result.TimeFactor * part.protoModuleCrew.Count);
                 if (GrowthTime >= GestationTime)
                 {
-                    GrowthTime = 0d;
+                    GrowthTime -= GestationTime;
                     SpawnKerbal();
                 }
             }
