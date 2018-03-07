@@ -365,7 +365,49 @@ namespace LifeSupport
              int numSharedVessels = 0;
              return GetTotalHabTime(sourceVessel, vsl, out numSharedVessels);
          }
- 
+
+        internal static double GetHabChecksum(VesselSupplyStatus sourceVessel, Vessel vsl)
+        {
+            //This routine just returns the total amount of hab factored by the multiplier.
+            //It is used to determine if there was a situation change and thus reset the vessel time.
+            //The main use case would be undocking/docking, or flying into range of a base.
+
+            //In the event that a vessel is not loaded, return zero.
+            if (!vsl.loaded)
+            {
+                return 0d;
+            }
+
+            int totMaxCrew = sourceVessel.CrewCap;
+            var vList = LogisticsTools.GetNearbyVessels((float)LifeSupportScenario.Instance.settings.GetSettings().HabRange, false, vsl, false);
+            var hList = new List<Vessel>();
+            var vCount = vList.Count;
+            for (int i = 0; i < vCount; ++i)
+            {
+                var v = vList[i];
+                int crewCap = v.GetCrewCapacity();
+                totMaxCrew += crewCap;
+                if (crewCap > 0)
+                {
+                    hList.Add(v);
+                }
+            }
+
+            double totHabSpace = sourceVessel.ExtraHabSpace;
+            double totHabMult = CalculateVesselHabMultiplier(vsl, 1);
+            totHabSpace += (LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime * totMaxCrew);
+
+            var hCount = hList.Count;
+            for (int i = 0; i < hCount; ++i)
+            {
+                var v = hList[i];
+                totHabSpace += CalculateVesselHabExtraTime(v);
+                totHabMult += CalculateVesselHabMultiplier(v, 1);
+            }
+
+            return totHabSpace*(totHabMult+1);
+        }
+
          internal static double GetTotalHabTime(VesselSupplyStatus sourceVessel, Vessel vsl, out int numSharedVessels)
          {
             //In the event that a vessel is not loaded, we just return the cached value.
