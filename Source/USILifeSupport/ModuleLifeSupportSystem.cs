@@ -649,7 +649,7 @@ namespace LifeSupport
                     return; // No need to print
                 case 1: //Grouchy
                     msg = string.Format("{0} refuses to work {1}", crew.name, reason);
-                    kStat.OldTrait = crew.experienceTrait.Title;
+                    kStat.OldTrait = crew.ExperienceTrait.TypeName;
                     crew.type = ProtoCrewMember.KerbalType.Tourist;
                     KerbalRoster.SetExperienceTrait(crew, "Tourist");
                     kStat.IsGrouchy = true;
@@ -658,7 +658,7 @@ namespace LifeSupport
                 case 2:  //Mutinous
                     {
                         msg = string.Format("{0} has become mutinous due to {1}", crew.name, reason);
-                        kStat.OldTrait = crew.experienceTrait.Title;
+                        kStat.OldTrait = crew.ExperienceTrait.TypeName;
                         crew.type = ProtoCrewMember.KerbalType.Tourist;
                         KerbalRoster.SetExperienceTrait(crew, "Tourist");
                         kStat.IsGrouchy = true;
@@ -779,7 +779,7 @@ namespace LifeSupport
                 if (crew.type != ProtoCrewMember.KerbalType.Tourist)
                 {
                     msg = string.Format("{0} refuses to work", crew.name);
-                    kStat.OldTrait = crew.experienceTrait.Title;
+                    kStat.OldTrait = crew.ExperienceTrait.TypeName;
                     crew.type = ProtoCrewMember.KerbalType.Tourist;
                     KerbalRoster.SetExperienceTrait(crew, "Tourist");
                     kStat.IsGrouchy = true;
@@ -789,7 +789,7 @@ namespace LifeSupport
                 case 2:  //Mutinous
             {
                 msg = string.Format("{0} has become mutinous", crew.name);
-                kStat.OldTrait = crew.experienceTrait.Title;
+                kStat.OldTrait = crew.ExperienceTrait.TypeName;
                 crew.type = ProtoCrewMember.KerbalType.Tourist;
                 KerbalRoster.SetExperienceTrait(crew, "Tourist");
                 kStat.IsGrouchy = true;
