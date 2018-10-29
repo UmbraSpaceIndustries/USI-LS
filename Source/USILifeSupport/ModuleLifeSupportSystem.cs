@@ -9,8 +9,102 @@ namespace LifeSupport
         [KSPField(isPersistant = true)]
         public double LastUpdateTime;
 
-        private bool isDirty = true;
-        private double oldHabChecksum;
+        private readonly double _checkInterval = 1d;
+        private double _lastProcessingTime;
+        private double _lastUpdate;
+        private bool _isDirty = true;
+        private double _oldHabChecksum;
+        private int _currentCrewCount;
+        private Part _crewPart;
+        private int _partCount;
+        bool _isStatusRefreshRequired = false;
+
+        protected ResourceConverter _resourceConverter;
+        protected IResourceBroker _resourceBroker;
+        private VesselSupplyStatus _vesselStatus;
+
+        public ResourceConverter Converter
+        {
+            get { return _resourceConverter ?? (_resourceConverter = new ResourceConverter(ResourceBroker)); }
+        }
+
+        public IResourceBroker ResourceBroker
+        {
+            get { return _resourceBroker ?? (_resourceBroker = new ResourceBroker()); }
+        }
+
+        public VesselSupplyStatus VesselStatus
+        {
+            get { return _vesselStatus ?? (_vesselStatus = SetupVesselStatus()); }
+            set { _vesselStatus = value; }
+        }
+
+        private ConversionRecipe SupplyRecipe
+        {
+            get { return GenerateSupplyRecipe(); }
+        }
+
+        private ConversionRecipe ECRecipe
+        {
+            get  { return GenerateECRecipe(); }
+        }
+
+        private VesselSupplyStatus SetupVesselStatus()
+        {
+            UpdateVesselInfo();
+
+            var id = base.vessel.id.ToString();
+            var vessel = LifeSupportManager.Instance.FetchVessel(id);
+            LifeSupportManager.Instance.TrackVessel(vessel);
+
+            return vessel;
+        }
+
+        private ConversionRecipe GenerateSupplyRecipe()
+        {
+            var crewCount = _currentCrewCount;
+            var recyclerMultiplier = VesselStatus.RecyclerMultiplier;
+            var suppliesConsumption = LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount;
+            var wasteOutput = LifeSupportScenario.Instance.settings.GetSettings().WasteAmount;
+
+            var supRatio = suppliesConsumption * crewCount * recyclerMultiplier;
+            var mulchRatio = wasteOutput * crewCount * recyclerMultiplier;
+
+            var recipe = new ConversionRecipe();
+            recipe.Inputs.Add(new ResourceRatio
+            {
+                FlowMode = ResourceFlowMode.ALL_VESSEL,
+                Ratio = supRatio,
+                ResourceName = "Supplies",
+                DumpExcess = true
+            });
+            recipe.Outputs.Add(new ResourceRatio
+            {
+                FlowMode = ResourceFlowMode.ALL_VESSEL,
+                Ratio = mulchRatio,
+                ResourceName = "Mulch",
+                DumpExcess = true
+            });
+
+            return recipe;
+        }
+
+        private ConversionRecipe GenerateECRecipe()
+        {
+            var crewCount = _currentCrewCount;
+            var electricityConsumption = LifeSupportScenario.Instance.settings.GetSettings().ECAmount;
+
+            var recipe = new ConversionRecipe();
+            recipe.Inputs.Add(new ResourceRatio
+            {
+                FlowMode = ResourceFlowMode.ALL_VESSEL,
+                Ratio = electricityConsumption * crewCount,
+                ResourceName = "ElectricCharge",
+                DumpExcess = true
+            });
+
+            return recipe;
+        }
 
         public override void OnLoadVessel()
         {
@@ -21,32 +115,7 @@ namespace LifeSupport
 
         private void SetVesselDirty(Vessel v)
         {
-            isDirty = true;
-        }
-
-        private VesselSupplyStatus _vStat;
-        private double _checkInterval = 1d;
-        private double _lastProcessingTime;
-        private int _currentCrew;
-        private Part _crewPart;
-        protected IResourceBroker _resBroker;
-        protected ResourceConverter _resConverter;
-        private int _partCount;
-
-        public ResourceConverter ResConverter
-        {
-            get { return _resConverter ?? (_resConverter = new ResourceConverter(ResBroker)); }
-        }
-
-        public IResourceBroker ResBroker
-        {
-            get { return _resBroker ?? (_resBroker = new ResourceBroker()); }
-        }
-
-        public VesselSupplyStatus VesselStatus
-        {
-            get { return _vStat ?? (_vStat = SetupVesselStatus()); }
-            set { _vStat = value;  }
+            _isDirty = true;
         }
 
         public void OnDestroy()
@@ -56,31 +125,11 @@ namespace LifeSupport
             GameEvents.onVesselChange.Remove(SetVesselDirty);
         }
 
-        bool refreshVesselTime = false;
-
-        private bool CheckIfHomeWorld()
-        {
-            if (USI_GlobalBonuses.Instance.GetHabBonus(vessel.mainBody.flightGlobalsIndex) < 5)  //TODO - make this a parm
-                return false;
-
-            //Check for hab time.
-            var habTime = LifeSupportManager.Instance.FetchVessel(vessel.id.ToString()).CachedHabTime;
-            //We want one year, either Kerbal or earth.
-            const double secsPerMinute = 60d;
-            const double secsPerHour = secsPerMinute * 60d;
-            double secsPerDay = GameSettings.KERBIN_TIME ? secsPerHour * 6d : secsPerHour * 24d;
-            double secsPerYear = GameSettings.KERBIN_TIME ? secsPerDay * 425d : secsPerDay * 365d;
-            double y = Math.Floor(habTime / secsPerYear);
-
-            return y >= 1;
-        }
-
         public void FixedUpdate()
         {
-            if (!HighLogic.LoadedSceneIsFlight || vessel == null)
+            if (!HighLogic.LoadedSceneIsFlight || vessel == null || !vessel.loaded)
                 return;
-            if (!vessel.loaded)
-                return;
+
             if (vessel.isEVA)
             {
                 CheckEVA(vessel);
@@ -91,29 +140,31 @@ namespace LifeSupport
             {
                 if (_partCount > 0)
                 {
-                    refreshVesselTime = true;
+                    _isStatusRefreshRequired = true;
                 }
                 _partCount = vessel.parts.Count;
             }
 
-
-            if (isDirty)
+            if (_isDirty)
             {
-                isDirty = false;
+                _isDirty = false;
                 UpdateVesselInfo();
                 UpdateStatus();
             }
 
-            if (_currentCrew == 0)
+            var now = Planetarium.GetUniversalTime();
+            if (_currentCrewCount == 0)
             {
                 VesselStatus.VesselName = vessel.vesselName;
                 VesselStatus.NumCrew = vessel.GetCrewCount();
                 VesselStatus.CrewCap = vessel.GetCrewCapacity();
-                VesselStatus.LastECCheck = Planetarium.GetUniversalTime();
-                VesselStatus.LastFeeding = Planetarium.GetUniversalTime();
-                VesselStatus.LastUpdate = Planetarium.GetUniversalTime();
+                VesselStatus.LastECCheck = now;
+                VesselStatus.LastFeeding = now;
+                VesselStatus.LastUpdate = now;
+
                 LifeSupportManager.Instance.TrackVessel(VesselStatus);
-                LastUpdateTime = Planetarium.GetUniversalTime();
+                LastUpdateTime = now;
+
                 return;
             }
 
@@ -123,619 +174,202 @@ namespace LifeSupport
                 var offKerbin = !LifeSupportManager.IsOnKerbin(vessel);
                 CheckVesselId();
 
-                //Check our time
+                // Check our time
                 double deltaTime = GetDeltaTime();
                 bool isCatchup = deltaTime / 2 > TimeWarp.fixedDeltaTime;
 
                 if (deltaTime < ResourceUtilities.FLOAT_TOLERANCE * 10)
                     return;
 
-                if (Planetarium.GetUniversalTime() >= _lastProcessingTime + _checkInterval)
+                if (now >= _lastProcessingTime + _checkInterval)
                 {
                     isLongLoop = true;
-                    _lastProcessingTime = Planetarium.GetUniversalTime();
+                    _lastProcessingTime = now;
                 }
 
-                VesselStatus.LastUpdate = Planetarium.GetUniversalTime();
+                VesselStatus.LastUpdate = now;
                 VesselStatus.VesselName = vessel.vesselName;
                 VesselStatus.NumCrew = vessel.GetCrewCount();
                 VesselStatus.CrewCap = vessel.GetCrewCapacity();
+
                 if (isLongLoop)
                 {
                     CheckForDeadKerbals();
                 }
 
-                if (_currentCrew > 0)
+                if (_currentCrewCount > 0)
                 {
                     //Guard clause
                     if (_crewPart == null)
                         UpdateVesselInfo();
 
                     //we will add a bit of a fudge factor for supplies
-                    var tolerance = deltaTime/2f;
+                    var tolerance = deltaTime / 2f;
+
                     //nom nom nom!
-                    ConverterResults resultSupply = ResConverter.ProcessRecipe(deltaTime, SupplyRecipe, _crewPart, null,
-                        1f);
-                    ConverterResults resultEC = ResConverter.ProcessRecipe(deltaTime, ECRecipe, _crewPart, null, 1f);
+                    ConverterResults resultSupply = Converter.ProcessRecipe(deltaTime, SupplyRecipe, _crewPart, null, 1f);
+                    ConverterResults resultEC = Converter.ProcessRecipe(deltaTime, ECRecipe, _crewPart, null, 1f);
 
                     #region Long Loop - Crew
                     if (isLongLoop)
                     {
                         //Ensure status is current
                         UpdateStatus();
-                        var vCrew = vessel.GetVesselCrew();
-                        var count = vCrew.Count;
+
                         var habTime = LifeSupportManager.GetTotalHabTime(VesselStatus, vessel);
 
-                        if (oldHabChecksum < ResourceUtilities.FLOAT_TOLERANCE)
-                            oldHabChecksum = LifeSupportManager.GetHabChecksum(VesselStatus,vessel);
+                        if (_oldHabChecksum < ResourceUtilities.FLOAT_TOLERANCE)
+                            _oldHabChecksum = LifeSupportManager.GetHabChecksum(VesselStatus, vessel);
 
                         var newHabChecksum = LifeSupportManager.GetHabChecksum(VesselStatus, vessel);
-                        if (Math.Abs(oldHabChecksum - newHabChecksum) > ResourceUtilities.FLOAT_TOLERANCE)
+                        if (Math.Abs(_oldHabChecksum - newHabChecksum) > ResourceUtilities.FLOAT_TOLERANCE)
                         {
-                            Debug.Log("Vessel situation changed, refreshing life support");
-                            refreshVesselTime = true;
-                            oldHabChecksum = newHabChecksum;
+                            Debug.Log("[USI-LS] Vessel situation changed, refreshing life support");
+                            _isStatusRefreshRequired = true;
+                            _oldHabChecksum = newHabChecksum;
                         }
 
+                        var crewRoster = vessel.GetVesselCrew();
+                        var count = crewRoster.Count;
                         for (int i = 0; i < count; ++i)
                         {
-                            var c = vCrew[i];
+                            var crewMember = crewRoster[i];
                             bool isGrouchyHab = false;
                             bool isGrouchySupplies = false;
                             bool isGrouchyEC = false;
-                            bool isScout = c.HasEffect("ExplorerSkill") && habTime >= LifeSupportScenario.Instance.settings.GetSettings().ScoutHabTime;
+                            bool isScout = crewMember.HasEffect("ExplorerSkill") && habTime >= LifeSupportScenario.Instance.settings.GetSettings().ScoutHabTime;
                             bool isPermaHab = habTime >= LifeSupportScenario.Instance.settings.GetSettings().PermaHabTime;
-                            bool isHomeWorld = CheckIfHomeWorld() && habTime >= LifeSupportScenario.Instance.settings.GetSettings().ScoutHabTime && vessel.LandedOrSplashed; 
-                            //Fetch them from the queue
-                            var k = LifeSupportManager.Instance.FetchKerbal(c);
-                            //Update our stuff
-                            if (refreshVesselTime)
+                            bool isHomeWorld = CheckIfHomeWorld() && habTime >= LifeSupportScenario.Instance.settings.GetSettings().ScoutHabTime && vessel.LandedOrSplashed;
+
+                            // Get the crew member's life support stats
+                            var trackedKerbal = LifeSupportManager.Instance.FetchKerbal(crewMember);
+
+                            // Update life support stats
+                            if (_isStatusRefreshRequired)
                             {
-                                k.TimeEnteredVessel = Planetarium.GetUniversalTime();
-                                refreshVesselTime = false;
-                                LifeSupportManager.Instance.TrackKerbal(k);
+                                trackedKerbal.TimeEnteredVessel = now;
+                                _isStatusRefreshRequired = false;
+                                LifeSupportManager.Instance.TrackKerbal(trackedKerbal);
                             }
-                            //First - Hab effects.                        
+
+                            // Update Hab effects
                             if (!offKerbin || isScout || isHomeWorld || isPermaHab)
                             {
-                                k.LastAtHome = Planetarium.GetUniversalTime();
-                                k.MaxOffKerbinTime = habTime + k.LastAtHome;
-                                k.TimeEnteredVessel = Planetarium.GetUniversalTime();
+                                trackedKerbal.TimeEnteredVessel = now;
+                                trackedKerbal.LastAtHome = now;
+                                trackedKerbal.MaxOffKerbinTime = habTime + trackedKerbal.LastAtHome;
                             }
                             else
                             {
-                                if (vessel.id.ToString() != k.CurrentVesselId)
+                                if (vessel.id.ToString() != trackedKerbal.CurrentVesselId)
                                 {
-                                    if (vessel.id.ToString() != k.PreviousVesselId)
-                                        k.TimeEnteredVessel = Planetarium.GetUniversalTime();
+                                    if (vessel.id.ToString() != trackedKerbal.PreviousVesselId)
+                                        trackedKerbal.TimeEnteredVessel = now;
 
-                                    k.PreviousVesselId = k.CurrentVesselId;
-                                    k.CurrentVesselId = vessel.id.ToString();
-                                    LifeSupportManager.Instance.TrackKerbal(k);
+                                    trackedKerbal.PreviousVesselId = trackedKerbal.CurrentVesselId;
+                                    trackedKerbal.CurrentVesselId = vessel.id.ToString();
+                                    LifeSupportManager.Instance.TrackKerbal(trackedKerbal);
                                 }
-                                isGrouchyHab = CheckHabSideEffects(k);
+
+                                isGrouchyHab = CheckHabSideEffects(trackedKerbal);
                             }
 
-
-                            //Second - Supply
+                            // Update Supplies effects
                             if (offKerbin && (deltaTime - resultSupply.TimeFactor > tolerance))
                             {
-                                isGrouchySupplies = CheckSupplySideEffects(k);
+                                isGrouchySupplies = CheckSupplySideEffects(trackedKerbal);
                             }
                             else if (deltaTime >= ResourceUtilities.FLOAT_TOLERANCE)
                             {
                                 //All is well
-                                k.LastMeal = LastUpdateTime;
+                                trackedKerbal.LastMeal = LastUpdateTime;
                                 VesselStatus.LastFeeding = LastUpdateTime;
                             }
 
-                            //Third - EC
+                            // Update ElectricCharge effects
                             if (offKerbin && (deltaTime - resultEC.TimeFactor > tolerance))
                             {
-                                isGrouchyEC = CheckECSideEffects(k);
+                                isGrouchyEC = CheckECSideEffects(trackedKerbal);
                             }
                             else if (deltaTime >= ResourceUtilities.FLOAT_TOLERANCE)
                             {
                                 //All is well
-                                k.LastEC = LastUpdateTime;
+                                trackedKerbal.LastEC = LastUpdateTime;
                                 VesselStatus.LastECCheck = LastUpdateTime;
                             }
 
+                            trackedKerbal.LastUpdate = now;
 
-                            k.LastUpdate = Planetarium.GetUniversalTime();
                             var isAnyGrouch = isGrouchyEC || isGrouchyHab || isGrouchySupplies;
-
                             if (isGrouchyEC && !isCatchup)
                             {
-                                ApplyEffect(k, c,
-                                    LifeSupportManager.GetNoECEffect(k.KerbalName),
+                                ApplyEffect(
+                                    trackedKerbal,
+                                    crewMember,
+                                    LifeSupportManager.GetNoECEffect(trackedKerbal.KerbalName),
                                     "power loss");
                             }
                             else if (isGrouchySupplies && !isCatchup)
                             {
-                                ApplyEffect(k, c,
-                                    LifeSupportManager.GetNoSupplyEffect(k.KerbalName),
+                                ApplyEffect(
+                                    trackedKerbal,
+                                    crewMember,
+                                    LifeSupportManager.GetNoSupplyEffect(trackedKerbal.KerbalName),
                                     "lack of supplies");
                             }
                             else if (isGrouchyHab && !isCatchup)
                             {
-                                ApplyEffect(k, c,
-                                    LifeSupportManager.GetNoHomeEffect(k.KerbalName),
+                                ApplyEffect(
+                                    trackedKerbal,
+                                    crewMember,
+                                    LifeSupportManager.GetNoHomeEffect(trackedKerbal.KerbalName),
                                     "homesickness");
                             }
-                            else if (c.experienceTrait.Title != k.OldTrait && !isAnyGrouch)
+                            else if (crewMember.experienceTrait.Title != trackedKerbal.OldTrait && !isAnyGrouch)
                             {
-                                RemoveGrouchiness(c, k);
+                                RemoveGrouchiness(crewMember, trackedKerbal);
                             }
-                            LifeSupportManager.Instance.TrackKerbal(k);
+
+                            LifeSupportManager.Instance.TrackKerbal(trackedKerbal);
                         }
                     }
                     #endregion - Crew
 
-                    var supAmount = _resBroker.AmountAvailable(_crewPart, "Supplies", deltaTime,
-                    ResourceFlowMode.ALL_VESSEL);
-                    var ecAmount = _resBroker.AmountAvailable(_crewPart, "ElectricCharge", deltaTime,
+                    var remainingSupplies = ResourceBroker.AmountAvailable(
+                        _crewPart,
+                        "Supplies",
+                        deltaTime,
                         ResourceFlowMode.ALL_VESSEL);
-                    VesselStatus.SuppliesLeft = supAmount /
-                                                LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount /
-                                                _currentCrew /
-                                                VesselStatus.RecyclerMultiplier;
-                    VesselStatus.ECLeft = ecAmount / LifeSupportScenario.Instance.settings.GetSettings().ECAmount /
-                                          _currentCrew;
+                    var remainingBattery = ResourceBroker.AmountAvailable(
+                        _crewPart,
+                        "ElectricCharge",
+                        deltaTime,
+                        ResourceFlowMode.ALL_VESSEL);
+                    var suppliesConsumption = LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount;
+                    var electricityConsumption = LifeSupportScenario.Instance.settings.GetSettings().ECAmount;
+
+                    VesselStatus.SuppliesLeft = remainingSupplies / suppliesConsumption / _currentCrewCount / VesselStatus.RecyclerMultiplier;
+                    VesselStatus.ECLeft = remainingBattery / electricityConsumption / _currentCrewCount;
                 }
                 else
                 {
-                    VesselStatus.LastECCheck = Planetarium.GetUniversalTime();
-                    VesselStatus.LastFeeding = Planetarium.GetUniversalTime();
-                    VesselStatus.LastUpdate = Planetarium.GetUniversalTime();
+                    VesselStatus.LastECCheck = now;
+                    VesselStatus.LastFeeding = now;
+                    VesselStatus.LastUpdate = now;
                 }
+
                 LifeSupportManager.Instance.TrackVessel(VesselStatus);
             }
             catch (Exception ex)
             {
-                print(String.Format("ERROR {0} IN ModuleLifeSupport", ex.Message));
+                print(string.Format("ERROR {0} IN ModuleLifeSupport", ex.Message));
             }
-        }
-
-        private void UpdateVesselInfo()
-        {
-            if (!HighLogic.LoadedSceneIsFlight || vessel == null)
-                return;
-
-            CheckForDeadKerbals();
-            _currentCrew = vessel.GetCrewCount();
-            if (vessel.GetCrewCapacity() > 0)
-            {
-                var count = vessel.parts.Count;
-                for (int i = 0; i < count; ++i)
-                {
-                    var p = vessel.parts[i];
-                    if (p.CrewCapacity > 0)
-                    {
-                        _crewPart = p;
-                        return;
-                    }
-                }
-            }
-        }
-
-        private void UpdateStatus()
-        {
-            UpdateStatus(VesselStatus);
-        }
-
-        private double _lastUpdate;
-
-        private void UpdateStatus(VesselSupplyStatus v)
-        {
-            if (_lastUpdate < ResourceUtilities.FLOAT_TOLERANCE)
-                _lastUpdate = Planetarium.GetUniversalTime();
-
-            bool fullRefresh = false;
-
-            if (Planetarium.GetUniversalTime() > _lastUpdate + 5d) //A reasonable time for easing in everything
-            {
-                fullRefresh = true;
-                _lastUpdate = Planetarium.GetUniversalTime();
-            }
-
-            var newRecMult = (float)LifeSupportManager.GetRecyclerMultiplier(vessel);
-            var newSpace = (float)LifeSupportManager.CalculateVesselHabExtraTime(vessel);
-            var newHabMult = (float)LifeSupportManager.CalculateVesselHabMultiplier(vessel, _currentCrew);
-            //If we're the active vessel, and we're past easing, we always take calc values.  
-            //Otherwise, let's use the cache.
-            var useCur = fullRefresh && vessel.id == FlightGlobals.ActiveVessel.id;
-
-            //Start with intelligent defaults.
-            if (v.RecyclerMultiplier < ResourceUtilities.FLOAT_TOLERANCE)
-                v.RecyclerMultiplier = 1f;
-            if (newRecMult < ResourceUtilities.FLOAT_TOLERANCE)
-                newRecMult = 1f;
-            //And take the lowest (non-zero)
-            if (useCur || newRecMult < v.RecyclerMultiplier)
-                v.RecyclerMultiplier = newRecMult;
-
-            //Hab we want the best ones. 
-            if (useCur || newSpace > v.ExtraHabSpace)
-                v.ExtraHabSpace = newSpace;
-
-            if (useCur || newHabMult > v.VesselHabMultiplier)
-                v.VesselHabMultiplier = newHabMult;
-
-            LifeSupportManager.Instance.TrackVessel(v);
-        }
-
-
-        private VesselSupplyStatus SetupVesselStatus()
-        {
-            var id = vessel.id.ToString();
-            var v = LifeSupportManager.Instance.FetchVessel(id);
-            UpdateVesselInfo();
-            LifeSupportManager.Instance.TrackVessel(v);
-            return v;
-        }
-
-        private void UnlockTins()
-        {
-            if (HighLogic.LoadedSceneIsFlight)
-            {
-                //Unlock the biscuit tins...
-                bool foundSupplies = false;
-                var count = vessel.parts.Count;
-                for (int i = 0; i < count; ++i)
-                {
-                    var p = vessel.parts[i];
-                    if (p.Resources.Contains("Supplies"))
-                    {
-                        var r = p.Resources["Supplies"];
-                        if (r.flowState == false)
-                        {
-                            r.flowState = true;
-                            foundSupplies = true;
-                        }
-                    }
-                }
-                if(foundSupplies)
-                    ScreenMessages.PostScreenMessage("Supply containers unlocked...", 5f, ScreenMessageStyle.UPPER_CENTER);
-            }
-        }
-
-        protected double GetDeltaTime()
-        {
-            if (Time.timeSinceLevelLoad < 1.0f || !FlightGlobals.ready)
-            {
-                return -1;
-            }
-
-            if (Math.Abs(LastUpdateTime) < ResourceUtilities.FLOAT_TOLERANCE)
-            {
-                // Just started running
-                LastUpdateTime = Planetarium.GetUniversalTime();
-                return -1;
-            }
-
-            double maxDeltaTime = ResourceUtilities.GetMaxDeltaTime();
-            double deltaTime = Math.Min(Planetarium.GetUniversalTime() - LastUpdateTime, maxDeltaTime);
-
-            LastUpdateTime += deltaTime;
-            return deltaTime;
-        }
-
-        private void CheckForDeadKerbals()
-        {
-            try
-            {
-                var crewNames = new List<string>();
-                var vCrew = vessel.GetVesselCrew();
-                var cCount = vCrew.Count;
-                for (int x = 0; x < cCount; ++x)
-                {
-                    crewNames.Add(vCrew[x].name);
-                }
-                var count = LifeSupportManager.Instance.LifeSupportInfo.Count;
-                for(int i = count; i --> 0;)
-                {
-                    var thisCrew = LifeSupportManager.Instance.LifeSupportInfo[i];
-                    if (thisCrew.CurrentVesselId != vessel.id.ToString())
-                        continue;
-
-                    if(!crewNames.Contains(thisCrew.KerbalName) && KerbalIsMissing(thisCrew.KerbalName))
-                        LifeSupportManager.Instance.UntrackKerbal(thisCrew.KerbalName);
-                }
-            }
-            catch (Exception ex)
-            {
-                print(String.Format("ERROR {0} IN CheckForDeadKerbals", ex.Message));
-            }
-        }
-
-        private bool KerbalIsMissing(string name)
-        {
-            var vCount = FlightGlobals.Vessels.Count;
-            var cCount = 0;
-            for (int i = 0; i < vCount; ++i)
-            {
-                var v = FlightGlobals.Vessels[i];
-                var crew = v.GetVesselCrew();
-                cCount = crew.Count;
-                for (int x = 0; x < cCount; ++x)
-                {
-                    var c = crew[x];
-                    if (c.name == name)
-                        return false;
-                }
-            }
-            return true;
-        }
-
-        private void CheckVesselId()
-        {
-            if(String.IsNullOrEmpty(VesselStatus.VesselId))
-                return;
-
-            //Something changed... 
-            if (VesselStatus.VesselId != vessel.id.ToString())
-            {
-                var oldV = LifeSupportManager.Instance.FetchVessel(VesselStatus.VesselId);
-                var newV = LifeSupportManager.Instance.FetchVessel(vessel.id.ToString());
-                newV.LastFeeding = oldV.LastFeeding;
-                newV.LastECCheck = oldV.LastECCheck;
-                newV.LastUpdate = oldV.LastUpdate;
-                newV.NumCrew = oldV.NumCrew;
-                newV.RecyclerMultiplier = oldV.RecyclerMultiplier;
-                newV.CrewCap = oldV.CrewCap;
-                newV.VesselHabMultiplier = oldV.VesselHabMultiplier;
-                newV.CachedHabTime = oldV.CachedHabTime;
-                newV.ExtraHabSpace = oldV.ExtraHabSpace;
-                newV.SuppliesLeft = oldV.SuppliesLeft;
-                newV.ECLeft = oldV.ECLeft;
-                newV.VesselId = vessel.id.ToString();
-                newV.VesselName = vessel.vesselName;
-                LifeSupportManager.Instance.TrackVessel(newV);
-                VesselStatus = newV;
-            }
-        }
-
-        public static double CalculateVesselHabExtraTime(Vessel v)
-        {
-            var habTime = 0d;
-            var habList = v.FindPartModulesImplementing<ModuleHabitation>();
-            var count = habList.Count;
-            for(int i = 0; i < count; ++i)
-            {
-                var hab = habList[i];    
-                habTime += hab.KerbalMonths;
-            }
-            return habTime;
-        }
-
-        public static double CalculateVesselHabMultiplier(Vessel v, int numCrew)
-        {
-            var habMulti = 0d;
-            var habList = v.FindPartModulesImplementing<ModuleHabitation>();
-            var count = habList.Count;
-            for (int i = 0; i < count; ++i)
-            {
-                var hab = habList[i];
-                habMulti += (hab.HabMultiplier * Math.Min(1, hab.CrewCapacity / numCrew));
-            }
-            return habMulti;
-        }
-
-        private ConversionRecipe SupplyRecipe
-        {
-            get
-            {
-                return GenerateSupplyRecipe();
-            }
-        }
-
-        private ConversionRecipe ECRecipe
-        {
-            get
-            {
-                return GenerateECRecipe();
-            }
-        }
-
-        private ConversionRecipe GenerateSupplyRecipe()
-        {
-            //Two recipes are executed.  One for EC, one for Supplies.
-            var recipe = new ConversionRecipe();
-            var numCrew = _currentCrew;
-            var recMult = VesselStatus.RecyclerMultiplier;   
-            var supAmount = LifeSupportScenario.Instance.settings.GetSettings().SupplyAmount;
-            var scrapAmount = LifeSupportScenario.Instance.settings.GetSettings().WasteAmount;
-            var supRatio = supAmount * numCrew * recMult;
-            var mulchRatio = scrapAmount * numCrew * recMult;
-            recipe.Inputs.Add(new ResourceRatio { FlowMode = ResourceFlowMode.ALL_VESSEL, Ratio = supRatio, ResourceName = "Supplies", DumpExcess = true });
-            recipe.Outputs.Add(new ResourceRatio { FlowMode = ResourceFlowMode.ALL_VESSEL, Ratio = mulchRatio, ResourceName = "Mulch", DumpExcess = true });
-            return recipe;
-        }
-
-        private ConversionRecipe GenerateECRecipe()
-        {
-            //Two recipes are executed.  One for EC, one for Supplies.
-            var recipe = new ConversionRecipe();
-            var numCrew = _currentCrew;
-            var ecAmount = LifeSupportScenario.Instance.settings.GetSettings().ECAmount;
-            recipe.Inputs.Add(new ResourceRatio { FlowMode = ResourceFlowMode.ALL_VESSEL, Ratio = ecAmount * numCrew, ResourceName = "ElectricCharge", DumpExcess = true });
-            return recipe;
-        }
-
-        private bool CheckSupplySideEffects(LifeSupportStatus kStat)
-        {
-            var curTime = Planetarium.GetUniversalTime();
-            var SnackMax = LifeSupportScenario.Instance.settings.GetSettings().SupplyTime;
-
-            var SnackTime = Math.Max(curTime - kStat.LastMeal, ResourceUtilities.FLOAT_TOLERANCE);
-            
-            if(SnackTime > ResourceUtilities.FLOAT_TOLERANCE)
-                UnlockTins();
-
-            if (SnackTime > SnackMax)
-            {
-                return true;
-            }
-            return false;
-        }
-
-        private bool CheckECSideEffects(LifeSupportStatus kStat)
-        {
-            var curTime = Planetarium.GetUniversalTime();
-            var ecMax = LifeSupportScenario.Instance.settings.GetSettings().ECTime;
-            var ecTime = Math.Max(curTime - kStat.LastEC, ResourceUtilities.FLOAT_TOLERANCE);
-            if (ecTime > ecMax)
-            {
-                return true;
-            }
-            return false;
-        }
-
-        private bool CheckHabSideEffects(LifeSupportStatus kStat)
-        {
-            var habTime = LifeSupportManager.GetTotalHabTime(VesselStatus, vessel);
-            if (kStat.LastAtHome < 1)
-                kStat.LastAtHome = Planetarium.GetUniversalTime();
-            if (habTime + kStat.LastAtHome > kStat.MaxOffKerbinTime)
-                kStat.MaxOffKerbinTime = habTime + kStat.LastAtHome;
-
-            LifeSupportManager.Instance.TrackKerbal(kStat);
-
-            if (Planetarium.GetUniversalTime() > kStat.MaxOffKerbinTime || (Planetarium.GetUniversalTime() - kStat.TimeEnteredVessel) > habTime)
-            {
-                return true;
-            }
-            return false;
-        }
-
-
-        private void RemoveGrouchiness(ProtoCrewMember c, LifeSupportStatus k)
-        {
-            if (k.IsGrouchy)
-            {
-                string msg = string.Format("{0} has returned to duty", c.name);
-                ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
-                c.type = ProtoCrewMember.KerbalType.Crew;
-                KerbalRoster.SetExperienceTrait(c, k.OldTrait);
-                k.IsGrouchy = false;
-                LifeSupportManager.Instance.TrackKerbal(k);
-            }
-        }
-
-        private void ApplyEffect(LifeSupportStatus kStat, ProtoCrewMember crew, int effectId, string reason)
-        {
-            //Tourists are immune to effects
-            if (crew.type == ProtoCrewMember.KerbalType.Tourist || crew.experienceTrait.Title == "Tourist")
-                return;
-
-            /*
-                *  SIDE EFFECTS:
-                * 
-                *  0 = No Effect (The feature is effectively turned off
-                *  1 = Grouchy (they become a Tourist until rescued)
-                *  2 = Mutinous (A tourist, but a random part of the ship is decoupled as they search for snacks
-                *  3 = Instantly 'wander' back to the KSC - don't ask us how!
-                *  4 = M.I.A. (will eventually respawn)
-                *  5 = K.I.A. 
-                * 
-                */
-
-            var msg = "";
-            switch (effectId)
-            {
-                case 0: // No effect
-                    return; // No need to print
-                case 1: //Grouchy
-                    msg = string.Format("{0} refuses to work {1}", crew.name, reason);
-                    kStat.OldTrait = crew.ExperienceTrait.TypeName;
-                    crew.type = ProtoCrewMember.KerbalType.Tourist;
-                    KerbalRoster.SetExperienceTrait(crew, "Tourist");
-                    kStat.IsGrouchy = true;
-                    LifeSupportManager.Instance.TrackKerbal(kStat);
-                    break;
-                case 2:  //Mutinous
-                    {
-                        msg = string.Format("{0} has become mutinous due to {1}", crew.name, reason);
-                        kStat.OldTrait = crew.ExperienceTrait.TypeName;
-                        crew.type = ProtoCrewMember.KerbalType.Tourist;
-                        KerbalRoster.SetExperienceTrait(crew, "Tourist");
-                        kStat.IsGrouchy = true;
-                        LifeSupportManager.Instance.TrackKerbal(kStat);
-                        ClipRandomPart();
-                        SpawnExtraSupplies(100f);
-                    }
-                    break;
-                case 3: //Return to KSC
-                    msg = string.Format("{0} gets fed up and wanders back to the KSC due to {1}", crew.name, reason);
-                    LifeSupportManager.Instance.UntrackKerbal(crew.name);
-                    crew.rosterStatus = ProtoCrewMember.RosterStatus.Available;
-                    vessel.CrewListSetDirty();
-                    RemoveCrewFromPart(crew);
-                    break;
-                case 4: //Despawn
-                    msg = string.Format("{0} has gone missing due to {1}", crew.name, reason);
-                    LifeSupportManager.Instance.UntrackKerbal(crew.name);
-                    vessel.CrewListSetDirty();
-                    RemoveCrewFromPart(crew);
-                    crew.rosterStatus = ProtoCrewMember.RosterStatus.Missing;
-                    break;
-                case 5: //Kill
-                    msg = string.Format("{0} has died due to {1}", crew.name, reason);
-                    LifeSupportManager.Instance.UntrackKerbal(crew.name);
-                    vessel.CrewListSetDirty();
-                    RemoveCrewFromPart(crew);
-                    crew.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
-                    break;
-            }
-
-            ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
-        }
-
-        private void SpawnExtraSupplies(float sup)
-        {
-            ResBroker.StoreResource(vessel.rootPart, "Supplies", sup, TimeWarp.deltaTime, ResourceFlowMode.ALL_VESSEL);
-        }
-
-        private void RemoveCrewFromPart(ProtoCrewMember crew)
-        {
-            var parts = vessel.parts;
-            for (int i = 0; i < parts.Count; ++i)
-            {
-                var p = parts[i];
-                if (p.CrewCapacity > 0)
-                {
-                    var crewList = p.protoModuleCrew;
-                    var cCount = crewList.Count;
-                    for (int x = 0; x < cCount; x++)
-                    {
-                        var c = crewList[x];
-                        if (c.name == crew.name)
-                        {
-                            p.RemoveCrewmember(c);
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-
-        private void ClipRandomPart()
-        {
-            System.Random r = new System.Random();
-            var idx = r.Next(1, vessel.parts.Count - 1);
-            var p = vessel.parts[idx];
-            if (p.parent != null)
-                p.decouple();
         }
 
         private void CheckEVA(Vessel evaKerbal)
         {
             if (IsAtHomeForEva(evaKerbal))
-            {
                 return;
-            }
 
             var kerbal = evaKerbal.GetVesselCrew()[0];
             //Check their status.
@@ -753,135 +387,522 @@ namespace LifeSupport
                     (evaKerbal.altitude < LifeSupportScenario.Instance.settings.GetSettings().HomeWorldAltitude);
         }
 
-        private void ApplyEVAEffect(LifeSupportStatus kStat, ProtoCrewMember crew, Vessel v, int effectId)
+        private void ApplyEVAEffect(LifeSupportStatus trackedKerbal, ProtoCrewMember crewMember, Vessel vessel, int effectId)
         {
-            if (crew.type == ProtoCrewMember.KerbalType.Tourist || crew.experienceTrait.Title == "Tourist")
+            if (crewMember.type == ProtoCrewMember.KerbalType.Tourist || crewMember.experienceTrait.Title == "Tourist")
                 return;
 
-            /*
-            *  SIDE EFFECTS:
-            * 
-            *  0 = No Effect (The feature is effectively turned off
-            *  1 = Grouchy (they become a Tourist until rescued)
-            *  2 = Mutinous (A tourist, but destroys a part of a nearby vessel...)
-            *  3 = Instantly 'wander' back to the KSC - don't ask us how!
-            *  4 = M.I.A. (will eventually respawn)
-            *  5 = K.I.A. 
-            * 
-            */
+            /* SIDE EFFECTS:
+             *   0 = No Effect (The feature is effectively turned off)
+             *   1 = Grouchy (they become a Tourist until rescued)
+             *   2 = Mutinous (A tourist, but also destroys a part of a nearby vessel...)
+             *   3 = Instantly 'wander' back to the KSC - don't ask us how!
+             *   4 = M.I.A. (will eventually respawn)
+             *   5 = K.I.A. 
+             */
 
-            var msg = "";
+            var screenMessage = "";
             switch (effectId)
             {
                 case 0: // No effect
-                return; // No need to print
+                    return; // No need to print
                 case 1: //Grouchy
-                if (crew.type != ProtoCrewMember.KerbalType.Tourist)
-                {
-                    msg = string.Format("{0} refuses to work", crew.name);
-                    kStat.OldTrait = crew.ExperienceTrait.TypeName;
-                    crew.type = ProtoCrewMember.KerbalType.Tourist;
-                    KerbalRoster.SetExperienceTrait(crew, "Tourist");
-                    kStat.IsGrouchy = true;
-                    LifeSupportManager.Instance.TrackKerbal(kStat);
-                }
-                break;
+                    if (crewMember.type != ProtoCrewMember.KerbalType.Tourist)
+                    {
+                        screenMessage = string.Format("{0} refuses to work", crewMember.name);
+                        trackedKerbal.OldTrait = crewMember.experienceTrait.TypeName;
+                        crewMember.type = ProtoCrewMember.KerbalType.Tourist;
+                        KerbalRoster.SetExperienceTrait(crewMember, "Tourist");
+                        trackedKerbal.IsGrouchy = true;
+                        LifeSupportManager.Instance.TrackKerbal(trackedKerbal);
+                    }
+                    break;
                 case 2:  //Mutinous
-            {
-                msg = string.Format("{0} has become mutinous", crew.name);
-                kStat.OldTrait = crew.ExperienceTrait.TypeName;
-                crew.type = ProtoCrewMember.KerbalType.Tourist;
-                KerbalRoster.SetExperienceTrait(crew, "Tourist");
-                kStat.IsGrouchy = true;
-                LifeSupportManager.Instance.TrackKerbal(kStat);
-                DestroyRandomPart(v);
-            }
-                break;
+                    {
+                        screenMessage = string.Format("{0} has become mutinous", crewMember.name);
+                        trackedKerbal.OldTrait = crewMember.experienceTrait.TypeName;
+                        crewMember.type = ProtoCrewMember.KerbalType.Tourist;
+                        KerbalRoster.SetExperienceTrait(crewMember, "Tourist");
+                        trackedKerbal.IsGrouchy = true;
+                        LifeSupportManager.Instance.TrackKerbal(trackedKerbal);
+                        DestroyRandomPart(vessel);
+                    }
+                    break;
                 case 3: //Return to KSC
-                msg = string.Format("{0} gets fed up and wanders back to the KSC", crew.name);
-                LifeSupportManager.Instance.UntrackKerbal(crew.name);
-                crew.rosterStatus = ProtoCrewMember.RosterStatus.Available;
-                DestroyVessel(v);
-                break;
+                    screenMessage = string.Format("{0} gets fed up and wanders back to the KSC", crewMember.name);
+                    LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
+                    crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Available;
+                    DestroyVessel(vessel);
+                    break;
                 case 4: //Despawn
-                msg = string.Format("{0} has gone missing", crew.name);
-                LifeSupportManager.Instance.UntrackKerbal(crew.name);
-                crew.rosterStatus = ProtoCrewMember.RosterStatus.Missing;
-                DestroyVessel(v);
-                break;
+                    screenMessage = string.Format("{0} has gone missing", crewMember.name);
+                    LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
+                    crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Missing;
+                    DestroyVessel(vessel);
+                    break;
                 case 5: //Kill
-                msg = string.Format("{0} has died", crew.name);
-                LifeSupportManager.Instance.UntrackKerbal(crew.name);
-                crew.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
-                DestroyVessel(v);
-                break;
+                    screenMessage = string.Format("{0} has died", crewMember.name);
+                    LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
+                    crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
+                    DestroyVessel(vessel);
+                    break;
             }
 
-            ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
+            ScreenMessages.PostScreenMessage(screenMessage, 5f, ScreenMessageStyle.UPPER_CENTER);
         }
 
-        private void DestroyRandomPart(Vessel thisVessel)
+        private void DestroyRandomPart(Vessel vessel)
         {
-            System.Random r = new System.Random();
-            var vlist = GetNearbyVessels(150, false, thisVessel, false);
-            var count = vlist.Count;
+            System.Random rng = new System.Random();
+            var vessels = GetNearbyVessels(150, false, vessel, false);
+            var count = vessels.Count;
             for (int i = 0; i < count; ++i)
             {
-                var v = vlist[i];
-                var idx = r.Next(1, v.parts.Count - 1);
-                var p = v.parts[idx];
-                if (p.parent != null)
-                    p.decouple();
+                var v = vessels[i];
+                var idx = rng.Next(1, v.parts.Count - 1);
+                var part = v.parts[idx];
+                if (part.parent != null)
+                    part.decouple();
             }
         }
 
-        private void DestroyVessel(Vessel v)
+        public static List<Vessel> GetNearbyVessels(int range, bool includeSelf, Vessel focusedVessel, bool landedOnly = true)
         {
-            var _demoParts = new List<Part>();
-            var count = v.parts.Count;
+            try
+            {
+                var nearbyVessels = new List<Vessel>();
+                var vesselCount = FlightGlobals.Vessels.Count;
+                for (int i = 0; i < vesselCount; ++i)
+                {
+                    var vessel = FlightGlobals.Vessels[i];
+                    if (vessel.mainBody == focusedVessel.mainBody
+                        && (!landedOnly || vessel.Landed || vessel == focusedVessel))
+                    {
+                        if (!includeSelf && vessel == focusedVessel)
+                            continue;
+
+                        var focusedPosition = focusedVessel.GetWorldPos3D();
+                        var neighborPosition = vessel.GetWorldPos3D();
+                        var distance = Vector3d.Distance(focusedPosition, neighborPosition);
+                        if (distance < range)
+                        {
+                            nearbyVessels.Add(vessel);
+                        }
+                    }
+                }
+
+                return nearbyVessels;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError(string.Format("[USI-LS] - ERROR in GetNearbyVessels - {0}", ex.Message));
+                return new List<Vessel>();
+            }
+        }
+
+        private void DestroyVessel(Vessel vessel)
+        {
+            var demoParts = new List<Part>();
+            var count = vessel.parts.Count;
             for (int i = 0; i < count; ++i)
             {
-                _demoParts.Add(v.parts[i]);
+                demoParts.Add(vessel.parts[i]);
             }
 
             for (int i = 0; i < count; ++i)
             {
-                var p = _demoParts[i];
+                var p = demoParts[i];
                 p.decouple();
                 p.explode();
             }
         }
 
-        public static List<Vessel> GetNearbyVessels(int range, bool includeSelf, Vessel thisVessel, bool landedOnly = true)
+        private void UpdateVesselInfo()
         {
-            try
+            if (!HighLogic.LoadedSceneIsFlight || vessel == null)
+                return;
+
+            CheckForDeadKerbals();
+            _currentCrewCount = vessel.GetCrewCount();
+            if (vessel.GetCrewCapacity() > 0)
             {
-                var vessels = new List<Vessel>();
-                var count = FlightGlobals.Vessels.Count;
-                for(int i = 0; i < count; ++i)
+                var partCount = vessel.parts.Count;
+                for (int i = 0; i < partCount; ++i)
                 {
-                    var v = FlightGlobals.Vessels[i];
-                    if (v.mainBody == thisVessel.mainBody
-                        && (v.Landed || !landedOnly || v == thisVessel))
+                    var part = vessel.parts[i];
+                    if (part.CrewCapacity > 0)
                     {
-                        if (v == thisVessel && !includeSelf) continue;
-                        var posCur = thisVessel.GetWorldPos3D();
-                        var posNext = v.GetWorldPos3D();
-                        var distance = Vector3d.Distance(posCur, posNext);
-                        if (distance < range)
-                        {
-                            vessels.Add(v);
-                        }
+                        _crewPart = part;
+                        return;
                     }
                 }
-                return vessels;
-            }
-            catch (Exception ex)
-            {
-                Debug.Log(String.Format("[LS] - ERROR in GetNearbyVessels - {0}", ex.Message));
-                return new List<Vessel>();
             }
         }
 
+        private void CheckForDeadKerbals()
+        {
+            try
+            {
+                var crewRoster = vessel.GetVesselCrew();
+                var crewNames = new List<string>();
+                var crewCount = crewRoster.Count;
+                for (int x = 0; x < crewCount; ++x)
+                {
+                    crewNames.Add(crewRoster[x].name);
+                }
+                var count = LifeSupportManager.Instance.LifeSupportInfo.Count;
+                for (int i = count; i-- > 0;)
+                {
+                    var trackedKerbal = LifeSupportManager.Instance.LifeSupportInfo[i];
+                    if (trackedKerbal.CurrentVesselId != vessel.id.ToString())
+                        continue;
+
+                    if (!crewNames.Contains(trackedKerbal.KerbalName) && IsKerbalMissing(trackedKerbal.KerbalName))
+                        LifeSupportManager.Instance.UntrackKerbal(trackedKerbal.KerbalName);
+                }
+            }
+            catch (Exception ex)
+            {
+                print(string.Format("ERROR {0} IN CheckForDeadKerbals", ex.Message));
+            }
+        }
+
+        private bool IsKerbalMissing(string name)
+        {
+            var vesselCount = FlightGlobals.Vessels.Count;
+            var crewCount = 0;
+            for (int i = 0; i < vesselCount; ++i)
+            {
+                var vessel = FlightGlobals.Vessels[i];
+                var crewRoster = vessel.GetVesselCrew();
+                crewCount = crewRoster.Count;
+                for (int x = 0; x < crewCount; ++x)
+                {
+                    var crewMember = crewRoster[x];
+                    if (crewMember.name == name)
+                        return false;
+                }
+            }
+            return true;
+        }
+
+        private void UpdateStatus()
+        {
+            UpdateStatus(VesselStatus);
+        }
+
+        private void UpdateStatus(VesselSupplyStatus supplyStatus)
+        {
+            var now = Planetarium.GetUniversalTime();
+            if (_lastUpdate < ResourceUtilities.FLOAT_TOLERANCE)
+                _lastUpdate = now;
+
+            // Give converters time to catch up before we start using calculated values
+            bool fullRefresh = false;
+            if (now > _lastUpdate + 5d)
+            {
+                fullRefresh = true;
+                _lastUpdate = now;
+            }
+
+            var calcRecyclerMultiplier = (float)LifeSupportManager.GetRecyclerMultiplier(vessel);
+            var calcHabTime = (float)LifeSupportManager.CalculateVesselHabExtraTime(vessel);
+            var calcHabMultiplier = (float)LifeSupportManager.CalculateVesselHabMultiplier(vessel, _currentCrewCount);
+
+            // If we're the active vessel, and we're past easing, use calculated values.  
+            //  Otherwise, use the cache.
+            var useCalculated = fullRefresh && vessel.id == FlightGlobals.ActiveVessel.id;
+
+            //Start with intelligent defaults.
+            if (supplyStatus.RecyclerMultiplier < ResourceUtilities.FLOAT_TOLERANCE)
+                supplyStatus.RecyclerMultiplier = 1f;
+            if (calcRecyclerMultiplier < ResourceUtilities.FLOAT_TOLERANCE)
+                calcRecyclerMultiplier = 1f;
+
+            //And take the lowest (non-zero)
+            if (useCalculated || calcRecyclerMultiplier < supplyStatus.RecyclerMultiplier)
+                supplyStatus.RecyclerMultiplier = calcRecyclerMultiplier;
+
+            //Hab we want the best ones. 
+            if (useCalculated || calcHabTime > supplyStatus.ExtraHabSpace)
+                supplyStatus.ExtraHabSpace = calcHabTime;
+
+            if (useCalculated || calcHabMultiplier > supplyStatus.VesselHabMultiplier)
+                supplyStatus.VesselHabMultiplier = calcHabMultiplier;
+
+            LifeSupportManager.Instance.TrackVessel(supplyStatus);
+        }
+
+        private void CheckVesselId()
+        {
+            if (string.IsNullOrEmpty(VesselStatus.VesselId))
+                return;
+
+            // Update values if the vessel id has changed (usually due to docking/undocking)
+            if (VesselStatus.VesselId != vessel.id.ToString())
+            {
+                // We're basically just cloning the old values here
+                var oldTrackedVessel = LifeSupportManager.Instance.FetchVessel(VesselStatus.VesselId);
+                var newTrackedVessel = LifeSupportManager.Instance.FetchVessel(vessel.id.ToString());
+
+                newTrackedVessel.VesselId = vessel.id.ToString();
+                newTrackedVessel.VesselName = vessel.vesselName;
+                newTrackedVessel.LastFeeding = oldTrackedVessel.LastFeeding;
+                newTrackedVessel.LastECCheck = oldTrackedVessel.LastECCheck;
+                newTrackedVessel.LastUpdate = oldTrackedVessel.LastUpdate;
+                newTrackedVessel.NumCrew = oldTrackedVessel.NumCrew;
+                newTrackedVessel.RecyclerMultiplier = oldTrackedVessel.RecyclerMultiplier;
+                newTrackedVessel.CrewCap = oldTrackedVessel.CrewCap;
+                newTrackedVessel.VesselHabMultiplier = oldTrackedVessel.VesselHabMultiplier;
+                newTrackedVessel.CachedHabTime = oldTrackedVessel.CachedHabTime;
+                newTrackedVessel.ExtraHabSpace = oldTrackedVessel.ExtraHabSpace;
+                newTrackedVessel.SuppliesLeft = oldTrackedVessel.SuppliesLeft;
+                newTrackedVessel.ECLeft = oldTrackedVessel.ECLeft;
+
+                LifeSupportManager.Instance.TrackVessel(newTrackedVessel);
+                VesselStatus = newTrackedVessel;
+            }
+        }
+
+        protected double GetDeltaTime()
+        {
+            if (Time.timeSinceLevelLoad < 1.0f || !FlightGlobals.ready)
+                return -1;
+
+            var now = Planetarium.GetUniversalTime();
+            if (Math.Abs(LastUpdateTime) < ResourceUtilities.FLOAT_TOLERANCE)
+            {
+                // Just started running
+                LastUpdateTime = now;
+                return -1;
+            }
+
+            double maxDeltaTime = ResourceUtilities.GetMaxDeltaTime();
+            double deltaTime = Math.Min(now - LastUpdateTime, maxDeltaTime);
+
+            LastUpdateTime += deltaTime;
+
+            return deltaTime;
+        }
+
+        private bool CheckIfHomeWorld()
+        {
+            if (USI_GlobalBonuses.Instance.GetHabBonus(vessel.mainBody.flightGlobalsIndex) < 5)  //TODO - make this a parm
+                return false;
+
+            //Check for hab time.
+            var habTime = LifeSupportManager.Instance.FetchVessel(vessel.id.ToString()).CachedHabTime;
+
+            //We want one year, either Kerbal or earth. Note: 60 seconds X 60 minutes = 3600 seconds in an hour
+            double secondsPerDay = GameSettings.KERBIN_TIME ? 3600d * 6d : 3600d * 24d;
+            double secsPerYear = GameSettings.KERBIN_TIME ? secondsPerDay * 425d : secondsPerDay * 365d;
+
+            double habYears = Math.Floor(habTime / secsPerYear);
+
+            return habYears >= 1d;
+        }
+
+        private bool CheckHabSideEffects(LifeSupportStatus trackedKerbal)
+        {
+            var now = Planetarium.GetUniversalTime();
+            var habTime = LifeSupportManager.GetTotalHabTime(VesselStatus, vessel);
+
+            if (trackedKerbal.LastAtHome < 1)
+                trackedKerbal.LastAtHome = now;
+            if (habTime + trackedKerbal.LastAtHome > trackedKerbal.MaxOffKerbinTime)
+                trackedKerbal.MaxOffKerbinTime = habTime + trackedKerbal.LastAtHome;
+
+            LifeSupportManager.Instance.TrackKerbal(trackedKerbal);
+
+            return (now > trackedKerbal.MaxOffKerbinTime || (now - trackedKerbal.TimeEnteredVessel) > habTime);
+        }
+
+        private bool CheckSupplySideEffects(LifeSupportStatus trackedKerbal)
+        {
+            var now = Planetarium.GetUniversalTime();
+            var snackMax = LifeSupportScenario.Instance.settings.GetSettings().SupplyTime;
+            var snackTime = Math.Max(now - trackedKerbal.LastMeal, ResourceUtilities.FLOAT_TOLERANCE);
+
+            if (snackTime > ResourceUtilities.FLOAT_TOLERANCE)
+                UnlockTins();
+
+            return snackTime > snackMax;
+        }
+
+        private void UnlockTins()
+        {
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                //Unlock the biscuit tins...
+                bool foundSupplies = false;
+                var partCount = vessel.parts.Count;
+                for (int i = 0; i < partCount; ++i)
+                {
+                    var part = vessel.parts[i];
+                    if (part.Resources.Contains("Supplies"))
+                    {
+                        var resource = part.Resources["Supplies"];
+                        if (resource.flowState == false)
+                        {
+                            resource.flowState = true;
+                            foundSupplies = true;
+                        }
+                    }
+                }
+
+                if (foundSupplies)
+                    ScreenMessages.PostScreenMessage("Supply containers unlocked...", 5f, ScreenMessageStyle.UPPER_CENTER);
+            }
+        }
+
+        private bool CheckECSideEffects(LifeSupportStatus trackedKerbal)
+        {
+            var now = Planetarium.GetUniversalTime();
+            var ecMax = LifeSupportScenario.Instance.settings.GetSettings().ECTime;
+            var ecTime = Math.Max(now - trackedKerbal.LastEC, ResourceUtilities.FLOAT_TOLERANCE);
+
+            return ecTime > ecMax;
+        }
+
+        private void ApplyEffect(LifeSupportStatus trackedKerbal, ProtoCrewMember crewMember, int effectId, string reason)
+        {
+            //Tourists are immune to effects
+            if (crewMember.type == ProtoCrewMember.KerbalType.Tourist || crewMember.experienceTrait.Title == "Tourist")
+                return;
+
+            /* SIDE EFFECTS:
+             *   0 = No Effect (The feature is effectively turned off)
+             *   1 = Grouchy (they become a Tourist until rescued)
+             *   2 = Mutinous (Also a tourist, but a random part of the ship is decoupled as they search for snacks)
+             *   3 = Instantly 'wander' back to the KSC - don't ask us how!
+             *   4 = M.I.A. (will eventually respawn)
+             *   5 = K.I.A. 
+             */
+
+            var msg = "";
+            switch (effectId)
+            {
+                case 0: // No effect
+                    return; // No need to print
+                case 1: //Grouchy
+                    msg = string.Format("{0} refuses to work {1}", crewMember.name, reason);
+                    trackedKerbal.OldTrait = crewMember.experienceTrait.TypeName;
+                    crewMember.type = ProtoCrewMember.KerbalType.Tourist;
+                    KerbalRoster.SetExperienceTrait(crewMember, "Tourist");
+                    trackedKerbal.IsGrouchy = true;
+                    LifeSupportManager.Instance.TrackKerbal(trackedKerbal);
+                    break;
+                case 2:  //Mutinous
+                    msg = string.Format("{0} has become mutinous due to {1}", crewMember.name, reason);
+                    trackedKerbal.OldTrait = crewMember.experienceTrait.TypeName;
+                    crewMember.type = ProtoCrewMember.KerbalType.Tourist;
+                    KerbalRoster.SetExperienceTrait(crewMember, "Tourist");
+                    trackedKerbal.IsGrouchy = true;
+                    LifeSupportManager.Instance.TrackKerbal(trackedKerbal);
+                    ClipRandomPart();
+                    SpawnExtraSupplies(100f);
+                    break;
+                case 3: //Return to KSC
+                    msg = string.Format("{0} gets fed up and wanders back to the KSC due to {1}", crewMember.name, reason);
+                    LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
+                    crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Available;
+                    vessel.CrewListSetDirty();
+                    RemoveCrewFromPart(crewMember);
+                    break;
+                case 4: //Despawn
+                    msg = string.Format("{0} has gone missing due to {1}", crewMember.name, reason);
+                    LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
+                    vessel.CrewListSetDirty();
+                    RemoveCrewFromPart(crewMember);
+                    crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Missing;
+                    break;
+                case 5: //Kill
+                    msg = string.Format("{0} has died due to {1}", crewMember.name, reason);
+                    LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
+                    vessel.CrewListSetDirty();
+                    RemoveCrewFromPart(crewMember);
+                    crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
+                    break;
+            }
+
+            ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
+        }
+
+        private void SpawnExtraSupplies(float sup)
+        {
+            ResourceBroker.StoreResource(vessel.rootPart, "Supplies", sup, TimeWarp.deltaTime, ResourceFlowMode.ALL_VESSEL);
+        }
+
+        private void RemoveCrewFromPart(ProtoCrewMember crewMemberToRemove)
+        {
+            var parts = vessel.parts;
+            for (int i = 0; i < parts.Count; ++i)
+            {
+                var part = parts[i];
+                if (part.CrewCapacity > 0)
+                {
+                    var crewRoster = part.protoModuleCrew;
+                    var crewCount = crewRoster.Count;
+                    for (int x = 0; x < crewCount; x++)
+                    {
+                        var crewMember = crewRoster[x];
+                        if (crewMember.name == crewMemberToRemove.name)
+                        {
+                            part.RemoveCrewmember(crewMember);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void ClipRandomPart()
+        {
+            System.Random rng = new System.Random();
+            var idx = rng.Next(1, vessel.parts.Count - 1);
+            var part = vessel.parts[idx];
+            if (part.parent != null)
+                part.decouple();
+        }
+
+        private void RemoveGrouchiness(ProtoCrewMember crewMember, LifeSupportStatus trackedKerbal)
+        {
+            if (trackedKerbal.IsGrouchy)
+            {
+                crewMember.type = ProtoCrewMember.KerbalType.Crew;
+                KerbalRoster.SetExperienceTrait(crewMember, trackedKerbal.OldTrait);
+
+                trackedKerbal.IsGrouchy = false;
+                LifeSupportManager.Instance.TrackKerbal(trackedKerbal);
+
+                string msg = string.Format("{0} has returned to duty", crewMember.name);
+                ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
+            }
+        }
+
+        //public static double CalculateVesselHabExtraTime(Vessel vessel)
+        //{
+        //    var habTime = 0d;
+        //    var habitats = vessel.FindConverterAddonsImplementing<USILS_HabitationConverterAddon>();
+        //    for(int i = 0; i < habitats.Count; ++i)
+        //    {
+        //        var habitat = habitats[i];    
+        //        habTime += habitat.KerbalMonths;
+        //    }
+        //    return habTime;
+        //}
+
+        //public static double CalculateVesselHabMultiplier(Vessel v, int numCrew)
+        //{
+        //    var habMulti = 0d;
+        //    var habList = v.FindPartModulesImplementing<ModuleHabitation>();
+        //    var count = habList.Count;
+        //    for (int i = 0; i < count; ++i)
+        //    {
+        //        var hab = habList[i];
+        //        habMulti += (hab.HabMultiplier * Math.Min(1, hab.CrewCapacity / numCrew));
+        //    }
+        //    return habMulti;
+        //}
     }
 }
