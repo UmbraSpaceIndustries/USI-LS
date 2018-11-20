@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using USITools;
 
@@ -314,57 +315,52 @@ namespace LifeSupport
             var recyclerTot = 0f;
             var crewCount = GetColonyCrewCount(vessel);
 
-            var recList = vessel.FindPartModulesImplementing<ModuleLifeSupportRecycler>();
-            var rmCount = recList.Count;
-            for (int i = 0; i < rmCount; ++i)
+            var recyclers = vessel.FindConverterAddonsImplementing<USILS_LifeSupportRecyclerConverterAddon>();
+            for (int i = 0; i < recyclers.Count; ++i)
             {
-                var r = recList[i];
-                if (r.RecyclerIsActive && r.IsActivated)
+                var recycler = recyclers[i];
+                if (recycler.IsActive && recycler.IsOperational)
                 {
-                    if (r.RecyclePercent > recyclerCap)
-                        recyclerCap = r.RecyclePercent;
-                    var recPercent = r.RecyclePercent;
-                    if (r.CrewCapacity < crewCount)
-                        recPercent *= r.CrewCapacity/(float) crewCount;
+                    if (recycler.RecyclePercent > recyclerCap)
+                        recyclerCap = recycler.RecyclePercent;
+                    var recPercent = recycler.RecyclePercent;
+                    if (recycler.CrewCapacity < crewCount)
+                        recPercent *= recycler.CrewCapacity/(float) crewCount;
 
                     recyclerTot += recPercent;
                 }
             }
 
-            var vList = LogisticsTools.GetNearbyVessels((float)LifeSupportScenario.Instance.settings.GetSettings().HabRange, false, vessel, false);
-            var vCount = vList.Count;
-            for(int i = 0; i < vCount; ++i)
+            var vessels = LogisticsTools.GetNearbyVessels((float)LifeSupportScenario.Instance.settings.GetSettings().HabRange, false, vessel, false);
+            for(int i = 0; i < vessels.Count; ++i)
             {
-                var v = vList[i];
-                var subRecList = v.FindPartModulesImplementing<ModuleLifeSupportRecycler>();
-                var subRmCount = subRecList.Count;
-
-                for (int x = 0; x < subRmCount; ++x)
+                var v = vessels[i];
+                var nearbyRecyclers = v.FindConverterAddonsImplementing<USILS_LifeSupportRecyclerConverterAddon>();
+                for (int x = 0; x < nearbyRecyclers.Count; ++x)
                 {
-                    var r = subRecList[x];
-                    if (r.IsActivated && r.RecyclerIsActive)
+                    var recycler = nearbyRecyclers[x];
+                    if (recycler.IsActive && recycler.IsOperational)
                     {
-                        if (r.RecyclePercent > recyclerCap)
-                            recyclerCap = r.RecyclePercent;
-                        var recPercent = r.RecyclePercent;
-                        if (r.CrewCapacity < crewCount)
-                            recPercent *= r.CrewCapacity / (float)crewCount;
+                        if (recycler.RecyclePercent > recyclerCap)
+                            recyclerCap = recycler.RecyclePercent;
+                        var recPercent = recycler.RecyclePercent;
+                        if (recycler.CrewCapacity < crewCount)
+                            recPercent *= recycler.CrewCapacity / (float)crewCount;
 
                         recyclerTot += recPercent;
                     }
                 }
-            } 
+            }
+
             //Inverse because this is a multiplier - low is good!                
-            double retVal = 1d - (Math.Min(recyclerTot, recyclerCap));
-            return retVal;
+            double multiplier = 1d - (Math.Min(recyclerTot, recyclerCap));
+            return multiplier;
         }
 
-
-         internal static double GetTotalHabTime(VesselSupplyStatus sourceVessel, Vessel vsl)
-         {
-             int numSharedVessels = 0;
-             return GetTotalHabTime(sourceVessel, vsl, out numSharedVessels);
-         }
+        internal static double GetTotalHabTime(VesselSupplyStatus sourceVessel, Vessel vsl)
+        {
+            return GetTotalHabTime(sourceVessel, vsl, out int numSharedVessels);
+        }
 
         internal static double GetHabChecksum(VesselSupplyStatus sourceVessel, Vessel vsl)
         {
@@ -408,10 +404,10 @@ namespace LifeSupport
             return totHabSpace*(totHabMult+1);
         }
 
-         internal static double GetTotalHabTime(VesselSupplyStatus sourceVessel, Vessel vsl, out int numSharedVessels)
+         internal static double GetTotalHabTime(VesselSupplyStatus sourceVessel, Vessel vessel, out int numSharedVessels)
          {
             //In the event that a vessel is not loaded, we just return the cached value.
-             if (!vsl.loaded)
+             if (!vessel.loaded)
              {
                 numSharedVessels = 0;
                 return sourceVessel.CachedHabTime;
@@ -422,7 +418,7 @@ namespace LifeSupport
 
             numSharedVessels = 0;
 
-            var vList = LogisticsTools.GetNearbyVessels((float)LifeSupportScenario.Instance.settings.GetSettings().HabRange, false, vsl, false);
+            var vList = LogisticsTools.GetNearbyVessels((float)LifeSupportScenario.Instance.settings.GetSettings().HabRange, false, vessel, false);
             var hList = new List<Vessel>();
             var vCount = vList.Count;
             for(int i = 0; i < vCount; ++i)
@@ -442,7 +438,7 @@ namespace LifeSupport
                 }
             }
             double totHabSpace = sourceVessel.ExtraHabSpace;
-            double totHabMult = CalculateVesselHabMultiplier(vsl,totCurCrew);
+            double totHabMult = CalculateVesselHabMultiplier(vessel,totCurCrew);
             totHabSpace += (LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime * totMaxCrew);
 
             var hCount = hList.Count;
@@ -454,7 +450,7 @@ namespace LifeSupport
                 totHabMult += CalculateVesselHabMultiplier(v, totCurCrew);
             }
 
-            totHabMult += USI_GlobalBonuses.Instance.GetHabBonus(vsl.mainBody.flightGlobalsIndex);
+            totHabMult += USI_GlobalBonuses.Instance.GetHabBonus(vessel.mainBody.flightGlobalsIndex);
             double habTotal = totHabSpace / (double)totCurCrew * (totHabMult + 1) * LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier;
              //print(String.Format("THS: {0} TC:{1} THM: {2} HM: {3}", totHabSpace, totCurCrew, totHabMult, LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier));
             sourceVessel.CachedHabTime = Math.Max(0, habTotal * LifeSupportUtilities.SecondsPerMonth());
@@ -462,7 +458,7 @@ namespace LifeSupport
             return sourceVessel.CachedHabTime;
          }
 
-        internal static double GetRecyclerMultiplierForParts(List<Part> pList, int crewCount)
+        internal static double GetRecyclerMultiplierForParts(List<Part> parts, int crewCount)
         {
             if (!LifeSupportScenario.Instance.settings.GetSettings().EnableRecyclers)
                 return 1d;
@@ -470,61 +466,65 @@ namespace LifeSupport
             var recyclerCap = 0f;
             var recyclerTot = 0f;
 
-            var count = pList.Count;
-            for (int i = 0; i < count; ++i)
+            for (int i = 0; i < parts.Count; ++i)
             {
-                var p = pList[i];
-                var mod = p.FindModuleImplementing<ModuleLifeSupportRecycler>();
-                if (mod == null) 
+                var part = parts[i];
+                var recycler = part
+                    .FindConverterAddonsImplementing<USILS_LifeSupportRecyclerConverterAddon>()
+                    .FirstOrDefault();
+                if (recycler == null) 
                     continue;
 
-                if (!mod.RecyclerIsActive && !HighLogic.LoadedSceneIsEditor)
+                if (!recycler.IsOperational && !HighLogic.LoadedSceneIsEditor)
                     continue;
 
-                if (mod.RecyclePercent > recyclerCap)
-                    recyclerCap = mod.RecyclePercent;
-                var recPercent = mod.RecyclePercent;
-                if (mod.CrewCapacity < crewCount)
-                    recPercent *= mod.CrewCapacity / (float)crewCount;
+                if (recycler.RecyclePercent > recyclerCap)
+                    recyclerCap = recycler.RecyclePercent;
+                var recPercent = recycler.RecyclePercent;
+                if (recycler.CrewCapacity < crewCount)
+                    recPercent *= recycler.CrewCapacity / (float)crewCount;
 
                 recyclerTot += recPercent;
             }
+
             //Inverse because this is a multiplier - low is good!                
-            double retVal = 1d - (Math.Min(recyclerTot, recyclerCap));
-            return retVal;
+            double multiplier = 1d - (Math.Min(recyclerTot, recyclerCap));
+            return multiplier;
         }
-        public static bool IsOnKerbin(Vessel v)
+        public static bool IsOnKerbin(Vessel vessel)
         {
-            return (v.mainBody == FlightGlobals.GetHomeBody() && v.altitude < LifeSupportScenario.Instance.settings.GetSettings().HomeWorldAltitude);
+            return (vessel.mainBody == FlightGlobals.GetHomeBody() && vessel.altitude < LifeSupportScenario.Instance.settings.GetSettings().HomeWorldAltitude);
         }
 
-        public static double CalculateVesselHabExtraTime(Vessel v)
+        public static double CalculateVesselHabExtraTime(Vessel vessel)
         {
             var habTime = 0d;
-            var habMods = v.FindPartModulesImplementing<ModuleHabitation>();
-            var count = habMods.Count;
-            for (int i = 0; i < count; ++i)
+            var habitats = vessel.FindConverterAddonsImplementing<USILS_HabitationConverterAddon>();
+            for (int i = 0; i < habitats.Count; ++i)
             {
-                var hab = habMods[i];
+                var habitat = habitats[i];
                 //Next.  Certain modules, in addition to crew capacity, have living space.
-                habTime += hab.KerbalMonths;
+                habTime += habitat.KerbalMonths;
             }
+
             return habTime;
         }
 
-        public static double CalculateVesselHabMultiplier(Vessel v, int numCrew)
+        public static double CalculateVesselHabMultiplier(Vessel vessel, int crewCount)
         {
-            if (numCrew == 0)
+            if (crewCount == 0)
                 return 0d;
-            var habMulti = 0d;
-            var habMods = v.FindPartModulesImplementing<ModuleHabitation>();
-            var count = habMods.Count;
+
+            var habMultiplier = 0d;
+            var habitats = vessel.FindConverterAddonsImplementing<USILS_HabitationConverterAddon>();
+            var count = habitats.Count;
             for (int i = 0; i < count; ++i)
             {
-                var hab = habMods[i];
-                habMulti += (hab.HabMultiplier * Math.Min(1, hab.CrewCapacity / numCrew));
+                var habitat = habitats[i];
+                habMultiplier += (habitat.HabMultiplier * Math.Min(1, habitat.CrewCapacity / crewCount));
             }
-            return habMulti;
+
+            return habMultiplier;
         }
     }
 }

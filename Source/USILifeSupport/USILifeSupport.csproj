@@ -56,14 +56,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AddScenarioModules.cs" />
+    <Compile Include="Converters\DeprecatedClasses.cs" />
+    <Compile Include="Converters\USILS_HabitationConverterAddon.cs" />
+    <Compile Include="Converters\USILS_HabitationSwapOption.cs" />
+    <Compile Include="Converters\USILS_LifeSupportExtenderConverterAddon.cs" />
+    <Compile Include="Converters\USILS_LifeSupportExtenderSwapOption.cs" />
+    <Compile Include="Converters\USILS_LifeSupportRecyclerConverterAddon.cs" />
+    <Compile Include="Converters\USILS_LifeSupportRecyclerSwapOption.cs" />
     <Compile Include="LifeSupportConfig.cs" />
     <Compile Include="LifeSupportMonitor_Editor.cs" />
     <Compile Include="LifeSupportMonitor_SpaceCenter.cs" />
     <Compile Include="LifeSupportUtilities.cs" />
-    <Compile Include="ModuleHabitation.cs" />
-    <Compile Include="ModuleLifeSupport.cs" />
-    <Compile Include="ModuleLifeSupportExtender.cs" />
-    <Compile Include="ModuleLifeSupportRecycler.cs" />
     <Compile Include="ModuleLifeSupportSystem.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="LifeSupportManager.cs" />
@@ -71,6 +74,7 @@
     <Compile Include="LifeSupportPersistance.cs" />
     <Compile Include="LIfeSupportScenario.cs" />
     <Compile Include="LifeSupportStatus.cs" />
+    <Compile Include="USILS_KolonyGrowthModule.cs" />
     <Compile Include="VesselSupplyStatus.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
