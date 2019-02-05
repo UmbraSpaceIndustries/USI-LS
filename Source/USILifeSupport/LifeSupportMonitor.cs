@@ -1,15 +1,12 @@
-﻿using System;
-using System.CodeDom;
+﻿using KSP.UI.Screens;
+using System;
 using System.Collections.Generic;
-using System.Data.SqlTypes;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using KSP.UI.Screens;
 using UnityEngine;
 
-namespace LifeSupport 
+namespace LifeSupport
 {
     [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class LifeSupportMonitor_Flight : LifeSupportMonitor
@@ -32,16 +29,16 @@ namespace LifeSupport
 
     public class LifeSupportMonitor : MonoBehaviour
     {
-        private ApplicationLauncherButton orbLogButton;
+        private ApplicationLauncherButton _lifeSupportMonitorButton;
         private Rect _windowPosition = new Rect(300, 60, 970, 400);
         private GUIStyle _windowStyle;
         private GUIStyle _labelStyle;
         private GUIStyle _scrollStyle;
-        private Vector2 scrollPos = Vector2.zero;
+        private Vector2 _scrollPos = Vector2.zero;
         private bool _hasInitStyles = false;
         internal static string EcGraceTimeDisplay;
         internal static string SuppliesGraceTimeDisplay;
-        public static bool renderDisplay = false;
+        public static bool _renderDisplay = false;
 
         void Awake()
         {
@@ -49,13 +46,13 @@ namespace LifeSupport
             var textureFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Supplies.png");
             print("Loading " + textureFile);
             texture.LoadImage(File.ReadAllBytes(textureFile));
-            this.orbLogButton = ApplicationLauncher.Instance.AddModApplication(GuiOn, GuiOff, null, null, null, null,
+            _lifeSupportMonitorButton = ApplicationLauncher.Instance.AddModApplication(GuiOn, GuiOff, null, null, null, null,
                 ApplicationLauncher.AppScenes.ALWAYS, texture);
         }
 
         private void GuiOn()
         {
-            renderDisplay = true;
+            _renderDisplay = true;
         }
 
         public void Start()
@@ -66,12 +63,12 @@ namespace LifeSupport
 
         private void GuiOff()
         {
-            renderDisplay = false;
+            _renderDisplay = false;
         }
 
         private void OnGUI()
         {
-            if (!renderDisplay)
+            if (!_renderDisplay)
                 return;
             if (!IsActive())
                 return;
@@ -238,7 +235,7 @@ namespace LifeSupport
             }
 
             GUILayout.BeginVertical();
-            scrollPos = GUILayout.BeginScrollView(scrollPos, _scrollStyle, GUILayout.Width(950), GUILayout.Height(350));
+            _scrollPos = GUILayout.BeginScrollView(_scrollPos, _scrollStyle, GUILayout.Width(950), GUILayout.Height(350));
             GUILayout.BeginVertical();
             try
             {
@@ -360,10 +357,10 @@ namespace LifeSupport
 
         internal void OnDestroy()
         {
-            if (orbLogButton == null)
+            if (_lifeSupportMonitorButton == null)
                 return;
-            ApplicationLauncher.Instance.RemoveModApplication(orbLogButton);
-            orbLogButton = null;
+            ApplicationLauncher.Instance.RemoveModApplication(_lifeSupportMonitorButton);
+            _lifeSupportMonitorButton = null;
         }
 
         private void InitStyles()

@@ -5,20 +5,21 @@ using System.Collections.Generic;
 using KSP.UI.Screens;
 using UnityEngine;
 using USITools;
+using System.Linq;
 
 namespace LifeSupport
 {
     [KSPAddon(KSPAddon.Startup.EditorAny, false)]
     public class LifeSupportMonitor_Editor : MonoBehaviour
     {
-        private ApplicationLauncherButton orbLogButton;
+        private ApplicationLauncherButton _lifeSupportMonitorButton;
         private Rect _windowPosition = new Rect(300, 60, 665, 400);
         private GUIStyle _windowStyle;
         private GUIStyle _labelStyle;
         private GUIStyle _scrollStyle;
-        private Vector2 scrollPos = Vector2.zero;
+        private Vector2 _scrollPos = Vector2.zero;
         private bool _hasInitStyles = false;
-        public static bool renderDisplay = false;
+        public static bool _renderDisplay = false;
 
 
         void Awake()
@@ -27,13 +28,13 @@ namespace LifeSupport
             var textureFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Supplies.png");
             print("Loading " + textureFile);
             texture.LoadImage(File.ReadAllBytes(textureFile));
-            this.orbLogButton = ApplicationLauncher.Instance.AddModApplication(GuiOn, GuiOff, null, null, null, null,
+            _lifeSupportMonitorButton = ApplicationLauncher.Instance.AddModApplication(GuiOn, GuiOff, null, null, null, null,
                 ApplicationLauncher.AppScenes.ALWAYS, texture);
         }
 
         private void GuiOn()
         {
-            renderDisplay = true;
+            _renderDisplay = true;
         }
 
         private bool useHabPenalties;
@@ -48,12 +49,12 @@ namespace LifeSupport
 
         private void GuiOff()
         {
-            renderDisplay = false;
+            _renderDisplay = false;
         }
 
         private void OnGUI()
         {
-            if (!renderDisplay)
+            if (!_renderDisplay)
                 return;
 
             if (!configLoaded && LifeSupportScenario.Instance.settings.isLoaded())
@@ -93,7 +94,7 @@ namespace LifeSupport
           fertilizer = 0d;
           habMult = 1d;
           batteryAmount = 0d;
-          habs = new List<ModuleHabitation>();
+          habs = new List<USILS_HabitationSwapOption>();
           hab_curCrew = "";
           hab_maxCrew = "";
           supplyExt_curCrew = "";
@@ -106,7 +107,7 @@ namespace LifeSupport
           totalHabMult = 0d;
           totalBatteryTime = 0d;
           totalSupplyTime = 0d;
-          recyclers = new List<ModuleLifeSupportRecycler>();
+          recyclers = new List<USILS_LifeSupportRecyclerSwapOption>();
         }
 
         private int curCrew = 0;
@@ -117,7 +118,7 @@ namespace LifeSupport
         private double extraHabTime = 0d;
         private double habMult = 1d;
         private double batteryAmount = 0d;
-        private List<ModuleHabitation> habs;
+        private List<USILS_HabitationSwapOption> habs;
 
         private string hab_curCrew = "";
         private string hab_maxCrew = "";
@@ -134,7 +135,7 @@ namespace LifeSupport
         private double totalBatteryTime = 0d;
         private double totalSupplyTime = 0d;
         private double totalFertilizerTime = 0d;
-        private List<ModuleLifeSupportRecycler> recyclers;
+        private List<USILS_LifeSupportRecyclerSwapOption> recyclers;
 
         private void UpdateGUIInfo(ShipConstruct ship)
         {
@@ -163,32 +164,21 @@ namespace LifeSupport
                 for (int i = 0; i < count; ++i)
                 {
                     var part = parts[i];
-                    var hab = part.Modules.GetModule<ModuleHabitation>();
-                    if (hab != null)
+                    var swapOptions = part.FindModulesImplementing<AbstractSwapOption>();
+                    var bays = part.FindModulesImplementing<USI_SwappableBay>();
+                    if (swapOptions != null && bays != null && swapOptions.Count > 0 && bays.Count > 0)
                     {
-                        var conList = part.Modules.GetModules<BaseConverter>();
-                        var bayList = part.Modules.GetModules<ModuleSwappableConverter>();
-                        if (bayList == null || bayList.Count == 0)
+                        for (int x = 0; x < bays.Count; x++)
                         {
-                            habs.Add(hab);
-                            //Certain modules, in addition to crew capacity, have living space.
-                            extraHabTime += hab.KerbalMonths;
-                            //Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
-                            habMult += hab.HabMultiplier * Math.Min(1, hab.CrewCapacity / Math.Max(curCrew, 1));
-                        }
-                        else
-                        {
-                            var bCount = bayList.Count;
-                            for(int x = 0; x < bCount; ++x)
+                            var bay = bays[x];
+                            var loadout = swapOptions[bay.currentLoadout] as USILS_HabitationSwapOption;
+                            if (loadout != null)
                             {
-                                var bay = bayList[x];
-                                var con = conList[bay.currentLoadout] as ModuleHabitation;
-                                if (con != null)
-                                {
-                                    habs.Add(con);
-                                    extraHabTime += con.KerbalMonths;
-                                    habMult += con.HabMultiplier * Math.Min(1, con.CrewCapacity / Math.Max(curCrew, 1));
-                                }
+                                habs.Add(loadout);
+                                //Certain modules, in addition to crew capacity, have living space.
+                                extraHabTime += loadout.BaseKerbalMonths;
+                                //Some modules act more as 'multipliers', dramatically extending a hab's workable lifespan.
+                                habMult += loadout.BaseHabMultiplier * Math.Min(1, loadout.CrewCapacity / Math.Max(curCrew, 1));
                             }
                         }
                     }
@@ -210,7 +200,6 @@ namespace LifeSupport
                     }
                 }
 
-
                 totalHabSpace = (LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime * maxCrew) + extraHabTime;
                 //A Kerbal month is 30 six-hour Kerbin days.
                 totalHabMult = habMult * LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier * LifeSupportUtilities.SecondsPerMonth();
@@ -222,27 +211,18 @@ namespace LifeSupport
                 {
                     for (int i = 0; i < count; ++i)
                     {
-                        var p = parts[i];
-                        var rec = p.Modules.GetModule<ModuleLifeSupportRecycler>();
-                        if (rec != null)
+                        var part = parts[i];
+                        var swapOptions = part.FindModulesImplementing<AbstractSwapOption>();
+                        var bays = part.FindModulesImplementing<USI_SwappableBay>();
+                        if (swapOptions != null && bays != null && swapOptions.Count > 0 && bays.Count > 0)
                         {
-                            var conList = p.Modules.GetModules<BaseConverter>();
-                            var bayList = p.Modules.GetModules<ModuleSwappableConverter>();
-                            if (bayList == null || bayList.Count == 0)
+                            for (int x = 0; x < bays.Count; x++)
                             {
-                                recyclers.Add(rec);
-                            }
-                            else
-                            {
-                                var bCount = bayList.Count;
-                                for (int x = 0; x < bCount; ++x)
+                                var bay = bays[x];
+                                var loadout = swapOptions[bay.currentLoadout] as USILS_LifeSupportRecyclerSwapOption;
+                                if (loadout != null)
                                 {
-                                    var bay = bayList[x];
-                                    var con = conList[bay.currentLoadout] as ModuleLifeSupportRecycler;
-                                    if (con != null)
-                                    {
-                                        recyclers.Add(con);
-                                    }
+                                    this.recyclers.Add(loadout);
                                 }
                             }
                         }
@@ -282,11 +262,10 @@ namespace LifeSupport
             }
         }
 
-
         private void GenerateWindow()
         {
             GUILayout.BeginVertical();
-            scrollPos = GUILayout.BeginScrollView(scrollPos, _scrollStyle, GUILayout.Width(645), GUILayout.Height(350));
+            _scrollPos = GUILayout.BeginScrollView(_scrollPos, _scrollStyle, GUILayout.Width(645), GUILayout.Height(350));
             GUILayout.BeginVertical();
 
             if (EditorLogic.fetch != null)
@@ -468,8 +447,8 @@ namespace LifeSupport
                                 var hab = habs[x];
                                 GUILayout.BeginHorizontal();
                                 GUILayout.Label(CTag(hab.part.partInfo.title, partColor), _labelStyle, GUILayout.Width(c1));
-                                GUILayout.Label(CTag(hab.KerbalMonths.ToString(), textColor), _labelStyle, GUILayout.Width(c2));
-                                GUILayout.Label(CTag(hab.HabMultiplier.ToString(), textColor), _labelStyle, GUILayout.Width(c3));
+                                GUILayout.Label(CTag(hab.BaseKerbalMonths.ToString(), textColor), _labelStyle, GUILayout.Width(c2));
+                                GUILayout.Label(CTag(hab.BaseHabMultiplier.ToString(), textColor), _labelStyle, GUILayout.Width(c3));
                                 GUILayout.EndHorizontal();
                             }
                         }
@@ -484,10 +463,10 @@ namespace LifeSupport
 
         internal void OnDestroy()
         {
-            if (orbLogButton == null)
+            if (_lifeSupportMonitorButton == null)
                 return;
-            ApplicationLauncher.Instance.RemoveModApplication(orbLogButton);
-            orbLogButton = null;
+            ApplicationLauncher.Instance.RemoveModApplication(_lifeSupportMonitorButton);
+            _lifeSupportMonitorButton = null;
             GameEvents.onEditorShipModified.Remove(UpdateGUIInfo);
         }
 
