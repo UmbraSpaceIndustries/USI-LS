@@ -47,7 +47,7 @@ namespace LifeSupport
             for (int i = 0; i < count; ++i)
             {
                 var c = crew[i];
-                if (string.IsNullOrEmpty(RestrictedToClass) || c.experienceTrait.Title == RestrictedToClass)
+                if (string.IsNullOrEmpty(RestrictedToClass) || c.experienceTrait.Config.Name == RestrictedToClass)
                     kerbals.Add(c);
             }
 

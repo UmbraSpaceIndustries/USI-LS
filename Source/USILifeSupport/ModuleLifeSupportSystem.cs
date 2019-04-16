@@ -325,7 +325,7 @@ namespace LifeSupport
                                     LifeSupportManager.GetNoHomeEffect(trackedKerbal.KerbalName),
                                     "homesickness");
                             }
-                            else if (crewMember.experienceTrait.Title != trackedKerbal.OldTrait && !isAnyGrouch)
+                            else if (crewMember.experienceTrait.Config.Name != trackedKerbal.OldTrait && !isAnyGrouch)
                             {
                                 RemoveGrouchiness(crewMember, trackedKerbal);
                             }
@@ -389,7 +389,7 @@ namespace LifeSupport
 
         private void ApplyEVAEffect(LifeSupportStatus trackedKerbal, ProtoCrewMember crewMember, Vessel vessel, int effectId)
         {
-            if (crewMember.type == ProtoCrewMember.KerbalType.Tourist || crewMember.experienceTrait.Title == "Tourist")
+            if (crewMember.type == ProtoCrewMember.KerbalType.Tourist || crewMember.experienceTrait.Config.Name == "Tourist")
                 return;
 
             /* SIDE EFFECTS:
@@ -410,7 +410,7 @@ namespace LifeSupport
                     if (crewMember.type != ProtoCrewMember.KerbalType.Tourist)
                     {
                         screenMessage = string.Format("{0} refuses to work", crewMember.name);
-                        trackedKerbal.OldTrait = crewMember.experienceTrait.TypeName;
+                        trackedKerbal.OldTrait = crewMember.experienceTrait.Config.Name;
                         crewMember.type = ProtoCrewMember.KerbalType.Tourist;
                         KerbalRoster.SetExperienceTrait(crewMember, "Tourist");
                         trackedKerbal.IsGrouchy = true;
@@ -420,7 +420,7 @@ namespace LifeSupport
                 case 2:  //Mutinous
                     {
                         screenMessage = string.Format("{0} has become mutinous", crewMember.name);
-                        trackedKerbal.OldTrait = crewMember.experienceTrait.TypeName;
+                        trackedKerbal.OldTrait = crewMember.experienceTrait.Config.Name;
                         crewMember.type = ProtoCrewMember.KerbalType.Tourist;
                         KerbalRoster.SetExperienceTrait(crewMember, "Tourist");
                         trackedKerbal.IsGrouchy = true;
@@ -767,7 +767,7 @@ namespace LifeSupport
         private void ApplyEffect(LifeSupportStatus trackedKerbal, ProtoCrewMember crewMember, int effectId, string reason)
         {
             //Tourists are immune to effects
-            if (crewMember.type == ProtoCrewMember.KerbalType.Tourist || crewMember.experienceTrait.Title == "Tourist")
+            if (crewMember.type == ProtoCrewMember.KerbalType.Tourist || crewMember.experienceTrait.Config.Name == "Tourist")
                 return;
 
             /* SIDE EFFECTS:
@@ -786,7 +786,7 @@ namespace LifeSupport
                     return; // No need to print
                 case 1: //Grouchy
                     msg = string.Format("{0} refuses to work {1}", crewMember.name, reason);
-                    trackedKerbal.OldTrait = crewMember.experienceTrait.TypeName;
+                    trackedKerbal.OldTrait = crewMember.experienceTrait.Config.Name;
                     crewMember.type = ProtoCrewMember.KerbalType.Tourist;
                     KerbalRoster.SetExperienceTrait(crewMember, "Tourist");
                     trackedKerbal.IsGrouchy = true;
@@ -794,7 +794,7 @@ namespace LifeSupport
                     break;
                 case 2:  //Mutinous
                     msg = string.Format("{0} has become mutinous due to {1}", crewMember.name, reason);
-                    trackedKerbal.OldTrait = crewMember.experienceTrait.TypeName;
+                    trackedKerbal.OldTrait = crewMember.experienceTrait.Config.Name;
                     crewMember.type = ProtoCrewMember.KerbalType.Tourist;
                     KerbalRoster.SetExperienceTrait(crewMember, "Tourist");
                     trackedKerbal.IsGrouchy = true;

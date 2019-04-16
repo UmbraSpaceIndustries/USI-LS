@@ -118,7 +118,7 @@ namespace LifeSupport
                 k.PreviousVesselId = "??UNKNOWN??";
                 k.LastUpdate = Planetarium.GetUniversalTime();
                 k.IsGrouchy = false;
-                k.OldTrait = crew.experienceTrait.Title;
+                k.OldTrait = crew.experienceTrait.Config.Name;
                 TrackKerbal(k);
             }
 
