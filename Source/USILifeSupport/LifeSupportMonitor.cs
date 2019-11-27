@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
+using KSP.Localization;
 
 namespace LifeSupport
 {
@@ -87,7 +88,7 @@ namespace LifeSupport
 
         private void Ondraw()
         {
-            _windowPosition = GUILayout.Window(10, _windowPosition, OnWindow, "Life Support Status", _windowStyle);
+            _windowPosition = GUILayout.Window(10, _windowPosition, OnWindow, Localizer.Format("#LOC_USILS_Monitortitle"), _windowStyle);//"Life Support Status"
         }
 
         private void OnWindow(int windowId)
@@ -112,14 +113,14 @@ namespace LifeSupport
             if (remEVATime > 0)
             {
                 vstat.SummaryLabel = String.Format(
-                    "<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2}</color><color=#3DB1FF> time remaining</color>"
+                    "<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2}</color>" + Localizer.Format("#LOC_USILS_EVATimeRemain")//<color=#3DB1FF> time remaining</color>
                     , kerbal.mainBody.bodyName
                     , sitString
-                    , timeString.Substring(timeString.IndexOf(':') + 1));
+                    , timeString.Substring(timeString.IndexOf(':') + 1)) ;
             }
             else
             {
-                vstat.SummaryLabel = "<color=#FF8585>EVA Time Expired</color>";
+                vstat.SummaryLabel = Localizer.Format("#LOC_USILS_EVATimeExpired");//"<color=#FF8585>EVA Time Expired</color>"
             }
 
             vstat.crew = new List<LifeSupportCrewDisplayStat>();
@@ -165,13 +166,13 @@ namespace LifeSupport
             int numSharedHabVessels = 0;
             var habTime = LifeSupportManager.GetTotalHabTime(vsl, thisVessel, out numSharedHabVessels);
 
-            var habString = "indefinite";
+            var habString = Localizer.Format("#LOC_USILS_IndefiniteText");//"indefinite"
             if (useHabPenalties)
             {
                 habString = LifeSupportUtilities.DurationDisplay(habTime, LifeSupportUtilities.TimeFormatLength.Short);
             }
             vstat.SummaryLabel = String.Format(
-                "<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2:0}</color><color=#3DB1FF> supplies (</color><color=#9EE4FF>{3:0.0}</color><color=#3DB1FF>/day) hab for </color><color=#9EE4FF>{4}</color>"                               
+                "<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2:0}</color>"+ Localizer.Format("#LOC_USILS_vesslestatus1") + "<color=#9EE4FF>{3:0.0}</color><color=#3DB1FF>"+ Localizer.Format("#LOC_USILS_vesslestatus2") + "</color><color=#9EE4FF>{4}</color>"//"<color=#3DB1FF> supplies (</color>""/day) hab for "
                 , thisVessel.mainBody.bodyName
                 , situationString
                 , supAmount
@@ -275,13 +276,13 @@ namespace LifeSupport
             GUILayout.BeginHorizontal();
             GUILayout.Label("", _labelStyle, GUILayout.Width(30));
             GUILayout.Label(c.CrewName, _labelStyle, GUILayout.Width(135));
-            GUILayout.Label("<color=#EDEDED>sup:</color>", _labelStyle, GUILayout.Width(35));
+            GUILayout.Label(Localizer.Format("#LOC_USILS_Crewstats1"), _labelStyle, GUILayout.Width(35));//"<color=#EDEDED>sup:</color>"
             GUILayout.Label(c.SupplyLabel, _labelStyle, GUILayout.Width(145));
-            GUILayout.Label("<color=#EDEDED>EC:</color>", _labelStyle, GUILayout.Width(35));
+            GUILayout.Label(Localizer.Format("#LOC_USILS_Crewstats2"), _labelStyle, GUILayout.Width(35));//"<color=#EDEDED>EC:</color>"
             GUILayout.Label(c.ECLabel, _labelStyle, GUILayout.Width(145));
-            GUILayout.Label("<color=#EDEDED>hab:</color>", _labelStyle, GUILayout.Width(40));
+            GUILayout.Label(Localizer.Format("#LOC_USILS_Crewstats3"), _labelStyle, GUILayout.Width(40));//"<color=#EDEDED>hab:</color>"
             GUILayout.Label(c.HabLabel, _labelStyle, GUILayout.Width(145));
-            GUILayout.Label("<color=#EDEDED>home:</color>", _labelStyle, GUILayout.Width(40));
+            GUILayout.Label(Localizer.Format("#LOC_USILS_Crewstats4"), _labelStyle, GUILayout.Width(40));//"<color=#EDEDED>home:</color>"
             GUILayout.Label(c.HomeLabel, _labelStyle, GUILayout.Width(145));
             GUILayout.EndHorizontal();
         }
@@ -307,13 +308,13 @@ namespace LifeSupport
 
         private string GetSituationString(Vessel vessel)
         {
-            var sitString = "Orbiting";
+            var sitString = Localizer.Format("#LOC_USILS_VessleSituation1");//"Orbiting"
             vessel.checkSplashed();
             if (vessel.Splashed)
-                sitString = "Splashed";
+                sitString = Localizer.Format("#LOC_USILS_VessleSituation2");//"Splashed"
             vessel.checkLanded();
             if (vessel.Landed)
-                sitString = "Landed";
+                sitString = Localizer.Format("#LOC_USILS_VessleSituation3");//"Landed"
             return sitString;
         }
 
@@ -415,7 +416,7 @@ namespace LifeSupport
 
         internal void ComputeHab(double vesselHabTime, ProtoCrewMember c, LifeSupportStatus cls)
         {
-            var crewHabString = "indefinite";
+            var crewHabString = Localizer.Format("#LOC_USILS_IndefiniteText");//"indefinite"
             var lblHab = "6FFF00";
             var useHabPenalties = LifeSupportManager.GetNoHomeEffect(c.name) > 0;
             if (useHabPenalties)
@@ -427,12 +428,12 @@ namespace LifeSupport
 
                 if(isScout || isPermaHab)
                 {
-                    crewHabString = "indefinite";
+                    crewHabString = Localizer.Format("#LOC_USILS_IndefiniteText");//"indefinite"
                 }
                 else if (habTimeLeft < 0)
                 {
                     lblHab = "FF5E5E";
-                    crewHabString = "expired";
+                    crewHabString = Localizer.Format("#LOC_USILS_expiredText");//"expired"
                 }
                 else
                 {
@@ -453,7 +454,7 @@ namespace LifeSupport
 
         internal void ComputeHome(ProtoCrewMember c, LifeSupportStatus cls)
         {
-            var crewHomeString = "indefinite";
+            var crewHomeString = Localizer.Format("#LOC_USILS_IndefiniteText");//"indefinite"
             var lblHome = "6FFF00";
             var useHabPenalties = LifeSupportManager.GetNoHomeEffect(c.name) > 0;
             if (useHabPenalties)
@@ -466,12 +467,12 @@ namespace LifeSupport
 
                 if (isScout || isPermaHab)
                 {
-                    crewHomeString = "indefinite";
+                    crewHomeString = Localizer.Format("#LOC_USILS_IndefiniteText");//"indefinite"
                 }
                 else if (homeTimeLeft < 0)
                 {
                     lblHome = "FF5E5E";
-                    crewHomeString = "expired";
+                    crewHomeString = Localizer.Format("#LOC_USILS_expiredText");//"expired"
                 }
                 else
                 {
@@ -494,7 +495,7 @@ namespace LifeSupport
         {
             if (effectWhenExpires == 0)
             {
-                return "<color=#6FFF00>indefinite</color>";
+                return "<color=#6FFF00>"+Localizer.Format("#LOC_USILS_IndefiniteText") +"</color>";//"indefinite"
             }
             if (timeLeft > 0)
             {
@@ -519,7 +520,7 @@ namespace LifeSupport
                 }
                 else // exceededTime > graceTime
                 {
-                    return "<color=#FF5E5E>expired</color>";
+                    return "<color=#FF5E5E>"+Localizer.Format("#LOC_USILS_expiredText")+"</color>";//"expired"
                 }
             }
         }
@@ -531,7 +532,7 @@ namespace LifeSupport
                 ecTimeLeft,
                 LifeSupportScenario.Instance.settings.GetSettings().ECTime,
                 LifeSupportMonitor.EcGraceTimeDisplay,
-                "out of EC",
+                Localizer.Format("#LOC_USILS_ECstats"),//"out of EC"
                 noEcEffect);
         }
 
@@ -546,7 +547,7 @@ namespace LifeSupport
                 vesselSuppliesTimeLeft,
                 LifeSupportScenario.Instance.settings.GetSettings().SupplyTime,
                 LifeSupportMonitor.SuppliesGraceTimeDisplay,
-                "starving",
+                Localizer.Format("#LOC_USILS_suppliestats"),//"starving"
                 noSupplyEffect);
         }
 
