@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using KSP.UI.Screens;
 using UnityEngine;
+using KSP.Localization;
 
 namespace LifeSupport
 {
@@ -90,7 +91,7 @@ namespace LifeSupport
 
         private void Ondraw()
         {
-            _windowPosition = GUILayout.Window(10, _windowPosition, OnWindow, "Life Support Setup", _windowStyle);
+            _windowPosition = GUILayout.Window(10, _windowPosition, OnWindow, Localizer.Format("#LOC_USILS_SetupTitle"), _windowStyle);//"Life Support Setup"
         }
 
         private void OnWindow(int windowId)
@@ -131,7 +132,7 @@ namespace LifeSupport
                 GuiOn();
             try
             {
-                var effectStrings = new[] {"none", "grouchy", "mutiny", "return", "M.I.A.", "K.I.A."};
+                var effectStrings = new[] {Localizer.Format("#LOC_USILS_effect1"),Localizer.Format("#LOC_USILS_effect2"), Localizer.Format("#LOC_USILS_effect3"), Localizer.Format("#LOC_USILS_effect4"), Localizer.Format("#LOC_USILS_effect5"), Localizer.Format("#LOC_USILS_effect6") };//"none", "grouchy", "mutiny", "return", "M.I.A.", "K.I.A."
                 GUILayout.BeginVertical();
                 // Colors
                 string textColor = "FFFFFF";
@@ -146,103 +147,103 @@ namespace LifeSupport
                 const int c7 = 70;
                 // LABELS
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(CTag("See Wiki for config documentation", textColor), _labelStyle, GUILayout.Width(c3));
+                GUILayout.Label(CTag(Localizer.Format("#LOC_USILS_SetupLabel1"), textColor), _labelStyle, GUILayout.Width(c3));//"See Wiki for config documentation"
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Supply Time:", _labelStyle, GUILayout.Width(c1));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel2"), _labelStyle, GUILayout.Width(c1));//"Supply Time:"
                 supplyTime = GUILayout.TextField(supplyTime, 10, GUILayout.Width(c2));
                 GUILayout.Label("", _labelStyle, GUILayout.Width(c4));
-                GUILayout.Label("EC Time:", _labelStyle, GUILayout.Width(c1));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel3"), _labelStyle, GUILayout.Width(c1));//"EC Time:"
                 ecTime = GUILayout.TextField(ecTime, 10, GUILayout.Width(c2));
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("EC Amount:", _labelStyle, GUILayout.Width(c1));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel4"), _labelStyle, GUILayout.Width(c1));//"EC Amount:"
                 ecAmount = GUILayout.TextField(ecAmount, 10, GUILayout.Width(c2));
                 GUILayout.Label("", _labelStyle, GUILayout.Width(c4));
-                GUILayout.Label("Supply Amount:", _labelStyle, GUILayout.Width(c1));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel5"), _labelStyle, GUILayout.Width(c1));//"Supply Amount:"
                 supplyAmount = GUILayout.TextField(supplyAmount, 10, GUILayout.Width(c2));
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("EVA Time:", _labelStyle, GUILayout.Width(c1));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel6"), _labelStyle, GUILayout.Width(c1));//"EVA Time:"
                 evaTime = GUILayout.TextField(evaTime, 10, GUILayout.Width(c2));
                 GUILayout.EndHorizontal();
 
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Waste Amount:", _labelStyle, GUILayout.Width(c1));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel7"), _labelStyle, GUILayout.Width(c1));//"Waste Amount:"
                 wasteAmount = GUILayout.TextField(wasteAmount, 10, GUILayout.Width(c2));
                 GUILayout.Label("", _labelStyle, GUILayout.Width(c4));
-                GUILayout.Label("Wear Amount:", _labelStyle, GUILayout.Width(c1));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel8"), _labelStyle, GUILayout.Width(c1));//"Wear Amount:"
                 wearAmount = GUILayout.TextField(wearAmount, 10, GUILayout.Width(c2));
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Supply Effect (Non-Vet):", _labelStyle, GUILayout.Width(c5));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel9"), _labelStyle, GUILayout.Width(c5));//"Supply Effect (Non-Vet):"
                 supNoVet = GUILayout.SelectionGrid(supNoVet, effectStrings, 6, _smButtonStyle);
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Supply Effect (Vet):", _labelStyle, GUILayout.Width(c5));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel10"), _labelStyle, GUILayout.Width(c5));//"Supply Effect (Vet):"
                 supVet = GUILayout.SelectionGrid(supVet, effectStrings, 6, _smButtonStyle);
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("EC Effect (Non-Vet):", _labelStyle, GUILayout.Width(c5));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel11"), _labelStyle, GUILayout.Width(c5));//"EC Effect (Non-Vet):"
                 ecNoVet = GUILayout.SelectionGrid(ecNoVet, effectStrings, 6, _smButtonStyle);
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("EC Effect (Vet):", _labelStyle, GUILayout.Width(c5));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel12"), _labelStyle, GUILayout.Width(c5));//"EC Effect (Vet):"
                 ecVet = GUILayout.SelectionGrid(ecVet, effectStrings, 6, _smButtonStyle);
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("EVA Effect (Non-Vet):", _labelStyle, GUILayout.Width(c5));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel13"), _labelStyle, GUILayout.Width(c5));//"EVA Effect (Non-Vet):"
                 evaNoVet = GUILayout.SelectionGrid(evaNoVet, effectStrings, 6, _smButtonStyle);
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("EVA Effect (Vet):", _labelStyle, GUILayout.Width(c5));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel14"), _labelStyle, GUILayout.Width(c5));//"EVA Effect (Vet):"
                 evaVet = GUILayout.SelectionGrid(evaVet, effectStrings, 6, _smButtonStyle);
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Hab Effect (Non-Vet):", _labelStyle, GUILayout.Width(c5));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel15"), _labelStyle, GUILayout.Width(c5));//"Hab Effect (Non-Vet):"
                 habNoVet = GUILayout.SelectionGrid(habNoVet, effectStrings, 6, _smButtonStyle);
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Hab Effect (Vet):", _labelStyle, GUILayout.Width(c5));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel16"), _labelStyle, GUILayout.Width(c5));//"Hab Effect (Vet):"
                 habVet = GUILayout.SelectionGrid(habVet, effectStrings, 6, _smButtonStyle);
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Hab Multiplier:", _labelStyle, GUILayout.Width(c1));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel17"), _labelStyle, GUILayout.Width(c1));//"Hab Multiplier:"
                 habMulti = GUILayout.TextField(habMulti, 3, GUILayout.Width(c4));
                 GUILayout.Label("", _labelStyle, GUILayout.Width(c6));
-                GUILayout.Label("Hab Months:", _labelStyle, GUILayout.Width(80));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel18"), _labelStyle, GUILayout.Width(80));//"Hab Months:"
                 baseHabTime = GUILayout.TextField(baseHabTime, 10, GUILayout.Width(c4));
                 GUILayout.Label("", _labelStyle, GUILayout.Width(c6));
-                GUILayout.Label("Hab Range:", _labelStyle, GUILayout.Width(c7));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel19"), _labelStyle, GUILayout.Width(c7));//"Hab Range:"
                 habRange = GUILayout.TextField(habRange, 4, GUILayout.Width(c4));
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Homeworld Altitude:", _labelStyle, GUILayout.Width(130));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel20"), _labelStyle, GUILayout.Width(130));//"Homeworld Altitude:"
                 homeAltitude = GUILayout.TextField(homeAltitude, 8, GUILayout.Width(c7));
-                enableRecyclers = GUILayout.Toggle(enableRecyclers, "Enable Recyclers", _toggleStyle);
+                enableRecyclers = GUILayout.Toggle(enableRecyclers, Localizer.Format("#LOC_USILS_SetupToggle"), _toggleStyle);//"Enable Recyclers"
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Scout Hab Time:", _labelStyle, GUILayout.Width(110));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel21"), _labelStyle, GUILayout.Width(110));//"Scout Hab Time:"
                 scoutHabTime = GUILayout.TextField(scoutHabTime, 12, GUILayout.Width(100));
-                GUILayout.Label("Perma-Hab Time:", _labelStyle, GUILayout.Width(110));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel22"), _labelStyle, GUILayout.Width(110));//"Perma-Hab Time:"
                 permaHabTime = GUILayout.TextField(permaHabTime, 12, GUILayout.Width(100));
                 GUILayout.EndHorizontal();
 
-                GUILayout.Label("Vet Names (separate with commas, first name only):", _labelStyle, GUILayout.Width(c3));
+                GUILayout.Label(Localizer.Format("#LOC_USILS_SetupLabel23"), _labelStyle, GUILayout.Width(c3));//"Vet Names (separate with commas, first name only):"
                 vetNames = GUILayout.TextField(vetNames, 100, GUILayout.Width(c3));
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("Save"))
+                if (GUILayout.Button(Localizer.Format("#LOC_USILS_SetupSave")))//"Save"
                     SaveSettings(config);
-                if (GUILayout.Button("Cancel"))
+                if (GUILayout.Button(Localizer.Format("#LOC_USILS_SetupCancel")))//"Cancel"
                     GuiOff();
                 GUILayout.EndHorizontal();
             }

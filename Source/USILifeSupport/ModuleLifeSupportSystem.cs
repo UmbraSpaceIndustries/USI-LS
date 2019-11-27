@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 namespace LifeSupport
 {
@@ -409,7 +410,7 @@ namespace LifeSupport
                 case 1: //Grouchy
                     if (crewMember.type != ProtoCrewMember.KerbalType.Tourist)
                     {
-                        screenMessage = string.Format("{0} refuses to work", crewMember.name);
+                        screenMessage = Localizer.Format("#LOC_USILS_ScrMsg1", crewMember.name);//string.Format("{0} refuses to work", )
                         trackedKerbal.OldTrait = crewMember.experienceTrait.Config.Name;
                         crewMember.type = ProtoCrewMember.KerbalType.Tourist;
                         KerbalRoster.SetExperienceTrait(crewMember, "Tourist");
@@ -419,7 +420,7 @@ namespace LifeSupport
                     break;
                 case 2:  //Mutinous
                     {
-                        screenMessage = string.Format("{0} has become mutinous", crewMember.name);
+                        screenMessage = Localizer.Format("#LOC_USILS_ScrMsg2", crewMember.name);//string.Format("{0} has become mutinous", )
                         trackedKerbal.OldTrait = crewMember.experienceTrait.Config.Name;
                         crewMember.type = ProtoCrewMember.KerbalType.Tourist;
                         KerbalRoster.SetExperienceTrait(crewMember, "Tourist");
@@ -429,19 +430,19 @@ namespace LifeSupport
                     }
                     break;
                 case 3: //Return to KSC
-                    screenMessage = string.Format("{0} gets fed up and wanders back to the KSC", crewMember.name);
+                    screenMessage = Localizer.Format("#LOC_USILS_ScrMsg3", crewMember.name);//string.Format("{0} gets fed up and wanders back to the KSC", )
                     LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
                     crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Available;
                     DestroyVessel(vessel);
                     break;
                 case 4: //Despawn
-                    screenMessage = string.Format("{0} has gone missing", crewMember.name);
+                    screenMessage = Localizer.Format("#LOC_USILS_ScrMsg4", crewMember.name);//string.Format("{0} has gone missing", )
                     LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
                     crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Missing;
                     DestroyVessel(vessel);
                     break;
                 case 5: //Kill
-                    screenMessage = string.Format("{0} has died", crewMember.name);
+                    screenMessage = Localizer.Format("#LOC_USILS_ScrMsg5", crewMember.name);//string.Format("{0} has died", )
                     LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
                     crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
                     DestroyVessel(vessel);
@@ -751,7 +752,7 @@ namespace LifeSupport
                 }
 
                 if (foundSupplies)
-                    ScreenMessages.PostScreenMessage("Supply containers unlocked...", 5f, ScreenMessageStyle.UPPER_CENTER);
+                    ScreenMessages.PostScreenMessage(Localizer.Format("#LOC_USILS_ScrMsg6"), 5f, ScreenMessageStyle.UPPER_CENTER);//"Supply containers unlocked..."
             }
         }
 
@@ -785,7 +786,7 @@ namespace LifeSupport
                 case 0: // No effect
                     return; // No need to print
                 case 1: //Grouchy
-                    msg = string.Format("{0} refuses to work {1}", crewMember.name, reason);
+                    msg = Localizer.Format("#LOC_USILS_ScrMsg7", crewMember.name,reason);//string.Format("{0} refuses to work {1}", , )
                     trackedKerbal.OldTrait = crewMember.experienceTrait.Config.Name;
                     crewMember.type = ProtoCrewMember.KerbalType.Tourist;
                     KerbalRoster.SetExperienceTrait(crewMember, "Tourist");
@@ -793,7 +794,7 @@ namespace LifeSupport
                     LifeSupportManager.Instance.TrackKerbal(trackedKerbal);
                     break;
                 case 2:  //Mutinous
-                    msg = string.Format("{0} has become mutinous due to {1}", crewMember.name, reason);
+                    msg = Localizer.Format("#LOC_USILS_ScrMsg8", crewMember.name,reason);//string.Format("{0} has become mutinous due to {1}", , )
                     trackedKerbal.OldTrait = crewMember.experienceTrait.Config.Name;
                     crewMember.type = ProtoCrewMember.KerbalType.Tourist;
                     KerbalRoster.SetExperienceTrait(crewMember, "Tourist");
@@ -803,21 +804,21 @@ namespace LifeSupport
                     SpawnExtraSupplies(100f);
                     break;
                 case 3: //Return to KSC
-                    msg = string.Format("{0} gets fed up and wanders back to the KSC due to {1}", crewMember.name, reason);
+                    msg = Localizer.Format("#LOC_USILS_ScrMsg9", crewMember.name,reason);//string.Format("{0} gets fed up and wanders back to the KSC due to {1}", , )
                     LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
                     crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Available;
                     vessel.CrewListSetDirty();
                     RemoveCrewFromPart(crewMember);
                     break;
                 case 4: //Despawn
-                    msg = string.Format("{0} has gone missing due to {1}", crewMember.name, reason);
+                    msg = Localizer.Format("#LOC_USILS_ScrMsg10", crewMember.name,reason);//string.Format("{0} has gone missing due to {1}", , )
                     LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
                     vessel.CrewListSetDirty();
                     RemoveCrewFromPart(crewMember);
                     crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Missing;
                     break;
                 case 5: //Kill
-                    msg = string.Format("{0} has died due to {1}", crewMember.name, reason);
+                    msg = Localizer.Format("#LOC_USILS_ScrMsg11", crewMember.name,reason);//string.Format("{0} has died due to {1}", , )
                     LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
                     vessel.CrewListSetDirty();
                     RemoveCrewFromPart(crewMember);
@@ -875,7 +876,7 @@ namespace LifeSupport
                 trackedKerbal.IsGrouchy = false;
                 LifeSupportManager.Instance.TrackKerbal(trackedKerbal);
 
-                string msg = string.Format("{0} has returned to duty", crewMember.name);
+                string msg = Localizer.Format("#LOC_USILS_ScrMsg12", crewMember.name);//string.Format("{0} has returned to duty", )
                 ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
             }
         }
