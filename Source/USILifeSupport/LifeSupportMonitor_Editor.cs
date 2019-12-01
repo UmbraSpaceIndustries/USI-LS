@@ -183,11 +183,11 @@ namespace LifeSupport
                             }
                         }
                     }
-                    if (part.Resources.Contains("ColonySupplies"))//
+                    if (part.Resources.Contains("ColonySupplies"))
                     {
                         colonySupplies += part.Resources["ColonySupplies"].amount;
                     }
-                    if (part.Resources.Contains("Fertilizer"))//
+                    if (part.Resources.Contains("Fertilizer"))
                     {
                         fertilizer += part.Resources["Fertilizer"].amount;
                     }
