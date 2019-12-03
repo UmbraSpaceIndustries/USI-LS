@@ -4,3 +4,4 @@ bin/
 *.cache
 *.user
 *.zip
+*.csproj
