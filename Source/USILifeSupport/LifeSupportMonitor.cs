@@ -113,14 +113,14 @@ namespace LifeSupport
             if (remEVATime > 0)
             {
                 vstat.SummaryLabel = String.Format(
-                    "<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2}</color>" + Localizer.Format("#LOC_USILS_EVATimeRemain")//<color=#3DB1FF> time remaining</color>
+                    "<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2}</color><color=#3DB1FF>" + Localizer.Format("#LOC_USILS_EVATimeRemain")+"</color>"// time remaining
                     , kerbal.mainBody.bodyName
                     , sitString
                     , timeString.Substring(timeString.IndexOf(':') + 1)) ;
             }
             else
             {
-                vstat.SummaryLabel = Localizer.Format("#LOC_USILS_EVATimeExpired");//"<color=#FF8585>EVA Time Expired</color>"
+                vstat.SummaryLabel = "<color=#FF8585>"+Localizer.Format("#LOC_USILS_EVATimeExpired")+"</color>";//"EVA Time Expired"
             }
 
             vstat.crew = new List<LifeSupportCrewDisplayStat>();
@@ -172,7 +172,7 @@ namespace LifeSupport
                 habString = LifeSupportUtilities.DurationDisplay(habTime, LifeSupportUtilities.TimeFormatLength.Short);
             }
             vstat.SummaryLabel = String.Format(
-                "<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2:0}</color>"+ Localizer.Format("#LOC_USILS_vesslestatus1") + "<color=#9EE4FF>{3:0.0}</color><color=#3DB1FF>"+ Localizer.Format("#LOC_USILS_vesslestatus2") + "</color><color=#9EE4FF>{4}</color>"//"<color=#3DB1FF> supplies (</color>""/day) hab for "
+                "<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2:0}</color><color=#3DB1FF>"+ Localizer.Format("#LOC_USILS_vesslestatus1") + "</color><color=#9EE4FF>{3:0.0}</color><color=#3DB1FF>"+ Localizer.Format("#LOC_USILS_vesslestatus2") + "</color><color=#9EE4FF>{4}</color>"//" supplies (""/day) hab for "
                 , thisVessel.mainBody.bodyName
                 , situationString
                 , supAmount
@@ -276,13 +276,13 @@ namespace LifeSupport
             GUILayout.BeginHorizontal();
             GUILayout.Label("", _labelStyle, GUILayout.Width(30));
             GUILayout.Label(c.CrewName, _labelStyle, GUILayout.Width(135));
-            GUILayout.Label(Localizer.Format("#LOC_USILS_Crewstats1"), _labelStyle, GUILayout.Width(35));//"<color=#EDEDED>sup:</color>"
+            GUILayout.Label("<color=#EDEDED>" + Localizer.Format("#LOC_USILS_Crewstats1") + "</color>", _labelStyle, GUILayout.Width(35));//"sup:"
             GUILayout.Label(c.SupplyLabel, _labelStyle, GUILayout.Width(145));
-            GUILayout.Label(Localizer.Format("#LOC_USILS_Crewstats2"), _labelStyle, GUILayout.Width(35));//"<color=#EDEDED>EC:</color>"
+            GUILayout.Label("<color=#EDEDED>" + Localizer.Format("#LOC_USILS_Crewstats2") + "</color>", _labelStyle, GUILayout.Width(35));//"EC:"
             GUILayout.Label(c.ECLabel, _labelStyle, GUILayout.Width(145));
-            GUILayout.Label(Localizer.Format("#LOC_USILS_Crewstats3"), _labelStyle, GUILayout.Width(40));//"<color=#EDEDED>hab:</color>"
+            GUILayout.Label("<color=#EDEDED>" + Localizer.Format("#LOC_USILS_Crewstats3") + "</color>", _labelStyle, GUILayout.Width(40));//"hab:"
             GUILayout.Label(c.HabLabel, _labelStyle, GUILayout.Width(145));
-            GUILayout.Label(Localizer.Format("#LOC_USILS_Crewstats4"), _labelStyle, GUILayout.Width(40));//"<color=#EDEDED>home:</color>"
+            GUILayout.Label("<color=#EDEDED>" + Localizer.Format("#LOC_USILS_Crewstats4") + "</color>", _labelStyle, GUILayout.Width(40));//"home:"
             GUILayout.Label(c.HomeLabel, _labelStyle, GUILayout.Width(145));
             GUILayout.EndHorizontal();
         }

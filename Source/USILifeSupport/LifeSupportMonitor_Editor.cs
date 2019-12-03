@@ -354,7 +354,7 @@ namespace LifeSupport
 
                     GUILayout.Space(20);
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label(Localizer.Format("#LOC_USILS_Details"), _labelStyle, GUILayout.Width(150));//"<b>Details</b>"
+                    GUILayout.Label("<b>"+Localizer.Format("#LOC_USILS_Details")+"</b>", _labelStyle, GUILayout.Width(150));//"Details"
                     GUILayout.EndHorizontal();
 
                     // HABITATION EQUATION
@@ -404,7 +404,7 @@ namespace LifeSupport
                     GUILayout.Space(20);
 
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label(Localizer.Format("#LOC_USILS_Parts"), _labelStyle, GUILayout.Width(150));//"<b>Parts</b>"
+                    GUILayout.Label("<b>"+Localizer.Format("#LOC_USILS_Parts")+"</b>", _labelStyle, GUILayout.Width(150));//"Parts"
                     GUILayout.EndHorizontal();
 
                     // RECYCLERS
