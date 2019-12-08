@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using USITools;
+using KSP.Localization;
 
 namespace LifeSupport
 {
@@ -40,15 +41,15 @@ namespace LifeSupport
         {
             var output = new StringBuilder();
             output.AppendLine(base.GetInfo());
-            output.AppendLine("Pushes back onboard kerbals hab/home timers");
-            output.AppendLine(string.Format("Rated for: {0} kerbals", TimeMultiplier));
+            output.AppendLine(Localizer.Format("#LOC_USILS_EOInfo1"));//"Pushes back onboard kerbals hab/home timers"
+            output.AppendLine(Localizer.Format("#LOC_USILS_EOInfo2",TimeMultiplier));//string.Format("Rated for: {0} kerbals", )
             if (AffectsPartOnly)
             {
-                output.AppendLine("Effects only kerbals in this part");
+                output.AppendLine(Localizer.Format("#LOC_USILS_EOInfo3"));//"Effects only kerbals in this part"
             }
             if (!string.IsNullOrEmpty(RestrictedToClass))
             {
-                output.AppendLine(string.Format("Effects only {0}s", RestrictedToClass));
+                output.AppendLine(Localizer.Format("#LOC_USILS_EOInfo4",RestrictedToClass));//string.Format("Effects only {0}s", )
             }
 
             return output.ToString();

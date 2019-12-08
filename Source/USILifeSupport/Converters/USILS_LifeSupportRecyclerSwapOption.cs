@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using USITools;
+using KSP.Localization;
 
 namespace LifeSupport
 {
@@ -27,9 +28,9 @@ namespace LifeSupport
         {
             var output = new StringBuilder();
             output.AppendLine(base.GetInfo());
-            output.AppendLine("Reduces supplies consumption across Kolony");
-            output.AppendLine(string.Format("Recycler Percent: {0}%", RecyclePercent * 100));
-            output.AppendLine(string.Format("Crew Affected: {0}", CrewCapacity));
+            output.AppendLine(Localizer.Format("#LOC_USILS_LSRInfo1"));//"Reduces supplies consumption across Kolony"
+            output.AppendLine(Localizer.Format("#LOC_USILS_LSRInfo2", RecyclePercent * 100));//string.Format("Recycler Percent: {0}%", )
+            output.AppendLine(Localizer.Format("#LOC_USILS_LSRInfo3", CrewCapacity));//string.Format("Crew Affected: {0}", )
 
             return output.ToString();
         }
