@@ -807,20 +807,20 @@ namespace LifeSupport
                     LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
                     crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Available;
                     vessel.CrewListSetDirty();
-                    RemoveCrewFromPart(crewMember);
+                    LifeSupportUtilities.RemoveCrewFromPart(crewMember,vessel);
                     break;
                 case 4: //Despawn
                     msg = string.Format("{0} has gone missing due to {1}", crewMember.name, reason);
                     LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
                     vessel.CrewListSetDirty();
-                    RemoveCrewFromPart(crewMember);
+                    LifeSupportUtilities.RemoveCrewFromPart(crewMember, vessel);
                     crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Missing;
                     break;
                 case 5: //Kill
                     msg = string.Format("{0} has died due to {1}", crewMember.name, reason);
                     LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
                     vessel.CrewListSetDirty();
-                    RemoveCrewFromPart(crewMember);
+                    LifeSupportUtilities.RemoveCrewFromPart(crewMember, vessel);
                     crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
                     break;
             }
@@ -833,28 +833,6 @@ namespace LifeSupport
             ResourceBroker.StoreResource(vessel.rootPart, "Supplies", sup, TimeWarp.deltaTime, ResourceFlowMode.ALL_VESSEL);
         }
 
-        private void RemoveCrewFromPart(ProtoCrewMember crewMemberToRemove)
-        {
-            var parts = vessel.parts;
-            for (int i = 0; i < parts.Count; ++i)
-            {
-                var part = parts[i];
-                if (part.CrewCapacity > 0)
-                {
-                    var crewRoster = part.protoModuleCrew;
-                    var crewCount = crewRoster.Count;
-                    for (int x = 0; x < crewCount; x++)
-                    {
-                        var crewMember = crewRoster[x];
-                        if (crewMember.name == crewMemberToRemove.name)
-                        {
-                            part.RemoveCrewmember(crewMember);
-                            return;
-                        }
-                    }
-                }
-            }
-        }
 
         private void ClipRandomPart()
         {

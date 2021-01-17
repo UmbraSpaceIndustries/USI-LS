@@ -1,3 +1,8 @@
+1.5.0 - TBD
+------------------
+CryoTanks are now available in USILS allowing you to freeze Kerbals for long journeys
+
+
 1.4.0 - 2020.12.20
 ------------------
 KSP 1.11 Compatibility

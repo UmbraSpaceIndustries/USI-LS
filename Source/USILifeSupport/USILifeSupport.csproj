@@ -15,7 +15,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
+    <DebugType>portable</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>..\..\..\..\KSP_DEV\GameData\UmbraSpaceIndustries\LifeSupport\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
@@ -79,6 +79,8 @@
     <Compile Include="Converters\USILS_LifeSupportExtenderSwapOption.cs" />
     <Compile Include="Converters\USILS_LifeSupportRecyclerConverterAddon.cs" />
     <Compile Include="Converters\USILS_LifeSupportRecyclerSwapOption.cs" />
+    <Compile Include="Cryo\ModuleCryoFreeze.cs" />
+    <Compile Include="Cryo\ModuleCryoResource.cs" />
     <Compile Include="LifeSupportConfig.cs" />
     <Compile Include="LifeSupportMonitor_Editor.cs" />
     <Compile Include="LifeSupportMonitor_SpaceCenter.cs" />
