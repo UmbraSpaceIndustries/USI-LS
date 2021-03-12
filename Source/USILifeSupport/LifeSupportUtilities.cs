@@ -5,6 +5,28 @@ namespace LifeSupport
 {
     public static class LifeSupportUtilities
     {
+        public static void RemoveCrewFromPart(ProtoCrewMember crewMemberToRemove, Vessel vessel)
+        {
+            var parts = vessel.parts;
+            for (int i = 0; i < parts.Count; ++i)
+            {
+                var part = parts[i];
+                if (part.CrewCapacity > 0)
+                {
+                    var crewRoster = part.protoModuleCrew;
+                    var crewCount = crewRoster.Count;
+                    for (int x = 0; x < crewCount; x++)
+                    {
+                        var crewMember = crewRoster[x];
+                        if (crewMember.name == crewMemberToRemove.name)
+                        {
+                            part.RemoveCrewmember(crewMember);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
 
         public static double SecondsPerDay()
         {
