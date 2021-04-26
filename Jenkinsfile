@@ -84,7 +84,7 @@ pipeline {
           $JobReleasePath = Join-Path -Path $ReleasePath -ChildPath $env:JOB_CACHE
           $ReferencePath = Join-Path -Path $JobReleasePath -ChildPath "000_USITools"
 
-          dotnet build --output FOR_RELEASE/GameData/UmbraSpaceIndustries/LifeSupport --configuration ${env.BUILD_CONFIG} `
+          dotnet build --output FOR_RELEASE/GameData/UmbraSpaceIndustries/LifeSupport --configuration $env:BUILD_CONFIG `
             --verbosity detailed /p:ReferencePath="$ReferencePath" ./Source/USILifeSupport/USILifeSupport.csproj
         '''
       }
