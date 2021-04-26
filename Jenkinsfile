@@ -75,6 +75,12 @@ pipeline {
         }
       }
     }
+    // Build
+    stage("Build") {
+      steps {
+        bat "dotnet build --output FOR_RELEASE/GameData/UmbraSpaceIndustries/LifeSupport --configuration ${env.BUILD_CONFIG} --verbosity detailed ./Source/USILifeSupport/USILifeSupport.csproj"
+      }
+    }
     // Update artifact cache
     stage("Cache artifacts") {
       steps {
