@@ -146,11 +146,7 @@ pipeline {
           Copy-Item -Path (Join-Path -Path $CachePath -ChildPath "000_USITools") -Destination ./artifacts/GameData -Recurse
           Copy-Item -Path (Join-Path -Path $CachePath -ChildPath "CommunityCategoryKit") -Destination ./artifacts/GameData -Recurse
           Copy-Item -Path (Join-Path -Path $CachePath -ChildPath "CommunityResourcePack") -Destination ./artifacts/GameData -Recurse
-          Copy-Item -Path (Join-Path -Path $CachePath -ChildPath "Firespitter") -Destination ./artifacts/GameData -Recurse
           Copy-Item -Path (Join-Path -Path $UsiCachePath -ChildPath "FX") -Destination ./artifacts/GameData/UmbraSpaceIndustries -Recurse
-          Copy-Item -Path (Join-Path -Path $UsiCachePath -ChildPath "Kontainers") -Destination ./artifacts/GameData/UmbraSpaceIndustries -Recurse
-          Copy-Item -Path (Join-Path -Path $UsiCachePath -ChildPath "ReactorPack") -Destination ./artifacts/GameData/UmbraSpaceIndustries -Recurse
-          Copy-Item -Path (Join-Path -Path $UsiCachePath -ChildPath "USICore") -Destination ./artifacts/GameData/UmbraSpaceIndustries -Recurse
         '''
         script {
           env.ARCHIVE_FILENAME = "USI-LS_${env.GITVERSION_SEMVER}.zip"
