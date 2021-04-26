@@ -95,7 +95,7 @@ pipeline {
               Write-Output "Removing old artifacts..."
               $NewArtifacts = Get-ChildItem -Path ./FOR_RELEASE/GameData/UmbraSpaceIndustries -Attributes Directory -Name
               $NewArtifacts.ForEach({
-                $ArtifactPath = Join-Path -Path $CachePath -ChildPath $_
+                $ArtifactPath = Join-Path -Path (Join-Path -Path $CachePath -ChildPath "UmbraSpaceIndustries") -ChildPath $_
                 if (Test-Path -Path $ArtifactPath) {
                   Remove-Item -Path $ArtifactPath -Recurse -Force
                 }
