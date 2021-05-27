@@ -1,9 +1,9 @@
 {
      "NAME":"USI-LS",
-     "URL":"https://raw.githubusercontent.com/BobPalmer/USI-LS/master/FOR_RELEASE/GameData/UmbraSpaceIndustries/LifeSupport/USI-LS.version",
-     "DOWNLOAD":"https://github.com/BobPalmer/USI-LS/releases",
+     "URL":"https://raw.githubusercontent.com/UmbraSpaceIndustries/USI-LS/master/FOR_RELEASE/GameData/UmbraSpaceIndustries/LifeSupport/USI-LS.version",
+     "DOWNLOAD":"https://github.com/UmbraSpaceIndustries/USI-LS/releases",
      "GITHUB":{
-         "USERNAME":"BobPalmer",
+         "USERNAME":"UmbraSpaceIndustries",
          "REPOSITORY":"USI-LS",
          "ALLOW_PRE_RELEASE":false
      },
