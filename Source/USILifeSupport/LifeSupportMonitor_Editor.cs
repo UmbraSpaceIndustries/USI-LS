@@ -25,7 +25,10 @@ namespace LifeSupport
         void Awake()
         {
             var texture = new Texture2D(36, 36, TextureFormat.RGBA32, false);
-            var textureFile = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Supplies.png");
+            var textureFile = Path.Combine(
+                Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+                "Assets",
+                "Supplies.png");
             print("Loading " + textureFile);
             texture.LoadImage(File.ReadAllBytes(textureFile));
             _lifeSupportMonitorButton = ApplicationLauncher.Instance.AddModApplication(GuiOn, GuiOff, null, null, null, null,
