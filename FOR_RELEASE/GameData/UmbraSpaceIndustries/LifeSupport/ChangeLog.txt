@@ -1,4 +1,4 @@
-1.5.0 - TBD
+112.0 - 2021.09.19
 ------------------
 CryoTanks are now available in USILS allowing you to freeze Kerbals for long journeys
 
