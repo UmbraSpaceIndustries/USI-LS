@@ -435,7 +435,7 @@ namespace LifeSupport
                 else if (habTimeLeft < 0)
                 {
                     lblHab = "FF5E5E";
-                    crewHabString = "expired";
+                    crewHabString = "expired (" + LifeSupportUtilities.SmartDurationDisplay(-habTimeLeft) + ")";
                 }
                 else
                 {
@@ -474,7 +474,7 @@ namespace LifeSupport
                 else if (homeTimeLeft < 0)
                 {
                     lblHome = "FF5E5E";
-                    crewHomeString = "expired";
+                    crewHomeString = "expired (" + LifeSupportUtilities.SmartDurationDisplay(-homeTimeLeft) + ")";
                 }
                 else
                 {
