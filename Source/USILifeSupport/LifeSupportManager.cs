@@ -112,10 +112,10 @@ namespace LifeSupport
                 k.LastEC = Planetarium.GetUniversalTime();
                 k.LastAtHome = Planetarium.GetUniversalTime();
                 k.LastSOIChange = Planetarium.GetUniversalTime();
-                k.MaxOffKerbinTime = Planetarium.GetUniversalTime() + 648000;    
-                k.TimeEnteredVessel = Planetarium.GetUniversalTime();
                 k.CurrentVesselId = "?UNKNOWN?";
                 k.PreviousVesselId = "??UNKNOWN??";
+                k.RemainingCabinTime = LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime 
+                    * LifeSupportUtilities.SecondsPerMonth();
                 k.LastUpdate = Planetarium.GetUniversalTime();
                 k.IsGrouchy = false;
                 k.OldTrait = crew.experienceTrait.Config.Name;
@@ -391,7 +391,6 @@ namespace LifeSupport
 
             double totHabSpace = sourceVessel.ExtraHabSpace;
             double totHabMult = CalculateVesselHabMultiplier(vsl, 1);
-            totHabSpace += (LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime * totMaxCrew);
 
             var hCount = hList.Count;
             for (int i = 0; i < hCount; ++i)
@@ -439,7 +438,6 @@ namespace LifeSupport
             }
             double totHabSpace = sourceVessel.ExtraHabSpace;
             double totHabMult = CalculateVesselHabMultiplier(vessel,totCurCrew);
-            totHabSpace += (LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime * totMaxCrew);
 
             var hCount = hList.Count;
             for (int i = 0; i < hCount; ++i)

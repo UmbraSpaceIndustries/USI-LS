@@ -11,7 +11,7 @@ namespace LifeSupport
     public class LifeSupportMonitor_SpaceCenter : MonoBehaviour
     {
         private ApplicationLauncherButton orbLogButton;
-        private Rect _windowPosition = new Rect(300, 60, 500, 550);
+        private Rect _windowPosition = new Rect(300, 60, 500, 560);
         private GUIStyle _windowStyle;
         private GUIStyle _labelStyle;
         private GUIStyle _smButtonStyle;
@@ -62,6 +62,7 @@ namespace LifeSupport
             habRange = config.HabRange.ToString();
             homeAltitude = config.HomeWorldAltitude.ToString();
             baseHabTime = config.BaseHabTime.ToString();
+            recoverySpeed = config.RecoverySpeed.ToString();
             vetNames = config.VetNames;
         }
 
@@ -123,6 +124,7 @@ namespace LifeSupport
         private string habRange;
         private string homeAltitude;
         private string baseHabTime;
+        private string recoverySpeed;
         private string vetNames;
 
         private void GenerateWindow()
@@ -220,11 +222,16 @@ namespace LifeSupport
                 GUILayout.Label("Hab Multiplier:", _labelStyle, GUILayout.Width(c1));
                 habMulti = GUILayout.TextField(habMulti, 3, GUILayout.Width(c4));
                 GUILayout.Label("", _labelStyle, GUILayout.Width(c6));
-                GUILayout.Label("Hab Months:", _labelStyle, GUILayout.Width(80));
+                GUILayout.Label("Cabin Months:", _labelStyle, GUILayout.Width(90));
                 baseHabTime = GUILayout.TextField(baseHabTime, 10, GUILayout.Width(c4));
                 GUILayout.Label("", _labelStyle, GUILayout.Width(c6));
                 GUILayout.Label("Hab Range:", _labelStyle, GUILayout.Width(c7));
                 habRange = GUILayout.TextField(habRange, 4, GUILayout.Width(c4));
+                GUILayout.EndHorizontal();
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Recovery Speed:", _labelStyle, GUILayout.Width(c1));
+                recoverySpeed = GUILayout.TextField(recoverySpeed, 4, GUILayout.Width(c4));
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
@@ -286,6 +293,7 @@ namespace LifeSupport
             config.HabRange = SaveDouble(config.HabRange,habRange);
             config.HomeWorldAltitude = SaveInt(config.HomeWorldAltitude,homeAltitude);
             config.BaseHabTime = SaveDouble(config.BaseHabTime,baseHabTime);
+            config.RecoverySpeed = SaveFloat(config.RecoverySpeed,recoverySpeed);
             config.VetNames = vetNames;
             LifeSupportScenario.Instance.settings.SaveConfig(config);
             GuiOff();

@@ -127,6 +127,8 @@ namespace LifeSupport
         private string hab_maxCrew = "";
         private string supply_curCrew = "";
         private string supply_maxCrew = "";
+        private string cabin_curCrew = "";
+        private string cabin_maxCrew = "";
 
         private string habExt_curCrew = "";
         private string habExt_maxCrew = "";
@@ -203,7 +205,7 @@ namespace LifeSupport
                     }
                 }
 
-                totalHabSpace = (LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime * maxCrew) + extraHabTime;
+                totalHabSpace = extraHabTime;
                 //A Kerbal month is 30 six-hour Kerbin days.
                 totalHabMult = habMult * LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier * LifeSupportUtilities.SecondsPerMonth();
                 totalBatteryTime = batteryAmount / LifeSupportScenario.Instance.settings.GetSettings().ECAmount;
@@ -246,6 +248,19 @@ namespace LifeSupport
 
                     hab_curCrew = LifeSupportUtilities.DurationDisplay(totalHabSpace / Math.Max(1, curCrew) * totalHabMult);
                     hab_maxCrew = LifeSupportUtilities.DurationDisplay(totalHabSpace / Math.Max(1, maxCrew) * totalHabMult);
+
+                    cabin_curCrew = LifeSupportUtilities.DurationDisplay(
+                        LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime *
+                        LifeSupportUtilities.SecondsPerMonth() *
+                        ((double)maxCrew / (double)Math.Max(1, curCrew)) *
+                        habMult
+                    );
+                    cabin_maxCrew = LifeSupportUtilities.DurationDisplay(
+                        LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime *
+                        LifeSupportUtilities.SecondsPerMonth() *
+                        ((double)maxCrew / (double)Math.Max(1, maxCrew)) *
+                        habMult
+                    );
 
                     supplyExt_curCrew = LifeSupportUtilities.DurationDisplay(
                         (totalSupplyTime + totalFertilizerTime) /
@@ -364,42 +379,39 @@ namespace LifeSupport
                     {
                         // column widths
                         const int c1 = 150;
-                        const int c2 = 80;
+                        const int c2 = 90;
                         const int c3 = 80;
-                        const int c4 = 90;
-                        const int c5 = 80;
-                        const int c6 = 50;
-                        const int c7 = 50;
+                        const int c4 = 50;
+                        const int c5 = 50;
+                        const int c6 = 120;
 
                         GUILayout.BeginHorizontal();
                         GUILayout.Label("Habitation", _labelStyle, GUILayout.Width(c1 - 30));
-                        GUILayout.Label(CTag("= ( (", operColor), _labelStyle, GUILayout.Width(30));
-                        GUILayout.Label("BaseTime " + CTag("*", operColor), _labelStyle, GUILayout.Width(c2));
-                        GUILayout.Label("MaxCrew " + CTag(") +", operColor), _labelStyle, GUILayout.Width(c3));
-                        GUILayout.Label("ExtraTime " + CTag(") *", operColor), _labelStyle, GUILayout.Width(c4));
-                        GUILayout.Label("Multiplier " + CTag("/", operColor), _labelStyle, GUILayout.Width(c5));
-                        GUILayout.Label("Crew " + CTag("*", operColor), _labelStyle, GUILayout.Width(c6));
-                        GUILayout.Label("Months", _labelStyle, GUILayout.Width(c7));
+                        GUILayout.Label(CTag(" = ", operColor), _labelStyle, GUILayout.Width(30));
+                        GUILayout.Label("ExtraTime " + CTag("*", operColor), _labelStyle, GUILayout.Width(c2));
+                        GUILayout.Label("Multiplier " + CTag("/", operColor), _labelStyle, GUILayout.Width(c3));
+                        GUILayout.Label("Crew " + CTag("*", operColor), _labelStyle, GUILayout.Width(c4));
+                        GUILayout.Label("Months", _labelStyle, GUILayout.Width(c5));
+                        GUILayout.Label("+CabinTime", _labelStyle, GUILayout.Width(c6));
+
                         GUILayout.EndHorizontal();
 
                         GUILayout.BeginHorizontal();
                         GUILayout.Label(CTag(hab_curCrew, textColor), _labelStyle, GUILayout.Width(c1));
-                        GUILayout.Label(CTag(LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime.ToString(), fadeColor), _labelStyle, GUILayout.Width(c2));
-                        GUILayout.Label(CTag(maxCrew.ToString(), crewColor), _labelStyle, GUILayout.Width(c3));
-                        GUILayout.Label(CTag(extraHabTime.ToString(), textColor), _labelStyle, GUILayout.Width(c4));
-                        GUILayout.Label(CTag("(1+" + (habMult-1d) +")", textColor), _labelStyle, GUILayout.Width(c5));
-                        GUILayout.Label(CTag(Math.Max(1, curCrew).ToString(), crewColor), _labelStyle, GUILayout.Width(c6));
-                        GUILayout.Label(CTag(LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier.ToString(), fadeColor), _labelStyle, GUILayout.Width(c7));
+                        GUILayout.Label(CTag(extraHabTime.ToString(), textColor), _labelStyle, GUILayout.Width(c2));
+                        GUILayout.Label(CTag("(1+" + (habMult-1d) +")", textColor), _labelStyle, GUILayout.Width(c3));
+                        GUILayout.Label(CTag(Math.Max(1, curCrew).ToString(), crewColor), _labelStyle, GUILayout.Width(c4));
+                        GUILayout.Label(CTag(LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier.ToString(), fadeColor), _labelStyle, GUILayout.Width(c5));
+                        GUILayout.Label(CTag(cabin_curCrew, textColor), _labelStyle, GUILayout.Width(c6));
                         GUILayout.EndHorizontal();
 
                         GUILayout.BeginHorizontal();
                         GUILayout.Label(CTag(hab_maxCrew, textColor), _labelStyle, GUILayout.Width(c1));
-                        GUILayout.Label(CTag(LifeSupportScenario.Instance.settings.GetSettings().BaseHabTime.ToString(), fadeColor), _labelStyle, GUILayout.Width(c2));
-                        GUILayout.Label(CTag(maxCrew.ToString(), crewColor), _labelStyle, GUILayout.Width(c3));
-                        GUILayout.Label(CTag(extraHabTime.ToString(), textColor), _labelStyle, GUILayout.Width(c4));
-                        GUILayout.Label(CTag("(1+" + (habMult - 1d) + ")", textColor), _labelStyle, GUILayout.Width(c5));
-                        GUILayout.Label(CTag(Math.Max(1, maxCrew).ToString(), crewColor), _labelStyle, GUILayout.Width(c6));
-                        GUILayout.Label(CTag(LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier.ToString(), fadeColor), _labelStyle, GUILayout.Width(c7));
+                        GUILayout.Label(CTag(extraHabTime.ToString(), textColor), _labelStyle, GUILayout.Width(c2));
+                        GUILayout.Label(CTag("(1+" + (habMult - 1d) + ")", textColor), _labelStyle, GUILayout.Width(c3));
+                        GUILayout.Label(CTag(Math.Max(1, maxCrew).ToString(), crewColor), _labelStyle, GUILayout.Width(c4));
+                        GUILayout.Label(CTag(LifeSupportScenario.Instance.settings.GetSettings().HabMultiplier.ToString(), fadeColor), _labelStyle, GUILayout.Width(c5));
+                        GUILayout.Label(CTag(cabin_maxCrew, textColor), _labelStyle, GUILayout.Width(c6));
                         GUILayout.EndHorizontal();
                     }
 

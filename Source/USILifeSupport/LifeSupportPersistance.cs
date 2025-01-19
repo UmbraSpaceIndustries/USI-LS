@@ -88,6 +88,7 @@ namespace LifeSupport
                 ScoutHabTime = 9180000,
                 PermaHabTime = 459000000,
                 HabRange = 2000,
+                RecoverySpeed = 1f,
                 VetNames = ""
             };
 
@@ -125,6 +126,7 @@ namespace LifeSupport
                 finalSettings.EVAEffectVets = Math.Max(settings.EVAEffectVets, finalSettings.EVAEffectVets);
                 finalSettings.VetNames += settings.VetNames + ",";
                 finalSettings.HabRange = Math.Min(settings.HabRange, finalSettings.HabRange);
+                finalSettings.RecoverySpeed = Math.Min(settings.RecoverySpeed, finalSettings.RecoverySpeed);
                 if (settings.EnableRecyclers)
                     finalSettings.EnableRecyclers = true;
             }
@@ -197,10 +199,9 @@ namespace LifeSupport
                     rNode.AddValue("LastAtHome", r.LastAtHome);
                     rNode.AddValue("LastSOIChange", r.LastSOIChange);
                     rNode.AddValue("LastPlanet", r.LastPlanet);
-                    rNode.AddValue("MaxOffKerbinTime", r.MaxOffKerbinTime);
                     rNode.AddValue("CurrentVesselId", r.CurrentVesselId);
                     rNode.AddValue("PreviousVesselId", r.PreviousVesselId);
-                    rNode.AddValue("TimeEnteredVessel", r.TimeEnteredVessel);
+                    rNode.AddValue("RemainingCabinTime", r.RemainingCabinTime);
                     rNode.AddValue("IsGrouchy", r.IsGrouchy);
                     rNode.AddValue("OldTrait", r.OldTrait);
                     rNode.AddValue("LastUpdate", r.LastUpdate);
@@ -258,6 +259,7 @@ namespace LifeSupport
                 sNode.AddValue("ReplacementPartAmount", _Settings.ReplacementPartAmount);
                 sNode.AddValue("EnableRecyclers", _Settings.EnableRecyclers);
                 sNode.AddValue("HabRange", _Settings.HabRange);
+                sNode.AddValue("RecoverySpeed", _Settings.RecoverySpeed);
                 sNode.AddValue("VetNames", _Settings.VetNames);
                 SettingsNode.AddNode(sNode);
             }
@@ -400,6 +402,7 @@ namespace LifeSupport
             _Settings.ReplacementPartAmount = config.ReplacementPartAmount;
             _Settings.EnableRecyclers = config.EnableRecyclers;
             _Settings.HabRange = config.HabRange;
+            _Settings.RecoverySpeed = config.RecoverySpeed;
             _Settings.VetNames = config.VetNames;
         }
 
@@ -429,10 +432,9 @@ namespace LifeSupport
             kerbInfo.LastSOIChange = status.LastSOIChange;
             kerbInfo.HomeBodyId = status.HomeBodyId;
             kerbInfo.LastPlanet = status.LastPlanet;
-            kerbInfo.MaxOffKerbinTime = status.MaxOffKerbinTime;
-            kerbInfo.TimeEnteredVessel = status.TimeEnteredVessel;
             kerbInfo.CurrentVesselId = status.CurrentVesselId;
             kerbInfo.PreviousVesselId = status.PreviousVesselId;
+            kerbInfo.RemainingCabinTime = status.RemainingCabinTime;
             kerbInfo.IsGrouchy = status.IsGrouchy;
             kerbInfo.OldTrait = status.OldTrait;
             kerbInfo.LastUpdate = status.LastUpdate;

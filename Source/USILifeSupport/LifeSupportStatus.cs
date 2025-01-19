@@ -16,5 +16,6 @@ namespace LifeSupport
         public double TimeEnteredVessel { get; set; }
         public string CurrentVesselId { get; set; }
         public string PreviousVesselId { get; set; }
+        public double RemainingCabinTime { get; set; }
     }
 }

@@ -109,16 +109,37 @@ namespace LifeSupport
             vstat.LastUpdate = kerbal.missionTime;
             var sitString = "(EVA)";
 
+            var evaKerbal = kerbal.GetVesselCrew()[0];
+            var kerbalStatus = LifeSupportManager.Instance.FetchKerbal(evaKerbal);
+            var cabinTime = kerbalStatus.RemainingCabinTime;
+            var cabinTimeString = LifeSupportUtilities.SmartDurationDisplay(Math.Max(0, cabinTime));
+
             var remEVATime = LifeSupportScenario.Instance.settings.GetSettings().EVATime - kerbal.missionTime;
             var timeString = LifeSupportUtilities.SmartDurationDisplay(Math.Max(0, remEVATime));
+
+            var secondsPerDay = LifeSupportUtilities.SecondsPerDay();
+            
+
+            var lblCabin = "6FFF00";
+            if (cabinTime < secondsPerDay * 3)
+            {
+                lblCabin = "FFE100";
+            }
+            if (cabinTime < secondsPerDay * 1)
+            {
+                lblCabin = "FFAE00";
+            }
 
             if (remEVATime > 0)
             {
                 vstat.SummaryLabel = String.Format(
-                    "<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2}</color><color=#3DB1FF> time remaining</color>"
+                    "<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2}</color><color=#3DB1FF> time remaining   -   </color>" +
+                    "<color=#{3}>{4}</color><color=#3DB1FF> cabin time</color>"
                     , kerbal.mainBody.bodyName
                     , sitString
-                    , timeString.Substring(timeString.IndexOf(':') + 1));
+                    , timeString
+                    , lblCabin
+                    , cabinTimeString);
             }
             else
             {
@@ -190,9 +211,12 @@ namespace LifeSupport
                     LifeSupportScenario.Instance.settings.GetSettings().HabRange);
             }
 
+            var numCrew = vsl.NumCrew;
+            var crewCap = vsl.CrewCap;
+            var vesselHabMultiplier = vsl.VesselHabMultiplier;
             foreach (var c in thisVessel.GetVesselCrew())
             {
-                var crewStat = GetCrewStat(c, thisVessel, suppliesTimeLeft, ecTimeLeft, ecAmount, habTime);
+                var crewStat = GetCrewStat(c, thisVessel, suppliesTimeLeft, ecTimeLeft, ecAmount, habTime, numCrew, crewCap, vesselHabMultiplier);
                 vstat.crew.Add(crewStat);
             }
             vstat.crew = vstat.crew.OrderBy(crewStat => crewStat.EarliestExpiration).ToList();
@@ -284,8 +308,8 @@ namespace LifeSupport
             GUILayout.Label(c.ECLabel, _labelStyle, GUILayout.Width(145));
             GUILayout.Label("<color=#EDEDED>hab:</color>", _labelStyle, GUILayout.Width(40));
             GUILayout.Label(c.HabLabel, _labelStyle, GUILayout.Width(145));
-            GUILayout.Label("<color=#EDEDED>home:</color>", _labelStyle, GUILayout.Width(40));
-            GUILayout.Label(c.HomeLabel, _labelStyle, GUILayout.Width(145));
+            GUILayout.Label("<color=#EDEDED>cabin:</color>", _labelStyle, GUILayout.Width(40));
+            GUILayout.Label(c.CabinLabel, _labelStyle, GUILayout.Width(145));
             GUILayout.EndHorizontal();
         }
 
@@ -320,7 +344,7 @@ namespace LifeSupport
             return sitString;
         }
 
-        private LifeSupportCrewDisplayStat GetCrewStat(ProtoCrewMember c, Vessel vessel, double vesselSuppliesTimeLeft, double vesselEcTimeLeft, double vesselEcAmount, double vesselHabTime)
+        private LifeSupportCrewDisplayStat GetCrewStat(ProtoCrewMember c, Vessel vessel, double vesselSuppliesTimeLeft, double vesselEcTimeLeft, double vesselEcAmount, double vesselHabTime, int numCrew, int crewCap, double vesselHabMultiplier)
         {
             var cls = LifeSupportManager.Instance.FetchKerbal(c);
             //Guard clause in case we just changed vessels
@@ -329,7 +353,6 @@ namespace LifeSupport
             {
                 cls.PreviousVesselId = cls.CurrentVesselId;
                 cls.CurrentVesselId = vessel.id.ToString();
-                cls.TimeEnteredVessel = Planetarium.GetUniversalTime();
                 LifeSupportManager.Instance.TrackKerbal(cls);
             }
 
@@ -345,7 +368,7 @@ namespace LifeSupport
             cStat.ComputeEc(ecTimeLeft, c);
             cStat.ComputeSupply(vesselSuppliesTimeLeft, c);
             cStat.ComputeHab(vesselHabTime, c, cls);
-            cStat.ComputeHome(c, cls);
+            cStat.ComputeCabin(c, cls, numCrew, crewCap, vesselHabMultiplier);
 
             LifeSupportManager.Instance.TrackKerbal(cls);
             return cStat;
@@ -399,7 +422,7 @@ namespace LifeSupport
         public string ECLabel { get; set; }
         public string SupplyLabel { get; set; }
         public string HabLabel { get; set; }
-        public string HomeLabel { get; set; }
+        public string CabinLabel { get; set; }
         public double EarliestExpiration { get; set; }
 
         public LifeSupportCrewDisplayStat()
@@ -424,7 +447,7 @@ namespace LifeSupport
             if (useHabPenalties)
             {
                 UpdateEarliestExpiration(vesselHabTime);
-                var habTimeLeft = vesselHabTime - (Planetarium.GetUniversalTime() - cls.TimeEnteredVessel);
+                var habTimeLeft = vesselHabTime - (Planetarium.GetUniversalTime() - cls.LastAtHome);
                 var isScout = c.HasEffect("ExplorerSkill") && habTimeLeft >= LifeSupportScenario.Instance.settings.GetSettings().ScoutHabTime;
                 var isPermaHab = habTimeLeft >= LifeSupportScenario.Instance.settings.GetSettings().PermaHabTime;
 
@@ -454,43 +477,46 @@ namespace LifeSupport
             HabLabel = String.Format("<color=#{0}>{1}</color>", lblHab, crewHabString);
         }
 
-        internal void ComputeHome(ProtoCrewMember c, LifeSupportStatus cls)
+        internal void ComputeCabin(ProtoCrewMember c, LifeSupportStatus cls, int numCrew, int crewCap, double vesselHabMultiplier)
         {
-            var crewHomeString = "indefinite";
-            var lblHome = "6FFF00";
+            var crewCabinString = "indefinite";
+            var lblCabin = "6FFF00";
             var useHabPenalties = LifeSupportManager.GetNoHomeEffect(c.name) > 0;
             if (useHabPenalties)
             {
-                var homeTimeLeft = cls.MaxOffKerbinTime - Planetarium.GetUniversalTime();
-                UpdateEarliestExpiration(homeTimeLeft);
+                var adjustedCabinTimeLeft = cls.RemainingCabinTime * ((double)crewCap / (double)numCrew) * (1 + vesselHabMultiplier);
+                UpdateEarliestExpiration(adjustedCabinTimeLeft);
 
-                var isScout = c.HasEffect("ExplorerSkill") && homeTimeLeft >= LifeSupportScenario.Instance.settings.GetSettings().ScoutHabTime;
-                var isPermaHab = homeTimeLeft >= LifeSupportScenario.Instance.settings.GetSettings().PermaHabTime;
+                // Debug.Log(String.Format("{0} has {1} remaining CabinTime", cls.KerbalName, cabinTimeLeft ));
+
+                var isScout = c.HasEffect("ExplorerSkill") && adjustedCabinTimeLeft >= LifeSupportScenario.Instance.settings.GetSettings().ScoutHabTime;
+                var isPermaHab = adjustedCabinTimeLeft >= LifeSupportScenario.Instance.settings.GetSettings().PermaHabTime;
 
                 if (isScout || isPermaHab)
                 {
-                    crewHomeString = "indefinite";
+                    crewCabinString = "indefinite";
                 }
-                else if (homeTimeLeft < 0)
+                else if (adjustedCabinTimeLeft < 0)
                 {
-                    lblHome = "FF5E5E";
-                    crewHomeString = "expired";
+                    lblCabin = "FF5E5E";
+                    crewCabinString = "expired";
                 }
                 else
                 {
-                    crewHomeString = LifeSupportUtilities.SmartDurationDisplay(homeTimeLeft);
+
+                    crewCabinString = LifeSupportUtilities.SmartDurationDisplay(adjustedCabinTimeLeft);
                     var secondsPerDay = LifeSupportUtilities.SecondsPerDay();
-                    if (homeTimeLeft < secondsPerDay * 30) //15 days
+                    if (adjustedCabinTimeLeft < secondsPerDay * 3)
                     {
-                        lblHome = "FFE100";
+                        lblCabin = "FFE100";
                     }
-                    if (homeTimeLeft < secondsPerDay * 15)
+                    if (adjustedCabinTimeLeft < secondsPerDay * 1)
                     {
-                        lblHome = "FFAE00";
+                        lblCabin = "FFAE00";
                     }
                 }
             }
-            HomeLabel = String.Format("<color=#{0}>{1}</color>", lblHome, crewHomeString);
+            CabinLabel = String.Format("<color=#{0}>{1}</color>", lblCabin, crewCabinString);
         }
 
         private string GetRemainingTimeWithGraceLabel(double timeLeft, double graceTime, string graceTimeDisplay, string inGraceTimeMessage, int effectWhenExpires)

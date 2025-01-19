@@ -23,6 +23,7 @@
         public double BaseHabTime { get; set; }
         public bool EnableRecyclers { get; set; }
         public double HabRange { get; set; }
+        public float RecoverySpeed { get; set; }
         public double ScoutHabTime { get; set; }
         public double PermaHabTime { get; set; }
     }

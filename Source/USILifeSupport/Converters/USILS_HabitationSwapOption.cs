@@ -33,7 +33,7 @@ namespace LifeSupport
             var output = new StringBuilder();
             output.AppendLine();
             output.AppendLine(base.GetInfo());
-            output.AppendLine(string.Format("Kerbal-Months: {0}", BaseKerbalMonths + part.CrewCapacity));
+            output.AppendLine(string.Format("Kerbal-Months: {0}", BaseKerbalMonths));
             output.AppendLine(string.Format("Crew Affected: {0}", CrewCapacity));
             output.AppendLine(string.Format("Hab Multipler: {0}", BaseHabMultiplier));
 

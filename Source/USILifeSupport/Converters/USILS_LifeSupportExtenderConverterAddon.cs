@@ -61,10 +61,11 @@ namespace LifeSupport
             {
                 var k = kerbals[i];
                 var lsKerbal = LifeSupportManager.Instance.FetchKerbal(k);
-                if (AffectsHomeTimer)
-                    lsKerbal.MaxOffKerbinTime += timePerKerbal;
-                if (AffectsHabTimer)
-                    lsKerbal.TimeEnteredVessel += timePerKerbal;
+
+                // Experimental patch.
+                // I don't like changing LastAtHome but the alternative is that we add another variable...
+                if (AffectsHomeTimer || AffectsHabTimer)
+                    lsKerbal.LastAtHome += timePerKerbal;
 
                 LifeSupportManager.Instance.TrackKerbal(lsKerbal);
             }
