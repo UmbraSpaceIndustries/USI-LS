@@ -6,6 +6,7 @@ using KSP.UI.Screens;
 using UnityEngine;
 using USITools;
 using System.Linq;
+using KSP.Localization;
 
 namespace LifeSupport
 {
@@ -79,7 +80,7 @@ namespace LifeSupport
 
         private void Ondraw()
         {
-            _windowPosition = GUILayout.Window(10, _windowPosition, OnWindow, "Life Support Status", _windowStyle);
+            _windowPosition = GUILayout.Window(10, _windowPosition, OnWindow, Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_title"), _windowStyle);
         }
 
         private void OnWindow(int windowId)
@@ -294,15 +295,15 @@ namespace LifeSupport
 
                         // LABELS
                         GUILayout.BeginHorizontal();
-                        GUILayout.Label("Crew", _labelStyle, GUILayout.Width(c1));
-                        GUILayout.Label("Supplies", _labelStyle, GUILayout.Width(c2));
-                        GUILayout.Label("Batteries", _labelStyle, GUILayout.Width(c3));
-                        GUILayout.Label("Habitation", _labelStyle, GUILayout.Width(c4));
+                        GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_Crew"), _labelStyle, GUILayout.Width(c1));
+                        GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_Supplies"), _labelStyle, GUILayout.Width(c2));
+                        GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_Batteries"), _labelStyle, GUILayout.Width(c3));
+                        GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_Habitation"), _labelStyle, GUILayout.Width(c4));
                         GUILayout.EndHorizontal();
 
                         // CURRENT CREW
                         GUILayout.BeginHorizontal();
-                        GUILayout.Label(CTag("Current (", textColor) + CTag(Math.Max(1, curCrew).ToString(), crewColor) + CTag(")", textColor), _labelStyle, GUILayout.Width(c1));
+                        GUILayout.Label(CTag(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_Current"), textColor) + CTag(Math.Max(1, curCrew).ToString(), crewColor) + CTag(")", textColor), _labelStyle, GUILayout.Width(c1));
                         GUILayout.Label(CTag(supply_curCrew, textColor), _labelStyle, GUILayout.Width(c2));
                         GUILayout.Label(
                             CTag(LifeSupportUtilities.DurationDisplay(totalBatteryTime / Math.Max(1, curCrew)), textColor),
@@ -312,23 +313,23 @@ namespace LifeSupport
                         if (useHabPenalties)
                             GUILayout.Label(CTag(hab_curCrew, textColor), _labelStyle, GUILayout.Width(160));
                         else
-                            GUILayout.Label(CTag("indefinite", textColor), _labelStyle, GUILayout.Width(c4));
+                            GUILayout.Label(CTag(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_indefinite"), textColor), _labelStyle, GUILayout.Width(c4));
                         GUILayout.EndHorizontal();
 
                         // CURRENT CREW WITH EXTENSIONS
                         GUILayout.BeginHorizontal();
-                        GUILayout.Label(CTag("+Fertilizer:", bonCapColor), _labelStyle, GUILayout.Width(c1));
+                        GUILayout.Label(CTag(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_Fertilizer"), bonCapColor), _labelStyle, GUILayout.Width(c1));
                         GUILayout.Label(CTag(supplyExt_curCrew, bonusColor), _labelStyle, GUILayout.Width(c2));
-                        GUILayout.Label(CTag("+Colony Supplies:", bonCapColor), _labelStyle, GUILayout.Width(c3));
+                        GUILayout.Label(CTag(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_ColonySupply"), bonCapColor), _labelStyle, GUILayout.Width(c3));
                         if (useHabPenalties)
                             GUILayout.Label(CTag(habExt_curCrew, bonusColor), _labelStyle, GUILayout.Width(160));
                         else
-                            GUILayout.Label(CTag("indefinite", bonusColor), _labelStyle, GUILayout.Width(c4));
+                            GUILayout.Label(CTag(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_indefinite"), bonusColor), _labelStyle, GUILayout.Width(c4));
                         GUILayout.EndHorizontal();
 
                         // MAX CREW
                         GUILayout.BeginHorizontal();
-                        GUILayout.Label(CTag("Max (", textColor) + CTag(Math.Max(1, maxCrew).ToString(), crewColor) + CTag(")", textColor), _labelStyle, GUILayout.Width(c1));
+                        GUILayout.Label(CTag(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_max"), textColor) + CTag(Math.Max(1, maxCrew).ToString(), crewColor) + CTag(")", textColor), _labelStyle, GUILayout.Width(c1));
                         GUILayout.Label(CTag(supply_maxCrew, textColor), _labelStyle, GUILayout.Width(c2));
                         GUILayout.Label(
                             CTag(LifeSupportUtilities.DurationDisplay(totalBatteryTime / Math.Max(1, maxCrew)), textColor),
@@ -338,25 +339,25 @@ namespace LifeSupport
                         if (useHabPenalties)
                             GUILayout.Label(CTag(hab_maxCrew, textColor), _labelStyle, GUILayout.Width(160));
                         else
-                            GUILayout.Label(CTag("indefinite", textColor), _labelStyle, GUILayout.Width(160));
+                            GUILayout.Label(CTag(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_indefinite"), textColor), _labelStyle, GUILayout.Width(160));
                         GUILayout.EndHorizontal();
 
                         // MAX WITH EXTENSIONS
                         GUILayout.BeginHorizontal();
-                        GUILayout.Label(CTag("+Fertilizer:", bonCapColor), _labelStyle, GUILayout.Width(c1));
+                        GUILayout.Label(CTag(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_Fertilizer"), bonCapColor), _labelStyle, GUILayout.Width(c1));
                         GUILayout.Label(CTag(supplyExt_maxCrew, bonusColor), _labelStyle, GUILayout.Width(c2));
-                        GUILayout.Label(CTag("+Colony Supplies:", bonCapColor),_labelStyle,GUILayout.Width(c3));
+                        GUILayout.Label(CTag(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_ColonySupply"), bonCapColor),_labelStyle,GUILayout.Width(c3));
                         if (useHabPenalties)
                             GUILayout.Label(CTag(habExt_maxCrew, bonusColor), _labelStyle, GUILayout.Width(160));
                         else
-                            GUILayout.Label(CTag("indefinite", bonusColor), _labelStyle, GUILayout.Width(c4));
+                            GUILayout.Label(CTag(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_indefinite"), bonusColor), _labelStyle, GUILayout.Width(c4));
                         GUILayout.EndHorizontal();
 
                     }
 
                     GUILayout.Space(20);
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label("<b>Details</b>", _labelStyle, GUILayout.Width(150));
+                    GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_details"), _labelStyle, GUILayout.Width(150));
                     GUILayout.EndHorizontal();
 
                     // HABITATION EQUATION
@@ -372,14 +373,14 @@ namespace LifeSupport
                         const int c7 = 50;
 
                         GUILayout.BeginHorizontal();
-                        GUILayout.Label("Habitation", _labelStyle, GUILayout.Width(c1 - 30));
+                        GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_Habitation"), _labelStyle, GUILayout.Width(c1 - 30));
                         GUILayout.Label(CTag("= ( (", operColor), _labelStyle, GUILayout.Width(30));
-                        GUILayout.Label("BaseTime " + CTag("*", operColor), _labelStyle, GUILayout.Width(c2));
-                        GUILayout.Label("MaxCrew " + CTag(") +", operColor), _labelStyle, GUILayout.Width(c3));
-                        GUILayout.Label("ExtraTime " + CTag(") *", operColor), _labelStyle, GUILayout.Width(c4));
-                        GUILayout.Label("Multiplier " + CTag("/", operColor), _labelStyle, GUILayout.Width(c5));
-                        GUILayout.Label("Crew " + CTag("*", operColor), _labelStyle, GUILayout.Width(c6));
-                        GUILayout.Label("Months", _labelStyle, GUILayout.Width(c7));
+                        GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_basetime") + CTag("*", operColor), _labelStyle, GUILayout.Width(c2));
+                        GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_maxcrew") + CTag(") +", operColor), _labelStyle, GUILayout.Width(c3));
+                        GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_ExtraTime") + CTag(") *", operColor), _labelStyle, GUILayout.Width(c4));
+                        GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_Multiplier") + CTag("/", operColor), _labelStyle, GUILayout.Width(c5));
+                        GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_CrewNum") + CTag("*", operColor), _labelStyle, GUILayout.Width(c6));
+                        GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_Month"), _labelStyle, GUILayout.Width(c7));
                         GUILayout.EndHorizontal();
 
                         GUILayout.BeginHorizontal();
@@ -406,7 +407,7 @@ namespace LifeSupport
                     GUILayout.Space(20);
 
                     GUILayout.BeginHorizontal();
-                    GUILayout.Label("<b>Parts</b>", _labelStyle, GUILayout.Width(150));
+                    GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_Part"), _labelStyle, GUILayout.Width(150));
                     GUILayout.EndHorizontal();
 
                     // RECYCLERS
@@ -417,9 +418,9 @@ namespace LifeSupport
                         const int c3 = 150;
 
                         GUILayout.BeginHorizontal();
-                        GUILayout.Label("Recycler", _labelStyle, GUILayout.Width(c1));
-                        GUILayout.Label("Recycle %", _labelStyle, GUILayout.Width(c2));
-                        GUILayout.Label("Crew-Capacity", _labelStyle, GUILayout.Width(c3));
+                        GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_Recycler"), _labelStyle, GUILayout.Width(c1));
+                        GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_Recycle"), _labelStyle, GUILayout.Width(c2));
+                        GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_CrewCapacity"), _labelStyle, GUILayout.Width(c3));
                         GUILayout.EndHorizontal();
 
                         var rCount = recyclers.Count;
@@ -439,9 +440,9 @@ namespace LifeSupport
                             GUILayout.Space(10);
 
                             GUILayout.BeginHorizontal();
-                            GUILayout.Label("Habitation", _labelStyle, GUILayout.Width(c1));
-                            GUILayout.Label("ExtraTime", _labelStyle, GUILayout.Width(c2));
-                            GUILayout.Label("Multiplier", _labelStyle, GUILayout.Width(c3));
+                            GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_Habitation"), _labelStyle, GUILayout.Width(c1));
+                            GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_ExtraTime"), _labelStyle, GUILayout.Width(c2));
+                            GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_MonitorEditor_Multiplier"), _labelStyle, GUILayout.Width(c3));
                             GUILayout.EndHorizontal();
 
                             var hCount = habs.Count;

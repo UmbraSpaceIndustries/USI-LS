@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using KSP.Localization;
 
 namespace LifeSupport
 {
@@ -307,7 +308,7 @@ namespace LifeSupport
                                     trackedKerbal,
                                     crewMember,
                                     LifeSupportManager.GetNoECEffect(trackedKerbal.KerbalName),
-                                    "power loss");
+                                    Localizer.GetStringByTag("#autoLoc_USI_LS_System_nopower"));
                             }
                             else if (isGrouchySupplies && !isCatchup)
                             {
@@ -315,7 +316,7 @@ namespace LifeSupport
                                     trackedKerbal,
                                     crewMember,
                                     LifeSupportManager.GetNoSupplyEffect(trackedKerbal.KerbalName),
-                                    "lack of supplies");
+                                    Localizer.GetStringByTag("#autoLoc_USI_LS_System_nosupplies"));
                             }
                             else if (isGrouchyHab && !isCatchup)
                             {
@@ -323,7 +324,7 @@ namespace LifeSupport
                                     trackedKerbal,
                                     crewMember,
                                     LifeSupportManager.GetNoHomeEffect(trackedKerbal.KerbalName),
-                                    "homesickness");
+                                    Localizer.GetStringByTag("#autoLoc_USI_LS_System_homesick"));
                             }
                             else if (crewMember.experienceTrait.Config.Name != trackedKerbal.OldTrait && !isAnyGrouch)
                             {
@@ -409,7 +410,7 @@ namespace LifeSupport
                 case 1: //Grouchy
                     if (crewMember.type != ProtoCrewMember.KerbalType.Tourist)
                     {
-                        screenMessage = string.Format("{0} refuses to work", crewMember.name);
+                        screenMessage = Localizer.Format("#autoLoc_USI_LS_System_Grouchy", crewMember.name);
                         trackedKerbal.OldTrait = crewMember.experienceTrait.Config.Name;
                         crewMember.type = ProtoCrewMember.KerbalType.Tourist;
                         KerbalRoster.SetExperienceTrait(crewMember, "Tourist");
@@ -419,7 +420,7 @@ namespace LifeSupport
                     break;
                 case 2:  //Mutinous
                     {
-                        screenMessage = string.Format("{0} has become mutinous", crewMember.name);
+                        screenMessage = Localizer.Format("#autoLoc_USI_LS_System_Mutinous", crewMember.name);
                         trackedKerbal.OldTrait = crewMember.experienceTrait.Config.Name;
                         crewMember.type = ProtoCrewMember.KerbalType.Tourist;
                         KerbalRoster.SetExperienceTrait(crewMember, "Tourist");
@@ -429,19 +430,19 @@ namespace LifeSupport
                     }
                     break;
                 case 3: //Return to KSC
-                    screenMessage = string.Format("{0} gets fed up and wanders back to the KSC", crewMember.name);
+                    screenMessage = Localizer.Format("#autoLoc_USI_LS_System_Return", crewMember.name);
                     LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
                     crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Available;
                     DestroyVessel(vessel);
                     break;
                 case 4: //Despawn
-                    screenMessage = string.Format("{0} has gone missing", crewMember.name);
+                    screenMessage = Localizer.Format("#autoLoc_USI_LS_System_Despawn", crewMember.name);
                     LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
                     crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Missing;
                     DestroyVessel(vessel);
                     break;
                 case 5: //Kill
-                    screenMessage = string.Format("{0} has died", crewMember.name);
+                    screenMessage = Localizer.Format("#autoLoc_USI_LS_System_Kill", crewMember.name);
                     LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
                     crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
                     DestroyVessel(vessel);
@@ -751,7 +752,7 @@ namespace LifeSupport
                 }
 
                 if (foundSupplies)
-                    ScreenMessages.PostScreenMessage("Supply containers unlocked...", 5f, ScreenMessageStyle.UPPER_CENTER);
+                    ScreenMessages.PostScreenMessage(Localizer.GetStringByTag("#autoLoc_USI_LS_System_Unlock"), 5f, ScreenMessageStyle.UPPER_CENTER);
             }
         }
 
@@ -785,7 +786,7 @@ namespace LifeSupport
                 case 0: // No effect
                     return; // No need to print
                 case 1: //Grouchy
-                    msg = string.Format("{0} refuses to work {1}", crewMember.name, reason);
+                    msg = Localizer.Format("#autoLoc_USI_LS_System_Grouchy_reason", crewMember.name, reason);
                     trackedKerbal.OldTrait = crewMember.experienceTrait.Config.Name;
                     crewMember.type = ProtoCrewMember.KerbalType.Tourist;
                     KerbalRoster.SetExperienceTrait(crewMember, "Tourist");
@@ -793,7 +794,7 @@ namespace LifeSupport
                     LifeSupportManager.Instance.TrackKerbal(trackedKerbal);
                     break;
                 case 2:  //Mutinous
-                    msg = string.Format("{0} has become mutinous due to {1}", crewMember.name, reason);
+                    msg = Localizer.Format("#autoLoc_USI_LS_System_Mutinous_reason", crewMember.name, reason);
                     trackedKerbal.OldTrait = crewMember.experienceTrait.Config.Name;
                     crewMember.type = ProtoCrewMember.KerbalType.Tourist;
                     KerbalRoster.SetExperienceTrait(crewMember, "Tourist");
@@ -803,21 +804,21 @@ namespace LifeSupport
                     SpawnExtraSupplies(100f);
                     break;
                 case 3: //Return to KSC
-                    msg = string.Format("{0} gets fed up and wanders back to the KSC due to {1}", crewMember.name, reason);
+                    msg = Localizer.Format("#autoLoc_USI_LS_System_Return_reason", crewMember.name, reason);
                     LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
                     crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Available;
                     vessel.CrewListSetDirty();
                     LifeSupportUtilities.RemoveCrewFromPart(crewMember,vessel);
                     break;
                 case 4: //Despawn
-                    msg = string.Format("{0} has gone missing due to {1}", crewMember.name, reason);
+                    msg = Localizer.Format("#autoLoc_USI_LS_System_Despawn_reason", crewMember.name, reason);
                     LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
                     vessel.CrewListSetDirty();
                     LifeSupportUtilities.RemoveCrewFromPart(crewMember, vessel);
                     crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Missing;
                     break;
                 case 5: //Kill
-                    msg = string.Format("{0} has died due to {1}", crewMember.name, reason);
+                    msg = Localizer.Format("#autoLoc_USI_LS_System_Kill_reason", crewMember.name, reason);
                     LifeSupportManager.Instance.UntrackKerbal(crewMember.name);
                     vessel.CrewListSetDirty();
                     LifeSupportUtilities.RemoveCrewFromPart(crewMember, vessel);
@@ -853,7 +854,7 @@ namespace LifeSupport
                 trackedKerbal.IsGrouchy = false;
                 LifeSupportManager.Instance.TrackKerbal(trackedKerbal);
 
-                string msg = string.Format("{0} has returned to duty", crewMember.name);
+                string msg = Localizer.Format("#autoLoc_USI_LS_System_Duty", crewMember.name);
                 ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
             }
         }
