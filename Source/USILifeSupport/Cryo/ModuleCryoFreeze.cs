@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using KSP.Localization;
 
 namespace LifeSupport.Cryo
 {
@@ -37,13 +38,13 @@ namespace LifeSupport.Cryo
         [KSPField(isPersistant = true)]
         public bool FirstFreeze = false;    //Was this our first time use?
 
-        [KSPField(guiName = "CryoTank Active?", guiActive = true, isPersistant = true)]
+        [KSPField(guiName = "#autoLoc_USI_LS_CryoTankActive", guiActive = true, isPersistant = true)]
         public bool FreezerEngaged = false; //Is the freezer on?
 
-        [KSPField(guiName = "CryoTank Timer:", guiActive = true)]
+        [KSPField(guiName = "#autoLoc_USI_LS_CryoTankTimer", guiActive = true)]
         public string CryoTime;
 
-        [KSPField(guiName = "CryoTank Stability:", guiActive = true)]
+        [KSPField(guiName = "#autoLoc_USI_LS_CryoTankStability", guiActive = true)]
         public string CryoMargin;
 
         [KSPEvent(guiActive = true, guiName = "Enter CryoFreeze", active = true)]
@@ -77,7 +78,7 @@ namespace LifeSupport.Cryo
             }
             else
             {
-                CryoTime = "Not Active";
+                CryoTime = Localizer.GetStringByTag("#autoLoc_USI_LS_CryoTankNotActive");
                 CryoMargin = String.Format("{0:0.00}%", 100f);
             }
             base.OnUpdate();
@@ -107,9 +108,9 @@ namespace LifeSupport.Cryo
         private void SetMenu()
         {
             if (FreezerEngaged)
-                Events["CryoFreeze"].guiName = "Unfreeze Kerbals";
+                Events["CryoFreeze"].guiName = "#autoLoc_USI_LS_CryoTankUnfreezeKerbals";
             else
-                Events["CryoFreeze"].guiName = "Freeze Kerbals";
+                Events["CryoFreeze"].guiName = "#autoLoc_USI_LS_CryoTankFreezeKerbals";
 
             MonoUtilities.RefreshContextWindows(part); 
         }
@@ -133,7 +134,7 @@ namespace LifeSupport.Cryo
                 {
                     var c = part.protoModuleCrew[i];
                     KerbalName += c.name + "|";
-                    var msg = string.Format("{0} has been frozen", c.name);
+                    var msg = Localizer.Format("#autoLoc_USI_LS_msg", c.name);
                     vessel.CrewListSetDirty();
                     LifeSupportUtilities.RemoveCrewFromPart(c, vessel);
                     c.rosterStatus = ProtoCrewMember.RosterStatus.Missing;
@@ -156,7 +157,7 @@ namespace LifeSupport.Cryo
                     var cCount = p.protoModuleCrew.Count;
                     for (int i = 0; i < cCount; ++i)
                     {
-                        if (p.protoModuleCrew[i].experienceTrait.TypeName == "Scientist")
+                        if (p.protoModuleCrew[i].experienceTrait.TypeName == Localizer.GetStringByTag("#autoLoc_USI_LS_scientist"))
                             return true;
                     }
                 }
@@ -168,21 +169,21 @@ namespace LifeSupport.Cryo
         {
             if(part.protoModuleCrew.Count() == 0)
             {
-                var msg = string.Format("No Kerbals present in CryoTank");
+                var msg = Localizer.GetStringByTag("#autoLoc_USI_LS_noKerbals");
                 ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
                 return false;
             }
             //Also need to do our check for re-starting a cryotank
             if(!CanRecharge && !FirstFreeze)
             {
-                var msg = string.Format("This CryoTank cannot be restarted!");
+                var msg = Localizer.GetStringByTag("#autoLoc_USI_LS_restart");
                 ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
                 return false;
             }
             //And do we require a scientist?
             if(FreezeRequiresScientist && !DoesVesselHaveScientist())
             {
-                var msg = string.Format("No Scientist on board to operate CryoTank");
+                var msg = Localizer.GetStringByTag("#autoLoc_USI_LS_noscientist");
                 ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
                 return false;
             }
@@ -191,7 +192,7 @@ namespace LifeSupport.Cryo
             //These need to be in the part.
             if(!PartHasCryoResources())
             {
-                var msg = string.Format("Insufficient resources to activate CryoTank");
+                var msg = Localizer.GetStringByTag("#autoLoc_USI_LS_needresources");
                 ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
                 return false;
             }
@@ -245,7 +246,7 @@ namespace LifeSupport.Cryo
             bool canThaw = true;
             if (String.IsNullOrEmpty(KerbalName))
             {
-                var msg = string.Format("No frozen Kerbal in this part");
+                var msg = Localizer.GetStringByTag("#autoLoc_USI_LS_noFrozenKerbals");
                 ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
                 canThaw = false;
             }
@@ -253,7 +254,7 @@ namespace LifeSupport.Cryo
             {
                 if (UnfreezeRequiresScientist && !DoesVesselHaveScientist())
                 {
-                    var msg = string.Format("CryoTank requires a Scientist to thaw a Kerbal");
+                    var msg = Localizer.GetStringByTag("#autoLoc_USI_LS_noscientist2thaw");
                     ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
                     canThaw = false;
                 }
@@ -266,7 +267,7 @@ namespace LifeSupport.Cryo
                     ProtoCrewMember crewMember = HighLogic.CurrentGame.CrewRoster.Kerbals().ToList().Where(k => k.name == kerb).FirstOrDefault();
                     if (crewMember == null)
                     {
-                        var msg = string.Format("Unable to thaw {0}", kerb);
+                        var msg = Localizer.Format("#autoLoc_USI_LS_unabletoThaw", kerb);
                         ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
                     }
                     else
@@ -274,7 +275,7 @@ namespace LifeSupport.Cryo
                         if (PassDethawTest())
                         {
                             //All is well - time to thaw!
-                            var msg = string.Format("{0} has been unfrozen", crewMember.name);
+                            var msg = Localizer.Format("#autoLoc_USI_LS_unfrozen", crewMember.name);
                             crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Available;
                             part.AddCrewmember(crewMember);
                             ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
@@ -282,7 +283,7 @@ namespace LifeSupport.Cryo
                         else
                         {
                             //Yikes!  Our Kerbal did not make it!
-                            var msg = string.Format("{0} failed to survive thawing", crewMember.name);
+                            var msg = Localizer.Format("#autoLoc_USI_LS_failedthaw", crewMember.name);
                             crewMember.rosterStatus = ProtoCrewMember.RosterStatus.Dead;
                             ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
                         }

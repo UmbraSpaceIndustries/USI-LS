@@ -1,4 +1,5 @@
-﻿using KSP.UI.Screens;
+﻿using KSP.Localization;
+using KSP.UI.Screens;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -90,7 +91,7 @@ namespace LifeSupport
 
         private void Ondraw()
         {
-            _windowPosition = GUILayout.Window(10, _windowPosition, OnWindow, "Life Support Status", _windowStyle);
+            _windowPosition = GUILayout.Window(10, _windowPosition, OnWindow, Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_title"), _windowStyle);
         }
 
         private void OnWindow(int windowId)
@@ -114,15 +115,15 @@ namespace LifeSupport
 
             if (remEVATime > 0)
             {
-                vstat.SummaryLabel = String.Format(
-                    "<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2}</color><color=#3DB1FF> time remaining</color>"
+                vstat.SummaryLabel = Localizer.Format(
+                    "#autoLoc_USI_LS_Monitor_EvaTime"
                     , kerbal.mainBody.bodyName
                     , sitString
                     , timeString.Substring(timeString.IndexOf(':') + 1));
             }
             else
             {
-                vstat.SummaryLabel = "<color=#FF8585>EVA Time Expired</color>";
+                vstat.SummaryLabel = Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_EvaTimeOut");
             }
 
             vstat.crew = new List<LifeSupportCrewDisplayStat>();
@@ -173,20 +174,20 @@ namespace LifeSupport
             {
                 habString = LifeSupportUtilities.DurationDisplay(habTime, LifeSupportUtilities.TimeFormatLength.Short);
             }
-            vstat.SummaryLabel = String.Format(
-                "<color=#3DB1FF>{0}/{1} - </color><color=#9EE4FF>{2:0}</color><color=#3DB1FF> supplies (</color><color=#9EE4FF>{3:0.0}</color><color=#3DB1FF>/day) hab for </color><color=#9EE4FF>{4}</color>"                               
+            vstat.SummaryLabel = Localizer.Format(
+                "#autoLoc_USI_LS_Monitor_Data"
                 , thisVessel.mainBody.bodyName
                 , situationString
-                , supAmount
-                , suppliesPerDay
+                , (int)supAmount
+                , Math.Truncate(suppliesPerDay*100)/100
                 , habString);
             vstat.crew = new List<LifeSupportCrewDisplayStat>();
             if (useHabPenalties)
             {
-                vstat.SummaryLabel += String.Format(
-                    "<color=#3DB1FF> (</color><color=#9EE4FF>{0}</color><color=#3DB1FF> {1} shared within </color><color=#9EE4FF>{2}</color><color=#3DB1FF>m)</color>",
+                vstat.SummaryLabel += Localizer.Format(
+                    "#autoLoc_USI_LS_Monitor_Share",
                     isOldData ? "?" : numSharedHabVessels.ToString(),
-                    numSharedHabVessels == 1 ? "vessel" : "vessels",
+                    numSharedHabVessels == 1 ? Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_Vessel") : Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_Vessels"),
                     LifeSupportScenario.Instance.settings.GetSettings().HabRange);
             }
 
@@ -278,13 +279,13 @@ namespace LifeSupport
             GUILayout.BeginHorizontal();
             GUILayout.Label("", _labelStyle, GUILayout.Width(30));
             GUILayout.Label(c.CrewName, _labelStyle, GUILayout.Width(135));
-            GUILayout.Label("<color=#EDEDED>sup:</color>", _labelStyle, GUILayout.Width(35));
+            GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_sup"), _labelStyle, GUILayout.Width(35));
             GUILayout.Label(c.SupplyLabel, _labelStyle, GUILayout.Width(145));
-            GUILayout.Label("<color=#EDEDED>EC:</color>", _labelStyle, GUILayout.Width(35));
+            GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_EC"), _labelStyle, GUILayout.Width(35));
             GUILayout.Label(c.ECLabel, _labelStyle, GUILayout.Width(145));
-            GUILayout.Label("<color=#EDEDED>hab:</color>", _labelStyle, GUILayout.Width(40));
+            GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_hab"), _labelStyle, GUILayout.Width(40));
             GUILayout.Label(c.HabLabel, _labelStyle, GUILayout.Width(145));
-            GUILayout.Label("<color=#EDEDED>home:</color>", _labelStyle, GUILayout.Width(40));
+            GUILayout.Label(Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_home"), _labelStyle, GUILayout.Width(40));
             GUILayout.Label(c.HomeLabel, _labelStyle, GUILayout.Width(145));
             GUILayout.EndHorizontal();
         }
@@ -310,13 +311,13 @@ namespace LifeSupport
 
         private string GetSituationString(Vessel vessel)
         {
-            var sitString = "Orbiting";
+            var sitString = Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_Orbiting");
             vessel.checkSplashed();
             if (vessel.Splashed)
-                sitString = "Splashed";
+                sitString = Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_Splashed");
             vessel.checkLanded();
             if (vessel.Landed)
-                sitString = "Landed";
+                sitString = Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_Landed");
             return sitString;
         }
 
@@ -418,7 +419,7 @@ namespace LifeSupport
 
         internal void ComputeHab(double vesselHabTime, ProtoCrewMember c, LifeSupportStatus cls)
         {
-            var crewHabString = "indefinite";
+            var crewHabString = Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_indefinite");
             var lblHab = "6FFF00";
             var useHabPenalties = LifeSupportManager.GetNoHomeEffect(c.name) > 0;
             if (useHabPenalties)
@@ -430,12 +431,12 @@ namespace LifeSupport
 
                 if(isScout || isPermaHab)
                 {
-                    crewHabString = "indefinite";
+                    crewHabString = Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_indefinite");
                 }
                 else if (habTimeLeft < 0)
                 {
                     lblHab = "FF5E5E";
-                    crewHabString = "expired";
+                    crewHabString = Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_expired");
                 }
                 else
                 {
@@ -456,7 +457,7 @@ namespace LifeSupport
 
         internal void ComputeHome(ProtoCrewMember c, LifeSupportStatus cls)
         {
-            var crewHomeString = "indefinite";
+            var crewHomeString = Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_indefinite");
             var lblHome = "6FFF00";
             var useHabPenalties = LifeSupportManager.GetNoHomeEffect(c.name) > 0;
             if (useHabPenalties)
@@ -469,12 +470,12 @@ namespace LifeSupport
 
                 if (isScout || isPermaHab)
                 {
-                    crewHomeString = "indefinite";
+                    crewHomeString = Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_indefinite");
                 }
                 else if (homeTimeLeft < 0)
                 {
                     lblHome = "FF5E5E";
-                    crewHomeString = "expired";
+                    crewHomeString = Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_expired");
                 }
                 else
                 {
@@ -497,7 +498,7 @@ namespace LifeSupport
         {
             if (effectWhenExpires == 0)
             {
-                return "<color=#6FFF00>indefinite</color>";
+                return Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_SpecialIndefinite");
             }
             if (timeLeft > 0)
             {
@@ -522,7 +523,7 @@ namespace LifeSupport
                 }
                 else // exceededTime > graceTime
                 {
-                    return "<color=#FF5E5E>expired</color>";
+                    return Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_Specialexpired");
                 }
             }
         }
@@ -534,7 +535,7 @@ namespace LifeSupport
                 ecTimeLeft,
                 LifeSupportScenario.Instance.settings.GetSettings().ECTime,
                 LifeSupportMonitor.EcGraceTimeDisplay,
-                "out of EC",
+                Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_OutofEC"),
                 noEcEffect);
         }
 
@@ -549,7 +550,7 @@ namespace LifeSupport
                 vesselSuppliesTimeLeft,
                 LifeSupportScenario.Instance.settings.GetSettings().SupplyTime,
                 LifeSupportMonitor.SuppliesGraceTimeDisplay,
-                "starving",
+                Localizer.GetStringByTag("#autoLoc_USI_LS_Monitor_starving"),
                 noSupplyEffect);
         }
 

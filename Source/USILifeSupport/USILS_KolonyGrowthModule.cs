@@ -1,11 +1,12 @@
-﻿namespace LifeSupport
+﻿using KSP.Localization;
+namespace LifeSupport
 {
     public class USILS_KolonyGrowthModule : PartModule
     {
-        [KSPField(guiName = "Kolony Growth", guiActive = true, guiActiveEditor = true, isPersistant = true), UI_Toggle(disabledText = "Off", enabledText = "On")]
+        [KSPField(guiName = "#autoLoc_USI_LS_Growth_Growth", guiActive = true, guiActiveEditor = true, isPersistant = true), UI_Toggle(disabledText = "Off", enabledText = "On")]
         public bool KolonyGrowthEnabled = false;
 
-        [KSPField(isPersistant = false, guiName = "Next Birthday")]
+        [KSPField(isPersistant = false, guiName = "#autoLoc_USI_LS_Growth_Birthday")]
         public string KerbabyCountdown;
 
         [KSPField(isPersistant = true)]
@@ -68,7 +69,7 @@
             newKerb.rosterStatus = ProtoCrewMember.RosterStatus.Assigned;
             part.AddCrewmember(newKerb);
 
-            var msg = string.Format("{0}, a new {1}, has joined your crew!", newKerb.name, newKerb.experienceTrait.TypeName);
+            var msg = Localizer.Format("#autoLoc_USI_LS_Growth_career", newKerb.name, newKerb.experienceTrait.TypeName);
             ScreenMessages.PostScreenMessage(msg, 5f, ScreenMessageStyle.UPPER_CENTER);
         }
     }
